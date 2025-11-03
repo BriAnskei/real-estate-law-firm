@@ -7,13 +7,14 @@ import Label from "../form/Label";
 import Select from "../form/Select";
 import Button from "../ui/button/Button";
 import useSignInVerification from "../../hooks/useSignInVerification";
+import { Link } from "react-router";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const {
     toggleRememberMe,
     handleSignInOnchange,
-    handlerAuthProvider,
+    handleSignInProvider,
     handleSignIn,
     signInInput,
     handleRoleOnChange,
@@ -36,11 +37,11 @@ export default function SignInForm() {
             {/* Google Sign In */}
             <button
               className="w-full inline-flex items-center justify-center gap-3
-               py-3 text-sm font-medium text-gray-700 transition-all bg-white
-                border-2 border-gray-200 rounded-lg hover:border-[#D4AF37]
-                 hover:bg-gray-50 dark:bg-gray-800 dark:text-white 
-                 dark:border-gray-700 dark:hover:border-[#D4AF37]"
-              onClick={handlerAuthProvider}
+                  py-3 text-sm font-medium text-gray-700 transition-all bg-white
+                    border-2 border-gray-200 rounded-lg hover:border-[#D4AF37]
+                    hover:bg-gray-50 dark:bg-gray-800 dark:text-white 
+                    dark:border-gray-700 dark:hover:border-[#D4AF37]"
+              onClick={handleSignInProvider}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path
@@ -67,13 +68,13 @@ export default function SignInForm() {
               <div className="absolute inset-0 flex items-center">
                 <div
                   className="w-full border-t border-gray-200 
-                dark:border-gray-700"
+                    dark:border-gray-700"
                 ></div>
               </div>
               <div className="relative flex justify-center text-sm">
                 <span
                   className="px-4 text-gray-500 bg-white 
-                dark:bg-gray-900 dark:text-gray-400"
+                    dark:bg-gray-900 dark:text-gray-400"
                 >
                   Or continue with email
                 </span>
@@ -88,7 +89,10 @@ export default function SignInForm() {
 
                 <Select
                   options={[
-                    { value: "founding-manager", label: "Founding Manager" },
+                    {
+                      value: "founding-manager/admin",
+                      label: "Founding Manager/Admin",
+                    },
                     { value: "lawyer", label: "Lawyer/Attorney" },
                     { value: "paralegal", label: "Paralegal" },
                     { value: "process-server", label: "Process Server" },
@@ -128,8 +132,8 @@ export default function SignInForm() {
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute z-30 -translate-y-1/2 cursor-pointer
-                     right-4 top-1/2 text-gray-500 hover:text-gray-700
-                      dark:text-gray-400 dark:hover:text-gray-300"
+                        right-4 top-1/2 text-gray-500 hover:text-gray-700
+                          dark:text-gray-400 dark:hover:text-gray-300"
                   >
                     {showPassword ? (
                       <Eye className="w-5 h-5" />
@@ -153,7 +157,7 @@ export default function SignInForm() {
                 <button
                   type="button"
                   className="text-sm text-[#D4AF37] hover:text-[#C4A037] 
-                  font-medium"
+                      font-medium"
                 >
                   Forgot password?
                 </button>
@@ -163,19 +167,15 @@ export default function SignInForm() {
                 Sign In
               </Button>
             </div>
-
             <div className="mt-6">
-              <p
-                className="text-sm text-center text-gray-600 
-              dark:text-gray-400"
-              >
-                Don't have an account?{" "}
-                <button
-                  className="text-[#D4AF37] hover:text-[#C4A037] 
-                font-medium"
+              <p className="text-sm text-center text-gray-600 dark:text-gray-400">
+                Don’t have an account?{" "}
+                <Link
+                  to="/signup"
+                  className="text-[#D4AF37] hover:text-[#C4A037] font-medium"
                 >
-                  Contact Administrator
-                </button>
+                  Sign up
+                </Link>
               </p>
             </div>
           </div>

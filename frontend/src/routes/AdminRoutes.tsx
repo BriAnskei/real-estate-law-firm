@@ -3,7 +3,7 @@ import { Route, Routes } from "react-router";
 import Blank from "../pages/Blank";
 import UserProfiles from "../pages/UserProfiles";
 import AppLayout from "../layout/AppLayout";
-import { ReactNode } from "react";
+
 import NotFound from "../pages/OtherPage/NotFound";
 
 export default function AdminRoutes() {

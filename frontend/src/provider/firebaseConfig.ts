@@ -2,13 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCYcmi4e_AnqnwTP4igorCBxbvp05O6VU8",
-  authDomain: "real-estate-law-firm.firebaseapp.com",
-  projectId: "real-estate-law-firm",
-  storageBucket: "real-estate-law-firm.firebasestorage.app",
-  messagingSenderId: "664031943019",
-  appId: "1:664031943019:web:8b0dbc5ba8730a48e6942e",
-  measurementId: "G-FQ61XBK3GN",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASEE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGEE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MEESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);

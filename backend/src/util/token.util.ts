@@ -1,0 +1,48 @@
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+
+export class TokenUtils {
+  static generateAccessToken(userId: string) {
+    return jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET as string, {
+      expiresIn: "15m",
+    });
+  }
+
+  static generateRefreshToken(payload: {
+    userId: string;
+    rememberMe: boolean;
+  }) {
+    const { userId, rememberMe } = payload;
+    return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET as string, {
+      expiresIn: rememberMe ? "1h" : "7d",
+    });
+  }
+
+  static hashToken(token: string): string {
+    return crypto.createHash("sha256").update(token).digest("hex");
+  }
+
+  static verifyToken(token: string, hash: string): boolean {
+    const computedHash = this.hashToken(token);
+    return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(hash));
+  }
+
+  static decodeToken(accessToken: string | undefined): string {
+    try {
+      if (!accessToken) {
+        throw new Error("Not Authorized, Login Again");
+      }
+
+      const decoded = jwt.verify(
+        accessToken,
+        process.env.JWT_ACCESS_SECRET as string
+      ) as {
+        userId: string;
+      };
+
+      return decoded.userId as string;
+    } catch (error) {
+      throw new Error("Error decoding token " + error);
+    }
+  }
+}

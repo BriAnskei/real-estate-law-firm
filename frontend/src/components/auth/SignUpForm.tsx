@@ -3,21 +3,19 @@ import { Link } from "react-router";
 import { Eye, EyeOff } from "lucide-react";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
-import Checkbox from "../form/input/Checkbox";
+import Select from "../form/Select";
 import Button from "../ui/button/Button";
+import useSignUpVerification from "../../hooks/useSignUpVerification";
 
 export default function SignUpForm() {
+  const {
+    signUpInput,
+    handleSignUpOnchange,
+    handleSignUp,
+    handleSignUpProvider,
+    handleRoleOnChange,
+  } = useSignUpVerification();
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    console.log("Sign up with:", { firstName, lastName, email, password });
-  };
 
   return (
     <div className="flex flex-col flex-1 w-full lg:w-1/2 bg-white dark:bg-gray-900">
@@ -33,9 +31,11 @@ export default function SignUpForm() {
           </div>
 
           <div>
-            {/* Google and X Sign Up */}
             <div>
-              <button className="w-full inline-flex items-center justify-center gap-3 py-3 text-sm font-medium text-gray-700 transition-all bg-white border-2 border-gray-200 rounded-lg hover:border-[#D4AF37] hover:bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 dark:hover:border-[#D4AF37]">
+              <button
+                className="w-full inline-flex items-center justify-center gap-3 py-3 text-sm font-medium text-gray-700 transition-all bg-white border-2 border-gray-200 rounded-lg hover:border-[#D4AF37] hover:bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 dark:hover:border-[#D4AF37]"
+                onClick={handleSignUpProvider}
+              >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z"
@@ -70,28 +70,45 @@ export default function SignUpForm() {
             </div>
 
             <div className="space-y-5">
+              <div>
+                <Label>
+                  Role <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  options={[
+                    { value: "lawyer", label: "Lawyer/Attorney" },
+                    { value: "paralegal", label: "Paralegal" },
+                    { value: "process-server", label: "Process Server" },
+                  ]}
+                  onChange={(e) => handleRoleOnChange(e)}
+                />
+              </div>
+
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="sm:col-span-1">
                   <Label>
                     First Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
+                    name="firstName"
                     type="text"
                     placeholder="Enter your first name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    value={signUpInput.firstName}
+                    onChange={handleSignUpOnchange}
                     required
                   />
                 </div>
+
                 <div className="sm:col-span-1">
                   <Label>
                     Last Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
+                    name="lastName"
                     type="text"
                     placeholder="Enter your last name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    value={signUpInput.lastName}
+                    onChange={handleSignUpOnchange}
                     required
                   />
                 </div>
@@ -102,10 +119,11 @@ export default function SignUpForm() {
                   Email <span className="text-red-500">*</span>
                 </Label>
                 <Input
+                  name="email"
                   type="email"
                   placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={signUpInput.email}
+                  onChange={handleSignUpOnchange}
                   required
                 />
               </div>
@@ -116,10 +134,11 @@ export default function SignUpForm() {
                 </Label>
                 <div className="relative">
                   <Input
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={signUpInput.password}
+                    onChange={handleSignUpOnchange}
                     required
                   />
                   <button
@@ -136,19 +155,19 @@ export default function SignUpForm() {
                 </div>
               </div>
 
-              <Button onClick={handleSubmit} className="w-full">
+              <Button onClick={handleSignUp} className="w-full">
                 Sign Up
               </Button>
             </div>
 
             <div className="mt-6">
               <p className="text-sm text-center text-gray-600 dark:text-gray-400">
-                Already have an account?{" "}
+                Already have Account?{" "}
                 <Link
                   to="/signin"
                   className="text-[#D4AF37] hover:text-[#C4A037] font-medium"
                 >
-                  Sign In
+                  Sign in
                 </Link>
               </p>
             </div>

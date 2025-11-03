@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { createChangeHandler } from "../util/createOnChangeHandler";
-
-import { useNavigate } from "react-router";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { auth, provider } from "../provider/firebaseConfig";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../store/store";
+import { signIn } from "../store/Slice/authSlice";
+import { useToast } from "./useToast";
 
-type signInInputType = {
+export type SignInInputType = {
   role:
     | "select-option"
-    | "founding-manager"
+    | "founding-manager/admin"
     | "lawyer"
     | "paralegal"
     | "process-server";
@@ -19,8 +21,10 @@ type signInInputType = {
 };
 
 const useSignInVerification = () => {
-  const navigate = useNavigate();
-  const [signInInput, setSigninInput] = useState<signInInputType>({
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { errorToast } = useToast();
+  const [signInInput, setSigninInput] = useState<SignInInputType>({
     role: "select-option",
     email: "",
     password: "",
@@ -28,15 +32,15 @@ const useSignInVerification = () => {
   });
 
   const handleSignInOnchange =
-    createChangeHandler<signInInputType>(setSigninInput);
+    createChangeHandler<SignInInputType>(setSigninInput);
 
   const handleRoleOnChange = (
     selectedRole:
-      | "founding-manager"
+      | "founding-manager/admin"
       | "lawyer"
       | "paralegal"
       | "process-server"
-      | any // deefaukt value
+      | any // defaukt value
   ) => {
     setSigninInput((prev) => ({ ...prev, role: selectedRole }));
   };
@@ -48,21 +52,35 @@ const useSignInVerification = () => {
     }));
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     try {
-      //
-      console.log('inputs:" ', signInInput);
+      if (!isSignInInputFilled()) {
+        return errorToast("Please complete all required fields to continue.");
+      }
+
+      await dispatch(signIn(signInInput)).unwrap();
     } catch (error) {
-      console.log(error);
+      errorToast(error as string);
     }
   };
 
-  const handlerAuthProvider = async () => {
+  const isSignInInputFilled = (): boolean => {
+    if (signInInput.role === "select-option") return false;
+
+    if (!signInInput.email.trim() || !signInInput.password.trim()) return false;
+
+    return true;
+  };
+
+  const handleSignInProvider = async () => {
     try {
       const res = await signInWithPopup(auth, provider);
+
       console.log("provideer res: ", res);
       //
-    } catch (error) {}
+    } catch (error) {
+      const res = await signInWithRedirect(auth, provider);
+    }
   };
 
   return {
@@ -71,7 +89,7 @@ const useSignInVerification = () => {
     toggleRememberMe,
     handleSignInOnchange,
     handleSignIn,
-    handlerAuthProvider,
+    handleSignInProvider,
   };
 };
 
