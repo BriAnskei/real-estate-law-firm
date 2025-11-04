@@ -6,7 +6,6 @@ import { UsersService } from "./user.service.js";
 import { SignInPayload, ResponseType } from "../types/auth.types.js";
 import { TokenUtils } from "../util/token.util.js";
 import { TokenService } from "./token.service.js";
-import { refreshToken } from "../model/refreshToken.model.js";
 
 export class AuthService {
   static async signInVerification(
@@ -35,13 +34,17 @@ export class AuthService {
     }
   }
 
+  /**
+   *
+   * issue a refresh and access tokens, saves the refreshToken in the DB
+   */
   private static async handleSigninTokens(payload: {
     userId: string;
     rememberMe: boolean;
   }): Promise<{ accessToken: string; refreshToken: string }> {
     try {
       const { userId, rememberMe } = payload;
-      const tokens = await this.generateTokens({
+      const tokens = await TokenService.generateTokens({
         userId,
         rememberMe,
       });
@@ -61,25 +64,6 @@ export class AuthService {
     }
   }
 
-  private static async generateTokens(payload: {
-    userId: string;
-    rememberMe: boolean;
-  }): Promise<{ accessToken: string; refreshToken: string }> {
-    try {
-      const { userId, rememberMe } = payload;
-
-      let refreshToken = TokenUtils.generateRefreshToken({
-        userId,
-        rememberMe,
-      });
-      let accessToken = TokenUtils.generateAccessToken(payload.userId);
-
-      return { refreshToken, accessToken };
-    } catch (error) {
-      throw new Error("generateTokens -> " + error);
-    }
-  }
-
   private static async saveRefreshToken(payload: {
     userId: string;
     refreshToken: string;
@@ -87,8 +71,6 @@ export class AuthService {
   }): Promise<void> {
     try {
       const { refreshToken, rememberMe, userId } = payload;
-
-      const hashedRefreshtoken = TokenUtils.hashToken(refreshToken);
 
       // calculates expiration date
       const today = new Date();
@@ -102,84 +84,53 @@ export class AuthService {
       }
 
       await TokenService.createRefreshToken({
-        token: hashedRefreshtoken,
+        token: refreshToken,
         userId,
         expiresAt: expirationDate,
+        rememberMeIssued: rememberMe,
       });
     } catch (error) {
       throw new Error("saveRefreshToken -> " + error);
     }
   }
 
-  static async refreshUserTokens(payload: {
-    userId: string;
-    oldRefreshToken: string;
-  }): Promise<ResponseType<{ accessToken: string; refreshToken: string }>> {
+  /**
+   *
+   * find token if it exist, handles token rotation
+   * @returns new generatedTokens
+   */
+  static async refreshUserTokens(refreshToken: string): Promise<
+    ResponseType<{
+      accessToken: string;
+      refreshToken: string;
+      rememberMe: boolean;
+    }>
+  > {
     try {
-      const { userId, oldRefreshToken } = payload;
-
-      const fecthTokenResponse = await TokenService.findByToken(
-        oldRefreshToken
+      const validationResponse = await TokenService.validateRefreshToken(
+        refreshToken
       );
 
-      if (!fecthTokenResponse.success) {
-        return { success: false, message: fecthTokenResponse.message! };
+      // if it exist or expired
+      if (!validationResponse.success) {
+        return { success: false, message: validationResponse.message };
       }
 
-      const tokens = await AuthService.handleTokenRoatation({
-        fecthTokenResponse,
-        userId,
-        oldRefreshToken,
+      const generatedTokens = await TokenService.handleTokenRotation({
+        userId: validationResponse.data?.decodedUserId!,
+        rememberMeIssued: validationResponse.data?.rememberMe!,
       });
 
       return {
         success: true,
         data: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
+          ...generatedTokens,
+          rememberMe: validationResponse.data?.rememberMe!,
         },
       };
     } catch (error) {
       throw new Error("refreshUserTokens -> " + error);
     }
-  }
-
-  private static async handleTokenRoatation(payload: {
-    fecthTokenResponse: ResponseType<refreshToken>;
-    userId: string;
-    oldRefreshToken: string;
-  }) {
-    const { fecthTokenResponse, userId, oldRefreshToken } = payload;
-
-    // valdate rememberMe option
-    // if token expires > 1hr new refreshToken expires for 7 days again
-    // otherwise new refreshToken expires for 1h
-    const now = new Date();
-    const oneHour = 60 * 60 * 1000; // 1h in milliseconds;
-    const timeUntilExpiry =
-      fecthTokenResponse.data!.expiresAt.getTime() - now.getTime();
-
-    const rememberMe = timeUntilExpiry > oneHour;
-
-    // calculate expiration date for the new token(refreshTon in DB)
-    const today = new Date();
-    const expirationDate = new Date(today);
-    if (rememberMe) {
-      // +7 days
-      expirationDate.setDate(today.getDate() + 7);
-    } else {
-      // +1 hour
-      expirationDate.setHours(today.getHours() + 1);
-    }
-
-    const tokens = await this.generateTokens({ userId, rememberMe });
-    await TokenService.refreshOldToken({
-      oldToken: oldRefreshToken,
-      userId,
-      newToken: tokens.refreshToken,
-      expiresAt: expirationDate,
-    });
-    return tokens;
   }
 
   async signUpProvider(

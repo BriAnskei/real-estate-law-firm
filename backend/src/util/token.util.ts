@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { refreshToken } from "../model/refreshToken.model.js";
 
 export class TokenUtils {
   static generateAccessToken(userId: string) {
@@ -44,5 +45,24 @@ export class TokenUtils {
     } catch (error) {
       throw new Error("Error decoding token " + error);
     }
+  }
+
+  static decodeRefreshToken(refreshToken: string): string {
+    try {
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET as string
+      ) as {
+        userId: string;
+      };
+      return decoded.userId as string;
+    } catch (error) {
+      throw new Error("decodeRefreshToken -> " + error);
+    }
+  }
+
+  static isTokenExpired(tokenData: refreshToken): boolean {
+    const now = new Date();
+    return new Date(tokenData.expiresAt) < now;
   }
 }

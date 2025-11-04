@@ -25,16 +25,17 @@ export class AuthApi {
     }
   }
 
-  /**
-   * generates a new acces token for axios intance
-   */
-  static async refreshToken(userId: string): Promise<string> {
+  static async refreshAccessToken(): Promise<string> {
     try {
       const res = await api.post(
-        "/auth/refresh",
-        { userId },
+        "/api/auth/refresh",
+        {},
         { withCredentials: true } // sends the HTTP-only cooker
       );
+
+      if (!res.data.success) {
+        throw new Error(res.data.message);
+      }
 
       return res.data.accessToken;
     } catch (error) {

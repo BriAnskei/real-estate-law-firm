@@ -4,6 +4,7 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../provider/firebaseConfig";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { useToast } from "./useToast";
 
 type SignUpInputType = {
   role:
@@ -20,6 +21,7 @@ type SignUpInputType = {
 
 const useSignUpVerification = () => {
   const navigate = useNavigate();
+  const { errorToast } = useToast();
   const [signUpInput, setSignUpInput] = useState<SignUpInputType>({
     role: "select-option",
     firstName: "",
@@ -43,8 +45,27 @@ const useSignUpVerification = () => {
     setSignUpInput((prev) => ({ ...prev, role: selectedRole }));
   };
 
+  const signUpInputFilled = (): boolean => {
+    if (signUpInput.role === "select-option") {
+      return false;
+    }
+
+    if (
+      !signUpInput.email.trim() ||
+      !signUpInput.firstName.trim() ||
+      !signUpInput.lastName.trim() ||
+      !signUpInput.password.trim()
+    )
+      return false;
+
+    return true;
+  };
+
   const handleSignUp = async () => {
     try {
+      if (!signUpInputFilled())
+        return errorToast("Please complete all required fields to continue.");
+
       //
     } catch (error) {}
   };
@@ -53,8 +74,7 @@ const useSignUpVerification = () => {
     try {
       // if no selected role, auth provider will be cancelled
       if (signUpInput.role === "select-option") {
-        toast.error("Please select your role to continue.");
-        return;
+        return errorToast("Please select your role to continue.");
       }
       const res = await signInWithPopup(auth, provider);
 

@@ -1,21 +1,22 @@
-import { BrowserRouter as Router, Navigate } from "react-router";
+import { BrowserRouter as Router, Navigate, Routes, Route } from "react-router";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import PublicRoutes from "./routes/PublicRoutes";
 import AdminRoutes from "./routes/AdminRoutes";
 import AttorneyRoutes from "./routes/AttorneyRoutes";
+import ParalegalRoutes from "./routes/ParalegalRoutes";
+import ProcessServerRoutes from "./routes/processServerRoutes";
 import { Toaster } from "sonner";
 import { useSelector } from "react-redux";
 import { RootState } from "./store/store";
 import { useUsers } from "./hooks/state/user/useUsers";
-import { JSX } from "react";
-import ParalegalRoutes from "./routes/ParalegalRoutes";
-import ProcessServerRoutes from "./routes/processServerRoutes";
 import { Roles } from "./store/Slice/userSlice";
+import { AuthProvider } from "./context/AuthContext";
+import { JSX } from "react";
 
 function AppContent() {
   const { loading, role } = useUsers();
 
-  if (loading) return <>Loading</>;
+  if (loading) return <div>Loading...</div>;
 
   const appRoutes: Record<Roles, JSX.Element> = {
     "founding-manager/admin": <AdminRoutes />,
@@ -24,23 +25,24 @@ function AppContent() {
     "process-server": <ProcessServerRoutes />,
   };
 
-  return appRoutes[role as Roles];
+  return appRoutes[role as Roles] || <Navigate to="/signin" replace />;
 }
 
 export default function App() {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, loading } = useSelector(
+    (state: RootState) => state.auth
+  );
 
   return (
     <>
       <Router>
-        <ScrollToTop />
+        <AuthProvider>
+          <ScrollToTop />
 
-        {!isAuthenticated ? (
-          <PublicRoutes isAuthenticated={isAuthenticated} />
-        ) : (
-          <AppContent />
-        )}
+          {!isAuthenticated ? <PublicRoutes /> : <AppContent />}
+        </AuthProvider>
       </Router>
+
       <Toaster position="top-left" />
     </>
   );

@@ -29,8 +29,23 @@ export class AuthController {
     });
   }
 
-  /**Generates new a tokens*/
-  static async refreshToken(req: Request, res: Response): Promise<void> {
+  /**Issue new tokens*/
+  static async refreshToken(req: Request, res: Response): Promise<any> {
     const refreshToken = req.cookies.refreshToken;
+
+    const response = await AuthService.refreshUserTokens(refreshToken);
+
+    if (!response.success) {
+      return res.json({ success: false, message: response.message });
+    }
+
+    res.cookie("refreshToken", response.data?.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: response.data?.rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
+    });
+
+    res.json({ success: true, accessToken: response.data?.accessToken });
   }
 }

@@ -2,7 +2,7 @@ export interface refreshToken {
   id?: string;
   token: string;
   userId: string;
-  rememberMeIssued: boolean;
+  rememberMeIssued?: boolean;
   expiresAt: Date;
   createdAt?: Date;
 }

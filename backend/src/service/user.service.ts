@@ -34,6 +34,10 @@ export class UsersService {
     }
   }
 
+  /**
+   *
+   *  find user by email if it exist, if it does verify password
+   */
   static async verifySignInCredentials(
     payload: SignInPayload
   ): Promise<ResponseType<users>> {
