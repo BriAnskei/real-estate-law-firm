@@ -1,6 +1,7 @@
 import { RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { registration_request } from "../model/registration_request.model.js";
+import { users } from "../model/user.model.js";
 
 export class RegistrationRequestService {
   static async getRegistrationRequestByUid(
@@ -17,6 +18,20 @@ export class RegistrationRequestService {
     }
   }
 
+  static async findRegistrationByEmail(
+    email: string
+  ): Promise<users | undefined> {
+    try {
+      const [rows] = await pool.execute<(users & RowDataPacket)[]>(
+        `SELECT * FROM registration_requests WHERE email = ?`,
+        [email]
+      );
+      return rows[0];
+    } catch (error) {
+      throw new Error("-> findUserByEmail, " + error);
+    }
+  }
+
   static async createRegistrationRequest(
     payload: registration_request
   ): Promise<void> {
@@ -24,16 +39,17 @@ export class RegistrationRequestService {
       await pool.execute(
         `
           INSERT INTO registration_requests 
-          (uid, email, first_name, last_name, password_hash, provider) 
-          VALUES (?, ?, ?, ?, ?, ?)
+          (uid, email, firstName, lastName, role, password_hash, provider) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         [
           payload.uid ?? null,
           payload.email,
           payload.firstName,
           payload.lastName,
+          payload.role,
           payload.password_hash ?? null,
-          payload.provider,
+          payload.provider ?? "manual",
         ]
       );
     } catch (error) {

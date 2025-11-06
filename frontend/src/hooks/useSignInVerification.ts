@@ -60,6 +60,7 @@ const useSignInVerification = () => {
 
       await dispatch(signIn(signInInput)).unwrap();
     } catch (error) {
+      console.log(error);
       errorToast(error as string);
     }
   };

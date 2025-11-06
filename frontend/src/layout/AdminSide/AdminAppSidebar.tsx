@@ -1,15 +1,22 @@
-import { GridIcon, ChevronDownIcon } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
-import { useLocation, Link } from "react-router";
-import { useSidebar } from "../context/SidebarContext";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router";
+
+// Assume these icons are imported from an icon library
 import {
-  CalenderIcon,
   AccountReqIcon,
   BoxCubeIcon,
-  PlugInIcon,
+  CalenderIcon,
+  ChevronDownIcon,
+  GridIcon,
   HorizontaLDots,
-} from "../icons";
-import SidebarWidget from "./SidebarWidget";
+  ListIcon,
+  PageIcon,
+  PlugInIcon,
+  TableIcon,
+  UserCircleIcon,
+} from "../../icons";
+import { useSidebar } from "../../context/SidebarContext";
+import SidebarWidget from "../SidebarWidget";
 
 type NavItem = {
   name: string;

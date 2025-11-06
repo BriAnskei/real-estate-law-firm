@@ -44,7 +44,7 @@ import { ReactComponent as TaskIcon } from "./task-icon.svg?react";
 import { ReactComponent as ListIcon } from "./list.svg?react";
 import { ReactComponent as TableIcon } from "./table.svg?react";
 import { ReactComponent as PageIcon } from "./page.svg?react";
-import { ReactComponent as PieChartIcon } from "./pie-chart.svg?react";
+import { ReactComponent as AccountReqIcon } from "./account-request.svg?react";
 import { ReactComponent as BoxCubeIcon } from "./box-cube.svg?react";
 import { ReactComponent as PlugInIcon } from "./plug-in.svg?react";
 import { ReactComponent as DocsIcon } from "./docs.svg?react";
@@ -102,7 +102,7 @@ export {
   ListIcon,
   TableIcon,
   PageIcon,
-  PieChartIcon,
+  AccountReqIcon,
   BoxCubeIcon,
   PlugInIcon,
   DocsIcon,

@@ -17,7 +17,7 @@ export class AuthService {
         return { success: false, message: res.message };
       }
 
-      const tokens = await this.handleSigninTokens({
+      const tokens = await this.handleRequesTokens({
         userId: res.data?.id!,
         rememberMe: payload.rememberMe,
       });
@@ -34,11 +34,57 @@ export class AuthService {
     }
   }
 
+  static async signUp(payload: registration_request) {
+    try {
+    } catch (error) {
+      throw new Error("signUp -> " + error);
+    }
+  }
+
+  static async googleSignupVerification(
+    data: admin.auth.DecodedIdToken,
+    role: "founding-manager/admin" | "lawyer" | "paralegal" | "process-server"
+  ): Promise<ResponseType<{ acessToken: string; refreshToken: string }>> {
+    try {
+      const isExisting = await this.ExistingEmail(data.email);
+      if (isExisting) {
+        return {
+          success: false,
+          message:
+            "This email address is already in use. Please contact the Administrator for verification.",
+        };
+      }
+
+      await RegistrationRequestService.createRegistrationRequest(
+        this.decodeSignUpProvider(data, role)
+      );
+
+      return { success: true };
+    } catch (error) {
+      throw new Error("googleSignup -> " + error);
+    }
+  }
+
+  private static async ExistingEmail(
+    email: string | undefined
+  ): Promise<boolean> {
+    if (!email) {
+      throw new Error("No Provided email");
+    }
+
+    const userData = await UsersService.findUserByEmail(email);
+
+    const registrationReqData =
+      await RegistrationRequestService.findRegistrationByEmail(email);
+
+    return Boolean(userData) || Boolean(registrationReqData);
+  }
+
   /**
    *
    * issue a refresh and access tokens, saves the refreshToken in the DB
    */
-  private static async handleSigninTokens(payload: {
+  private static async handleRequesTokens(payload: {
     userId: string;
     rememberMe: boolean;
   }): Promise<{ accessToken: string; refreshToken: string }> {
@@ -60,7 +106,7 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
       };
     } catch (error) {
-      throw new Error("handleSigninTokens -> " + error);
+      throw new Error("handleRequesTokens -> " + error);
     }
   }
 
@@ -110,15 +156,16 @@ export class AuthService {
       const validationResponse = await TokenService.validateRefreshToken(
         refreshToken
       );
+      const { success, message, data } = validationResponse;
 
       // if it exist or expired
       if (!validationResponse.success) {
-        return { success: false, message: validationResponse.message };
+        return { success, message };
       }
 
       const generatedTokens = await TokenService.handleTokenRotation({
-        userId: validationResponse.data?.decodedUserId!,
-        rememberMeIssued: validationResponse.data?.rememberMe!,
+        userId: data?.decodedUserId!,
+        rememberMeIssued: data?.rememberMe!,
       });
 
       return {
@@ -137,17 +184,6 @@ export class AuthService {
     providerToken: string
   ): Promise<ResponseType<DecodedIdToken>> {
     try {
-      const { success, message, data } = await this.verifySignUpProvider(
-        providerToken
-      );
-      if (!success) {
-        return { success, message };
-      }
-
-      await RegistrationRequestService.createRegistrationRequest(
-        this.decodeSignUpProvider(data!, "google")
-      );
-
       return {
         success: true,
         message: "Form submitted to admin, please wait for approval",
@@ -157,57 +193,19 @@ export class AuthService {
     }
   }
 
-  async verifySignUpProvider(
-    providerToken: string
-  ): Promise<ResponseType<DecodedIdToken>> {
-    try {
-      const decoded = await this.decodeProviderToken(providerToken);
-      const isExisting = await this.isProviderUidExist(decoded.uid);
-
-      if (isExisting) {
-        return {
-          success: false,
-          message:
-            "This email is already in the request, please wait for Founder/Admin approval",
-        };
-      }
-
-      return { success: true, data: decoded };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  private async isProviderUidExist(uid: string): Promise<boolean> {
-    try {
-      const data = await RegistrationRequestService.getRegistrationRequestByUid(
-        uid
-      );
-      return Boolean(data);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  private async decodeProviderToken(token: string): Promise<DecodedIdToken> {
-    try {
-      return await admin.auth().verifyIdToken(token);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  private decodeSignUpProvider(
-    data: DecodedIdToken,
-    provider: "manual" | "google"
+  private static decodeSignUpProvider(
+    data: admin.auth.DecodedIdToken,
+    role: "founding-manager/admin" | "lawyer" | "paralegal" | "process-server"
   ): registration_request {
+    const [firstName, lastName] = data.name.split(" ");
+
     return {
       uid: data.uid,
       email: data.email!,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: data.role,
-      provider,
+      firstName: firstName,
+      lastName: lastName,
+      role,
+      provider: "google",
     };
   }
 }

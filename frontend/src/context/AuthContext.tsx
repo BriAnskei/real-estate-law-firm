@@ -1,7 +1,7 @@
 import React, { createContext, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch, store } from "../store/store";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router-dom"; // Fixed import
 import { AuthApi } from "../util/api/auth.api";
 import { setTokens } from "../store/Slice/authSlice";
 
@@ -10,27 +10,37 @@ const AuthContext = createContext(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const state = store.getState();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const refreshAccessToken = async () => {
       try {
+        const state = store.getState();
         const { isAuthenticated, accessToken } = state.auth;
         if (isAuthenticated && accessToken) return;
 
-        const newAcessToken = await AuthApi.refreshAccessToken();
+        const newAccessToken = await AuthApi.refreshAccessToken();
+        if (newAccessToken) {
+          return navigate("/signin");
+        }
 
-        dispatch(setTokens(newAcessToken));
+        dispatch(setTokens(newAccessToken));
       } catch (error) {
-        //No valid refresh token, user not logged in.
-        console.error(error);
-        navigate("/signin");
+        const publicPaths = ["/signin", "/signup"];
+        const isPublicPath = publicPaths.some((path) =>
+          location.pathname.includes(path)
+        );
+
+        if (!isPublicPath) {
+          navigate("/signin");
+        }
       }
     };
+
     refreshAccessToken();
-  }, []);
+  }, [dispatch, navigate, location.pathname]);
 
   return <AuthContext.Provider value={null}>{children}</AuthContext.Provider>;
 };

@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Navigate, Routes, Route } from "react-router";
+import { BrowserRouter as Router, Navigate } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import PublicRoutes from "./routes/PublicRoutes";
 import AdminRoutes from "./routes/AdminRoutes";
@@ -38,11 +39,9 @@ export default function App() {
       <Router>
         <AuthProvider>
           <ScrollToTop />
-
-          {!isAuthenticated ? <PublicRoutes /> : <AppContent />}
+          {!isAuthenticated || loading ? <PublicRoutes /> : <AppContent />}
         </AuthProvider>
       </Router>
-
       <Toaster position="top-left" />
     </>
   );

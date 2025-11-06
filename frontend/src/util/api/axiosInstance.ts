@@ -1,8 +1,5 @@
 import axios from "axios";
-import { AuthApi } from "./auth.api";
-import { setTokens } from "../../store/Slice/authSlice";
 import { Store } from "@reduxjs/toolkit";
-import { useToast } from "../../hooks/useToast";
 
 const api = axios.create({
   baseURL: "http://localhost:4000",

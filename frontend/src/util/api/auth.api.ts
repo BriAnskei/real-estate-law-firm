@@ -1,4 +1,5 @@
 import { SignInInputType } from "../../hooks/useSignInVerification";
+import { Roles } from "../../store/Slice/userSlice";
 import { ApiResponseeType } from "./apiResponseType";
 import api from "./axiosInstance";
 
@@ -20,6 +21,30 @@ export class AuthApi {
       }
 
       return { success: true, data: res.data.data };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async googleSignUp(payload: {
+    token: string;
+    role: string;
+  }): Promise<ApiResponseeType<undefined>> {
+    const { role, token } = payload;
+
+    try {
+      const res = await api.get("/api/auth/signup/google", {
+        params: { role },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.data.success) {
+        return { success: false, message: res.data.message };
+      }
+
+      return { success: true };
     } catch (error) {
       throw error;
     }

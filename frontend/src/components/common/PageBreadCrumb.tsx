@@ -8,7 +8,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
       <h2
-        className="text-xl font-semibold text-gray-800 dark:text-white/90"
+        className="text-xl font-semibold text-[#D4AF37] dark:text-[#D4AF37]"
         x-text="pageName"
       >
         {pageTitle}
@@ -17,12 +17,12 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
         <ol className="flex items-center gap-1.5">
           <li>
             <Link
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-300"
               to="/"
             >
               Home
               <svg
-                className="stroke-current"
+                className="stroke-current transition-colors duration-300"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
@@ -39,7 +39,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
               </svg>
             </Link>
           </li>
-          <li className="text-sm text-gray-800 dark:text-white/90">
+          <li className="text-sm text-[#D4AF37] dark:text-[#D4AF37] font-medium">
             {pageTitle}
           </li>
         </ol>

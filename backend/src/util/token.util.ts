@@ -15,7 +15,7 @@ export class TokenUtils {
   }) {
     const { userId, rememberMe } = payload;
     return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET as string, {
-      expiresIn: rememberMe ? "1h" : "7d",
+      expiresIn: rememberMe ? "7d" : "1h",
     });
   }
 

@@ -20,6 +20,21 @@ export const signIn = createAsyncThunk(
   }
 );
 
+export const googleSignUp = createAsyncThunk(
+  "auth/signup",
+  async (payload: { token: string; role: string }, { rejectWithValue }) => {
+    try {
+      const res = await AuthApi.googleSignUp(payload);
+
+      if (!res.success) {
+        return rejectWithValue(res.message);
+      }
+    } catch (error) {
+      return rejectWithValue("Error" + error);
+    }
+  }
+);
+
 type AuthState = {
   accessToken?: string | null;
   isAuthenticated: boolean;
