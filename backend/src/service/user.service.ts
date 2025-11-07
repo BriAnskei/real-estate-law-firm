@@ -34,6 +34,25 @@ export class UsersService {
     }
   }
 
+  static async isUserAdmin(userId: string): Promise<ResponseType<undefined>> {
+    try {
+      const response = await this.findUserById(userId);
+
+      if (!response.success)
+        return { success: false, message: response.message };
+
+      const userData = response.data!;
+
+      if (userData.role !== "founding-manager/admin") {
+        return { success: false, message: "not authorize, please login again" };
+      }
+
+      return { success: true };
+    } catch (error) {
+      throw new Error("isUserAdmin -> " + error);
+    }
+  }
+
   /**
    *
    *  find user by email if it exist, if it does verify password

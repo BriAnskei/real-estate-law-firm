@@ -8,9 +8,9 @@ import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { Provider } from "react-redux";
 import { store } from "./store/store.ts";
-import { responseIntercepter } from "./util/api/axiosInstance.ts";
+import { axiosInterceptor } from "./util/api/axiosInstance.ts";
 
-responseIntercepter(store);
+axiosInterceptor(store);
 
 createRoot(document.getElementById("root")!).render(
   <Provider store={store}>

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Store } from "@reduxjs/toolkit";
+import { RootState } from "../../store/store";
 
 const api = axios.create({
   baseURL: "http://localhost:4000",
@@ -14,46 +15,63 @@ function onRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
-// Handle expired token on 401
-export async function responseIntercepter(store: Store) {
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      // const originalRequest = error.config;
-      // if (error.response?.status === 401 && !originalRequest._retry) {
-      //   originalRequest._retry = true;
-      //   // If another request is already refreshing
-      //   if (isRefreshing) {
-      //     return new Promise((resolve) => {
-      //       refreshSubscribers.push((token) => {
-      //         originalRequest.headers.Authorization = `Bearer ${token}`;
-      //         resolve(api(originalRequest)); // retries all request
-      //       });
-      //     });
-      //   }
-      //   isRefreshing = true;
-      //   try {
-      //     const { errorToast } = useToast();
-      //     const response = await AuthApi.refreshToken(
-      //       store.getState().user.curUserId
-      //     );
-      //     if (!response.success) {
-      //       return errorToast(response.message!);
-      //     }
-      //     store.dispatch(setTokens(response.data!));
-      //     isRefreshing = false;
-      //     onRefreshed(response.data!);
-      //     originalRequest.headers.Authorization = `Bearer ${response.data!}`;
-      //     return api(originalRequest);
-      //   } catch (err) {
-      //     isRefreshing = false;
-      //     // store.dispatch(logout());
-      //     return Promise.reject(err);
-      //   }
-      // }
-      // return Promise.reject(error); // caller backend issues case
-    }
+export function axiosInterceptor(store: Store) {
+  // Attach token
+  api.interceptors.request.use(
+    (config) => {
+      const token = (store.getState() as RootState).auth.accessToken;
+
+      if (token) config.headers["token"] = token;
+      return config;
+    },
+    (error) => Promise.reject(error)
   );
+
+  // // Handle 401 refresh logic
+  // api.interceptors.response.use(
+  //   (response) => response,
+  //   async (error) => {
+  //     const originalRequest = error.config;
+
+  //     if (error.response?.status === 401 && !originalRequest._retry) {
+  //       originalRequest._retry = true;
+
+  //       if (isRefreshing) {
+  //         return new Promise((resolve) => {
+  //           refreshSubscribers.push((token) => {
+  //             originalRequest.headers["token"] = token;
+  //             resolve(api(originalRequest));
+  //           });
+  //         });
+  //       }
+
+  //       isRefreshing = true;
+
+  //       try {
+  //         const userId = store.getState().user.curUserId;
+  //         const res = await AuthApi.refreshToken(userId);
+
+  //         if (!res.success) {
+  //           store.dispatch(logout());
+  //           return Promise.reject(res.message);
+  //         }
+
+  //         const newToken = res.data;
+  //         store.dispatch(setTokens(newToken));
+  //         onRefreshed(newToken);
+  //         originalRequest.headers["token"] = newToken;
+  //         return api(originalRequest);
+  //       } catch (err) {
+  //         store.dispatch(logout());
+  //         return Promise.reject(err);
+  //       } finally {
+  //         isRefreshing = false;
+  //       }
+  //     }
+
+  //     return Promise.reject(error);
+  //   }
+  // );
 }
 
 export default api;

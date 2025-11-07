@@ -2,14 +2,25 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import RegistrationRequestsTable from "../../components/tables/adminTables/RegistrationRequestsTable";
-import { useModal } from "../../hooks/useModal";
 import RejectionModal from "../../components/modal/adminModals/RejectionModal";
-import { useRejectionModal } from "../../hooks/state/modals/useRejectionModal";
+import { useAccountRequest } from "../../hooks/state/accountRequest/useAccountRequest";
+import { useEffect } from "react";
 
 export default function AccountRequest() {
-  const { openModal, closeModal, isOpen, userName } = useRejectionModal();
+  const {
+    modal,
+    rejectionConfirmation,
+    loading,
+    data,
+    onSearchHandler,
+    onFilter,
+    search,
+    clearFilter,
+  } = useAccountRequest();
 
-  const onconfirm = () => {};
+  useEffect(() => {
+    console.log("loading update: ", loading);
+  }, [loading]);
 
   return (
     <>
@@ -20,14 +31,22 @@ export default function AccountRequest() {
       <PageBreadcrumb pageTitle="Registration Request" />
       <div className="space-y-6">
         <ComponentCard title="Account Requests">
-          <RegistrationRequestsTable openRejectionModal={openModal} />
+          <RegistrationRequestsTable
+            openRejectionModal={modal.openModal}
+            registrationData={data}
+            isLoading={loading}
+            onSearchHandler={onSearchHandler}
+            onFilter={onFilter}
+            searchQuery={search}
+            clearFilter={clearFilter}
+          />
         </ComponentCard>
       </div>
       <RejectionModal
-        isOpen={isOpen}
-        onClose={closeModal}
-        userName={userName}
-        onConfirm={onconfirm}
+        isOpen={modal.isOpen}
+        onClose={modal.closeModal}
+        userName={modal.userName}
+        onConfirm={rejectionConfirmation}
       />
     </>
   );

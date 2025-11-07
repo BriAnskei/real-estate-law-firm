@@ -3,13 +3,9 @@ import { ApiResponseeType } from "./apiResponseType";
 import api from "./axiosInstance";
 
 export class UserApi {
-  static async fetchUser(token: string): Promise<ApiResponseeType<UserType>> {
+  static async fetchUser(): Promise<ApiResponseeType<UserType>> {
     try {
-      const res = await api.get("api/user/current", {
-        headers: {
-          token,
-        },
-      });
+      const res = await api.get("api/user/current");
 
       if (!res.data.success) {
         return { success: false, message: res.data.message };

@@ -2,36 +2,10 @@ import { RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { registration_request } from "../model/registration_request.model.js";
 import { users } from "../model/user.model.js";
+import { ResponseType } from "../types/auth.types.js";
+import { UsersService } from "./user.service.js";
 
 export class RegistrationRequestService {
-  static async getRegistrationRequestByUid(
-    uid: string
-  ): Promise<registration_request | undefined> {
-    try {
-      const [rows] = await pool.query<(registration_request & RowDataPacket)[]>(
-        "SELECT * FROM registration_request WHERE uid = ?",
-        [uid]
-      );
-      return rows[0];
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async findRegistrationByEmail(
-    email: string
-  ): Promise<users | undefined> {
-    try {
-      const [rows] = await pool.execute<(users & RowDataPacket)[]>(
-        `SELECT * FROM registration_requests WHERE email = ?`,
-        [email]
-      );
-      return rows[0];
-    } catch (error) {
-      throw new Error("-> findUserByEmail, " + error);
-    }
-  }
-
   static async createRegistrationRequest(
     payload: registration_request
   ): Promise<void> {
@@ -57,26 +31,77 @@ export class RegistrationRequestService {
     }
   }
 
-  async getAllRegistrationRequests(): Promise<registration_request[]> {
+  static async getRegistrationRequestByUid(
+    uid: string
+  ): Promise<registration_request | undefined> {
     try {
       const [rows] = await pool.query<(registration_request & RowDataPacket)[]>(
-        "SELECT * FROM registration_request ORDER BY created_at DESC"
+        "SELECT * FROM registration_request WHERE uid = ?",
+        [uid]
       );
-      return rows;
+      return rows[0];
     } catch (error) {
       throw error;
     }
   }
 
-  async deleteRegistrationRequestByUid(uid: string): Promise<boolean> {
+  static async findRegistrationByEmail(
+    email: string
+  ): Promise<registration_request | undefined> {
     try {
-      const [result] = await pool.execute(
-        "DELETE FROM registration_request WHERE uid = ?",
-        [uid]
-      );
+      const [rows] = await pool.execute<
+        (registration_request & RowDataPacket)[]
+      >(`SELECT * FROM registration_requests WHERE email = ?`, [email]);
+      return rows[0];
+    } catch (error) {
+      throw new Error("-> findUserByEmail, " + error);
+    }
+  }
 
-      // Check if any row was affected
-      return (result as any).affectedRows > 0;
+  static async findByEmailOrName(
+    searchTerm: string
+  ): Promise<registration_request[] | undefined> {
+    try {
+      let query = `
+      SELECT * FROM registration_requests 
+      WHERE email LIKE ? 
+         OR firstName LIKE ? 
+         OR lastName LIKE ?
+      ORDER BY id DESC
+    `;
+
+      const likeValue = `%${searchTerm}%`;
+      const params = [likeValue, likeValue, likeValue];
+
+      const [rows] = await pool.query<(registration_request & RowDataPacket)[]>(
+        query,
+        params
+      );
+      return rows;
+    } catch (error) {
+      throw new Error("findByEmailOrName -> " + error);
+    }
+  }
+
+  /**
+   *
+   * verifies the user if it is a valid admin before fetch all the request
+   */
+  static async getAllRegistrationRequests(
+    userId: string
+  ): Promise<ResponseType<registration_request[]>> {
+    console.log("fetching request");
+    try {
+      const response = await UsersService.isUserAdmin(userId);
+
+      if (!response.success) {
+        return { ...response };
+      }
+
+      const [rows] = await pool.query<(registration_request & RowDataPacket)[]>(
+        "SELECT * FROM registration_requests ORDER BY created_at DESC"
+      );
+      return { success: true, data: rows };
     } catch (error) {
       throw error;
     }
@@ -92,6 +117,20 @@ export class RegistrationRequestService {
         [status, uid]
       );
 
+      return (result as any).affectedRows > 0;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteRegistrationRequestByUid(uid: string): Promise<boolean> {
+    try {
+      const [result] = await pool.execute(
+        "DELETE FROM registration_request WHERE uid = ?",
+        [uid]
+      );
+
+      // Check if any row was affected
       return (result as any).affectedRows > 0;
     } catch (error) {
       throw error;

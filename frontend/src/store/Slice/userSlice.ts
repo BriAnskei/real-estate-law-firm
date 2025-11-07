@@ -4,9 +4,9 @@ import { UserApi } from "../../util/api/user.api";
 
 export const fetchCurrentUSer = createAsyncThunk(
   "user/fetchCurUSer",
-  async (token: string, { rejectWithValue, dispatch }) => {
+  async (_: void, { rejectWithValue, dispatch }) => {
     try {
-      const res = await UserApi.fetchUser(token);
+      const res = await UserApi.fetchUser();
 
       if (!res.success) {
         return rejectWithValue(res.message);

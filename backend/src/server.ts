@@ -4,6 +4,8 @@ import cors from "cors";
 import authRouter from "./route/auth.routes.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./route/user.routes.js";
+import registrationRouter from "./route/registration.routes.js";
+import mailerRoutes from "./route/mailer.routes.js";
 
 const app = express();
 const PORT = 4000;
@@ -14,6 +16,8 @@ app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
+app.use("/api/registration", registrationRouter);
+app.use("/email", mailerRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Brian Pogi");

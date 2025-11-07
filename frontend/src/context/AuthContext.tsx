@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (isAuthenticated && accessToken) return;
 
         const newAccessToken = await AuthApi.refreshAccessToken();
-        if (newAccessToken) {
+        if (!newAccessToken) {
           return navigate("/signin");
         }
 

@@ -24,7 +24,7 @@ export const useUsers = () => {
             "No accessToken or user is not authenticated do run fetch user state"
           );
 
-        await dispatch(fetchCurrentUSer(accessToken));
+        await dispatch(fetchCurrentUSer());
         navigate("/");
       } catch (error) {
         console.error("failed to fetch user", error);
