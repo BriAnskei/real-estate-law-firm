@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
-import { clearAuth } from "../../store/Slice/authSlice";
+import { clearAuth, signOut } from "../../store/Slice/authSlice";
 
 export default function UserDropdown() {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   function toggleDropdown() {
@@ -17,6 +18,17 @@ export default function UserDropdown() {
   function closeDropdown() {
     setIsOpen(false);
   }
+
+  const handleSignout = async () => {
+    try {
+      await dispatch(signOut()).unwrap();
+
+      navigate("/signin");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="relative">
       <button
@@ -167,9 +179,8 @@ export default function UserDropdown() {
             </DropdownItem>
           </li>
         </ul>
-        <Link
-          to="/signin"
-          onClick={() => dispatch(clearAuth())}
+        <div
+          onClick={handleSignout}
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium 
           text-gray-700 rounded-lg group text-theme-sm hover:bg-[#D4AF37]/10
            hover:text-gray-800 dark:text-gray-300 dark:hover:bg-[#D4AF37]/10
@@ -193,7 +204,7 @@ export default function UserDropdown() {
             />
           </svg>
           Sign out
-        </Link>
+        </div>
       </Dropdown>
     </div>
   );

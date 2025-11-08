@@ -4,7 +4,7 @@ import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { auth, provider } from "../provider/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
-import { signIn } from "../store/Slice/authSlice";
+import { googleSignIn, signIn } from "../store/Slice/authSlice";
 import { useToast } from "./useToast";
 
 export type SignInInputType = {
@@ -76,9 +76,14 @@ const useSignInVerification = () => {
   const handleSignInProvider = async () => {
     try {
       const res = await signInWithPopup(auth, provider);
+      const token = await res.user.getIdToken();
 
-      console.log("provideer res: ", res);
-      //
+      dispatch(
+        googleSignIn({
+          token,
+          rememberMe: signInInput.rememberMe,
+        })
+      );
     } catch (error) {
       const res = await signInWithRedirect(auth, provider);
     }

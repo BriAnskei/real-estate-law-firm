@@ -112,14 +112,14 @@ export class TokenService {
     );
 
     const { affectedRows } = res as any;
-    if (affectedRows === 0)
-      throw new Error("No refresh token found to replace");
+    if (affectedRows === 0) throw new Error("No refresh token found to delete");
   }
 
   /**
    *
-   * find token if it exist, validate expiration date and
-   * returns decodedRefreshToken(userId) and rememberMeIssued
+   * find token if it exist, validate expiration date,
+   * returns decodedRefreshToken(userId) and rememberMeIssued.
+   * If token is expired delete token and returns expired message
    */
   static async validateRefreshToken(
     refreshToken: string

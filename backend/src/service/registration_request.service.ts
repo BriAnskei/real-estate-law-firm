@@ -4,6 +4,7 @@ import { registration_request } from "../model/registration_request.model.js";
 import { users } from "../model/user.model.js";
 import { ResponseType } from "../types/auth.types.js";
 import { UsersService } from "./user.service.js";
+import { MailerUtil } from "../util/mailer.util.js";
 
 export class RegistrationRequestService {
   static async createRegistrationRequest(
@@ -26,6 +27,20 @@ export class RegistrationRequestService {
           payload.provider ?? "manual",
         ]
       );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getRegistrationRequestById(
+    id: string
+  ): Promise<registration_request | undefined> {
+    try {
+      const [rows] = await pool.query<(registration_request & RowDataPacket)[]>(
+        "SELECT * FROM registration_request WHERE id = ?",
+        [id]
+      );
+      return rows[0];
     } catch (error) {
       throw error;
     }
@@ -107,27 +122,61 @@ export class RegistrationRequestService {
     }
   }
 
-  async updateRegistrationRequestStatus(
-    uid: string,
-    status: "pending" | "approved" | "rejected"
-  ): Promise<boolean> {
+  static async deleteRegistrationRequestByUid(uid: string): Promise<boolean> {
     try {
       const [result] = await pool.execute(
-        "UPDATE registration_request SET status = ? WHERE uid = ?",
-        [status, uid]
+        "DELETE FROM registration_request WHERE uid = ?",
+        [uid]
       );
 
+      // Check if any row was affected
       return (result as any).affectedRows > 0;
     } catch (error) {
       throw error;
     }
   }
 
-  async deleteRegistrationRequestByUid(uid: string): Promise<boolean> {
+  /**
+   *  Drop Registration data  and add it in the user tables then notify user
+   */
+  static async registrationApproval(
+    registrationData: registration_request
+  ): Promise<void> {
+    try {
+      await this.deleteRegistrationRequestById(registrationData.id!);
+      await UsersService.createUser(registrationData);
+
+      await MailerUtil.adminApprovalEmail(registrationData);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Admin rejection for the registration request, this will drop  the regstration
+   * request  the db and inform the user for the rejection reason
+   */
+  static async rejectRegistrationRequest(payload: {
+    registrationReq: registration_request;
+    reason: string;
+  }): Promise<void> {
+    try {
+      const { registrationReq, reason } = payload;
+
+      await this.deleteRegistrationRequestById(registrationReq.id!);
+      await MailerUtil.adminRejectionEmail(registrationReq, reason);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private static async deleteRegistrationRequestById(
+    id: string
+  ): Promise<boolean> {
     try {
       const [result] = await pool.execute(
-        "DELETE FROM registration_request WHERE uid = ?",
-        [uid]
+        "DELETE FROM registration_requests WHERE id = ?",
+        [id]
       );
 
       // Check if any row was affected

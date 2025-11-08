@@ -6,6 +6,7 @@ import { UsersService } from "./user.service.js";
 import { SignInPayload, ResponseType } from "../types/auth.types.js";
 import { TokenUtils } from "../util/token.util.js";
 import { TokenService } from "./token.service.js";
+import { MailerUtil } from "../util/mailer.util.js";
 
 export class AuthService {
   static async signInVerification(
@@ -34,10 +35,53 @@ export class AuthService {
     }
   }
 
+  static async googleSignin(payload: {
+    data: admin.auth.DecodedIdToken;
+    rememberMe: boolean;
+  }): Promise<ResponseType<{ accessToken: string; refreshToken: string }>> {
+    try {
+      const { data, rememberMe } = payload;
+
+      const userData = await UsersService.findUserByEmail(data.email!);
+
+      // if the user does not exist
+      if (!userData) {
+        return { success: false, message: "User does not exist" };
+      }
+
+      // check if user using OAuth
+      if (userData.provider !== "google") {
+        return {
+          success: false,
+          message: "Please sign in with email and password instead.",
+        };
+      }
+
+      const tokens = await this.handleRequesTokens({
+        userId: userData.id!,
+        rememberMe,
+      });
+
+      return { success: true, data: tokens };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async signUp(payload: registration_request) {
     try {
     } catch (error) {
       throw new Error("signUp -> " + error);
+    }
+  }
+
+  static async handleSignOut(refreshToken: string) {
+    try {
+      const hashedToken = TokenUtils.hashToken(refreshToken);
+
+      await TokenService.deleteByToken(hashedToken);
+    } catch (error) {
+      throw new Error("handleSignOut -> " + error);
     }
   }
 
@@ -51,17 +95,32 @@ export class AuthService {
         return {
           success: false,
           message:
-            "This email address is already in use. Please contact the Administrator for verification.",
+            "This email address is already in use. Please contact the Administrator.",
         };
       }
 
-      await RegistrationRequestService.createRegistrationRequest(
+      await this.processRegistrationRequest(
         this.decodeSignUpProvider(data, role)
       );
 
       return { success: true };
     } catch (error) {
       throw new Error("googleSignup -> " + error);
+    }
+  }
+
+  private static async processRegistrationRequest(
+    registrationRequest: registration_request
+  ) {
+    try {
+      await RegistrationRequestService.createRegistrationRequest(
+        registrationRequest
+      );
+
+      // send email after creating
+      await MailerUtil.signUpEmailRequest(registrationRequest);
+    } catch (error) {
+      throw error;
     }
   }
 

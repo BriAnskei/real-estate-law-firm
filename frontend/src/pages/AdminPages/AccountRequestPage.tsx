@@ -5,10 +5,11 @@ import RegistrationRequestsTable from "../../components/tables/adminTables/Regis
 import RejectionModal from "../../components/modal/adminModals/RejectionModal";
 import { useAccountRequest } from "../../hooks/state/accountRequest/useAccountRequest";
 import { useEffect } from "react";
+import ApproveRegistrationModal from "../../components/modal/adminModals/ApproveModal";
 
 export default function AccountRequest() {
   const {
-    modal,
+    rejectionModal,
     rejectionConfirmation,
     loading,
     data,
@@ -16,6 +17,7 @@ export default function AccountRequest() {
     onFilter,
     search,
     clearFilter,
+    approvalModal,
   } = useAccountRequest();
 
   useEffect(() => {
@@ -32,7 +34,8 @@ export default function AccountRequest() {
       <div className="space-y-6">
         <ComponentCard title="Account Requests">
           <RegistrationRequestsTable
-            openRejectionModal={modal.openModal}
+            openOnApproveModal={approvalModal.openApprovalModal}
+            openRejectionModal={rejectionModal.openModal}
             registrationData={data}
             isLoading={loading}
             onSearchHandler={onSearchHandler}
@@ -43,10 +46,16 @@ export default function AccountRequest() {
         </ComponentCard>
       </div>
       <RejectionModal
-        isOpen={modal.isOpen}
-        onClose={modal.closeModal}
-        userName={modal.userName}
+        isOpen={rejectionModal.isOpen}
+        onClose={rejectionModal.closeModal}
+        regiration={rejectionModal.registration!}
         onConfirm={rejectionConfirmation}
+      />
+      <ApproveRegistrationModal
+        isOpen={approvalModal.isApprovalOpen}
+        onClose={approvalModal.closeApprovalModal}
+        registrationData={approvalModal.approvalRegistration!}
+        onApprove={approvalModal.appoveRegistrationReq}
       />
     </>
   );

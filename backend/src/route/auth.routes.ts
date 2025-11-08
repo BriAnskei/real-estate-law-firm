@@ -10,11 +10,19 @@ authRouter.post(
   asyncHandler(AuthController.signIn, "AuthController.signIn")
 );
 
+authRouter.post(
+  "/signin/google",
+  asyncHandler(verifyProviderToken),
+  asyncHandler(AuthController.googleSignin)
+);
+
 authRouter.get(
   "/signup/google",
   asyncHandler(verifyProviderToken),
   asyncHandler(AuthController.googleSignup)
 );
+
+authRouter.post("/signout", asyncHandler(AuthController.onSignOut));
 
 authRouter.post(
   "/refresh",

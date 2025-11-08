@@ -34,7 +34,7 @@ const useSignUpVerification = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { errorToast, successToast } = useToast();
+  const { errorToast, successToast, promiseToast } = useToast();
   const [signUpInput, setSignUpInput] = useState<SignUpInputType>(initialInput);
 
   const handleSignUpOnchange =
@@ -85,26 +85,31 @@ const useSignUpVerification = () => {
   };
 
   const handleSignUpProvider = async () => {
-    try {
-      // if no selected role, auth provider will be cancelled
-      if (signUpInput.role === "select-option")
-        return errorToast("Please select your role to continue.");
+    if (signUpInput.role === "select-option")
+      return errorToast("Please select your role to continue.");
 
-      console.log("signing up with provider");
+    const res = await signInWithPopup(auth, provider);
 
-      const res = await signInWithPopup(auth, provider);
-      const token = await res.user.getIdToken();
+    const token = await res.user.getIdToken();
 
-      await dispatch(googleSignUp({ token, role: signUpInput.role })).unwrap();
+    await promiseToast(
+      async () => {
+        await dispatch(
+          googleSignUp({ token, role: signUpInput.role })
+        ).unwrap();
 
-      successToast(
-        "Submission successful. Please wait for the Administrator’s approval."
-      );
-      navigate("/signin");
-    } catch (error) {
-      console.log(error);
-      errorToast(error as string);
-    }
+        navigate("/signin");
+      },
+      {
+        loading: "Submitting registration...",
+        success: () =>
+          "Registration successful! Please wait for the Administrator's approval.",
+        error: (err) =>
+          `Failed to register: ${
+            err || "Something went wrong. Please try again."
+          }`,
+      }
+    );
   };
 
   return {

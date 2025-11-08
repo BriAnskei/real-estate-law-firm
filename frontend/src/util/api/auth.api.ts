@@ -8,13 +8,40 @@ export class AuthApi {
     payload: SignInInputType
   ): Promise<ApiResponseeType<string>> {
     try {
-      console.log("res: ");
       const res = await api.post("/api/auth/signin", payload, {
         headers: {
           "Content-Type": "application/json",
         },
         withCredentials: true,
       });
+
+      if (!res.data.success) {
+        return { success: false, message: res.data.message };
+      }
+
+      return { success: true, data: res.data.data };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async googleSignIn(payload: {
+    token: string;
+    rememberMe: boolean;
+  }): Promise<ApiResponseeType<string>> {
+    try {
+      const { token, rememberMe } = payload;
+
+      const res = await api.post(
+        "/api/auth/signin/google",
+        { rememberMe },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
 
       if (!res.data.success) {
         return { success: false, message: res.data.message };
@@ -45,6 +72,18 @@ export class AuthApi {
       }
 
       return { success: true };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async onSignOut(): Promise<void> {
+    try {
+      const res = await api.post("/api/auth/signout", {});
+
+      if (!res.data.success) {
+        throw new Error(res.data.message);
+      }
     } catch (error) {
       throw error;
     }

@@ -1,17 +1,18 @@
 import React from "react";
+import { RegistrationType } from "../../../hooks/state/accountRequest/useAccountRequest";
 
 interface RejectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void;
-  userName: string;
+  regiration: RegistrationType;
 }
 
 const RejectionModal: React.FC<RejectionModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  userName,
+  regiration,
 }) => {
   const [reason, setReason] = React.useState("");
   const [error, setError] = React.useState("");
@@ -43,10 +44,10 @@ const RejectionModal: React.FC<RejectionModalProps> = ({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
           className="relative w-full max-w-md bg-white dark:bg-gray-900 
-          rounded-2xl shadow-2xl transform transition-all duration-300 scale-100"
+          rounded-2xl shadow-2xl transform transition-all duration-300 scale-100 pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -108,7 +109,7 @@ const RejectionModal: React.FC<RejectionModalProps> = ({
             <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
               You are about to reject the registration request for{" "}
               <span className="font-semibold text-gray-800 dark:text-white/90">
-                {userName}
+                {regiration.firstName}
               </span>
               . Please provide a reason for this decision.
             </p>

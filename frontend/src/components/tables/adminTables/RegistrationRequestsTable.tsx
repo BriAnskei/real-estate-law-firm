@@ -19,13 +19,14 @@ const formatRole = (role: string): string => {
 };
 
 type RegistrationRequestsTableType = {
-  openRejectionModal: (name: string) => void;
+  openRejectionModal: (registration: RegistrationType) => void;
   registrationData: RegistrationType[] | undefined;
   isLoading?: boolean;
   onSearchHandler: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFilter: boolean;
   searchQuery: string;
   clearFilter: () => void;
+  openOnApproveModal: (registration: RegistrationType) => void;
 };
 
 export default function RegistrationRequestsTable(
@@ -39,6 +40,7 @@ export default function RegistrationRequestsTable(
     onFilter,
     searchQuery,
     clearFilter,
+    openOnApproveModal,
   } = payload;
 
   const handleApprove = (id: string, name: string) => {
@@ -47,12 +49,8 @@ export default function RegistrationRequestsTable(
     // After approval, this request will be removed from the table
   };
 
-  const handleReject = (id: string, name: string) => {
-    console.log(`Rejected request for ${name} (ID: ${id})`);
-
-    openRejectionModal(name);
-    // TODO: Implement rejection logic
-    // After rejection, this request will be removed from the table
+  const handleReject = (registration: RegistrationType) => {
+    openRejectionModal(registration);
   };
 
   return (
@@ -184,12 +182,7 @@ export default function RegistrationRequestsTable(
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() =>
-                            handleApprove(
-                              request.id!,
-                              `${request.firstName} ${request.lastName}`
-                            )
-                          }
+                          onClick={() => openOnApproveModal(request)}
                           className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-[#D4AF37] rounded-lg hover:bg-[#C19B2F] dark:bg-[#D4AF37] dark:hover:bg-[#C19B2F] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 dark:focus:ring-offset-gray-900"
                         >
                           <svg
@@ -209,12 +202,7 @@ export default function RegistrationRequestsTable(
                           Approve
                         </button>
                         <button
-                          onClick={() =>
-                            handleReject(
-                              request.id!,
-                              `${request.firstName} ${request.lastName}`
-                            )
-                          }
+                          onClick={() => handleReject(request)}
                           className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
                         >
                           <svg

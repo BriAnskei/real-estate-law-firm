@@ -20,9 +20,33 @@ export const signIn = createAsyncThunk(
   }
 );
 
-export const googleSignUp = createAsyncThunk(
+export const googleSignIn = createAsyncThunk(
   "auth/signup",
-  async (payload: { token: string; role: string }, { rejectWithValue }) => {
+  async (
+    payload: { token: string; rememberMe: boolean },
+    { rejectWithValue, dispatch }
+  ) => {
+    try {
+      const res = await AuthApi.googleSignIn(payload);
+
+      if (!res.success) {
+        return rejectWithValue(res.message);
+      }
+
+      dispatch(setTokens(res.data));
+    } catch (error) {
+      console.log("Error: ", error);
+      return rejectWithValue("Failed, " + error);
+    }
+  }
+);
+
+export const googleSignUp = createAsyncThunk(
+  "auth/signup/google",
+  async (
+    payload: { token: string; rememberMe: boolean },
+    { rejectWithValue }
+  ) => {
     try {
       const res = await AuthApi.googleSignUp(payload);
 
@@ -31,6 +55,18 @@ export const googleSignUp = createAsyncThunk(
       }
     } catch (error) {
       return rejectWithValue("Error" + error);
+    }
+  }
+);
+
+export const signOut = createAsyncThunk(
+  "auth/signout",
+  async (_: void, { rejectWithValue, dispatch }) => {
+    try {
+      await AuthApi.onSignOut();
+      dispatch(clearAuth());
+    } catch (error) {
+      return rejectWithValue(error);
     }
   }
 );
@@ -44,7 +80,7 @@ type AuthState = {
 
 const initialState: AuthState = {
   accessToken: "",
-  isAuthenticated: Boolean(localStorage.getItem("access_token")),
+  isAuthenticated: false,
   loading: false,
   error: null,
 };
@@ -57,6 +93,7 @@ const authSlice = createSlice({
       state.accessToken = action.payload;
       state.isAuthenticated = true;
     },
+
     clearAuth: (state) => {
       state.isAuthenticated = false;
       state.accessToken = null;

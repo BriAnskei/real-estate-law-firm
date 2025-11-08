@@ -5,6 +5,29 @@ import { PasswordUtils } from "../util/password.util.js";
 import { ResponseType, SignInPayload } from "../types/auth.types.js";
 
 export class UsersService {
+  static async createUser(user: users): Promise<void> {
+    try {
+      await pool.execute(
+        `
+          INSERT INTO users 
+          (uid, email, firstName, lastName, role, password_hash, provider) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          user.uid ?? null,
+          user.email,
+          user.firstName,
+          user.lastName,
+          user.role,
+          user.password_hash ?? null,
+          user.provider ?? "manual",
+        ]
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async findUserById(userId: string): Promise<ResponseType<users>> {
     try {
       const [rows] = await pool.execute<(users & RowDataPacket)[]>(
