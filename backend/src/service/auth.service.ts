@@ -7,6 +7,7 @@ import { SignInPayload, ResponseType } from "../types/auth.types.js";
 import { TokenUtils } from "../util/token.util.js";
 import { TokenService } from "./token.service.js";
 import { MailerUtil } from "../util/mailer.util.js";
+import { PasswordUtils } from "../util/password.util.js";
 
 export class AuthService {
   static async signInVerification(
@@ -68,8 +69,36 @@ export class AuthService {
     }
   }
 
-  static async signUp(payload: registration_request) {
+  static async signUp(payload: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    role: "founding-manager/admin" | "lawyer" | "paralegal" | "process-server";
+  }): Promise<ResponseType<string>> {
     try {
+      const { email, password, firstName, lastName, role } = payload;
+
+      const isEmailExist = await this.ExistingEmail(email);
+
+      if (isEmailExist) {
+        return {
+          success: false,
+          message:
+            "This email address is already in use. Please contact the Administrator.",
+        };
+      }
+
+      await this.processRegistrationRequest({
+        email,
+        password_hash: await PasswordUtils.hashPassword(password),
+        firstName,
+        lastName,
+        role,
+        provider: "manual",
+      });
+
+      return { success: true };
     } catch (error) {
       throw new Error("signUp -> " + error);
     }
@@ -124,6 +153,9 @@ export class AuthService {
     }
   }
 
+  /**
+   *  finds registration email on request or user tables if it exist
+   */
   private static async ExistingEmail(
     email: string | undefined
   ): Promise<boolean> {

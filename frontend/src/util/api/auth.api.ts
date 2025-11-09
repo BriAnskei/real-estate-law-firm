@@ -1,12 +1,12 @@
 import { SignInInputType } from "../../hooks/useSignInVerification";
-import { Roles } from "../../store/Slice/userSlice";
-import { ApiResponseeType } from "./apiResponseType";
+import { SignUpInputType } from "../../hooks/useSignUpVerification";
+import { ApiResponseType } from "./apiResponseType";
 import api from "./axiosInstance";
 
 export class AuthApi {
   static async signIn(
     payload: SignInInputType
-  ): Promise<ApiResponseeType<string>> {
+  ): Promise<ApiResponseType<string>> {
     try {
       const res = await api.post("/api/auth/signin", payload, {
         headers: {
@@ -28,7 +28,7 @@ export class AuthApi {
   static async googleSignIn(payload: {
     token: string;
     rememberMe: boolean;
-  }): Promise<ApiResponseeType<string>> {
+  }): Promise<ApiResponseType<string>> {
     try {
       const { token, rememberMe } = payload;
 
@@ -53,10 +53,25 @@ export class AuthApi {
     }
   }
 
+  static async signUp(
+    signinInput: SignUpInputType
+  ): Promise<ApiResponseType<undefined>> {
+    try {
+      const res = await api.post("/api/auth/signup", signinInput);
+
+      if (!res.data.success)
+        return { success: false, message: res.data.message };
+
+      return { success: true, message: res.data.message };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async googleSignUp(payload: {
     token: string;
     role: string;
-  }): Promise<ApiResponseeType<undefined>> {
+  }): Promise<ApiResponseType<undefined>> {
     const { role, token } = payload;
 
     try {

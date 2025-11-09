@@ -1,11 +1,8 @@
 import React from "react";
 import { ThemeToggleButton } from "../../components/common/ThemeToggleButton";
+import { Outlet } from "react-router";
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout() {
   return (
     <>
       <div className="relative min-h-screen bg-white dark:bg-gray-900">
@@ -15,7 +12,7 @@ export default function AuthLayout({
         <div className="flex flex-col lg:flex-row min-h-screen">
           {/* Left Side - Sign In Form */}
 
-          {children}
+          <Outlet />
           {/* Right Side - Branding Panel */}
           <div className="hidden lg:flex items-center justify-center w-1/2 bg-black relative overflow-hidden">
             <BackgroundIcons />

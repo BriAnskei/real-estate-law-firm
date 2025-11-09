@@ -66,6 +66,14 @@ const useSlice = createSlice({
         state.curUserId = curUserId;
       }
     },
+
+    clearUserState: (state) => {
+      state.byId = {};
+      state.allIds = [];
+      state.filterById = {};
+      state.filterIds = [];
+      state.curUserId = "";
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -82,5 +90,5 @@ const useSlice = createSlice({
   },
 });
 
-export const { setCurUser } = useSlice.actions;
+export const { setCurUser, clearUserState } = useSlice.actions;
 export default useSlice.reducer;

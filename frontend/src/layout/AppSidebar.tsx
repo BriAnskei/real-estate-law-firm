@@ -1,89 +1,16 @@
-import { GridIcon, ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useLocation, Link } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
-import {
-  CalenderIcon,
-  AccountReqIcon,
-  BoxCubeIcon,
-  PlugInIcon,
-  HorizontaLDots,
-} from "../icons";
-import SidebarWidget from "./SidebarWidget";
 
-type NavItem = {
-  name: string;
-  icon: React.ReactNode;
-  path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
-};
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "../store/selector/user/userSelector";
+import GetUserRoutesNav, { NavItem } from "../routes/userRouteNav";
+import { HorizontaLDots } from "../icons";
+import { Logo } from "./Logo";
 
-const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/",
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-  //
-  // {
-  //   icon: <UserCircleIcon />,
-  //   name: "User Profile",
-  //   path: "/profile",
-  // },
-  // {
-  //   name: "Forms",
-  //   icon: <ListIcon />,
-  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  // },
-  // {
-  //   name: "Tables",
-  //   icon: <TableIcon />,
-  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  // },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Blank Page", path: "/blank", pro: false },
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
-];
-
-const othersItems: NavItem[] = [
-  {
-    icon: <AccountReqIcon />,
-    name: "Account Request",
-    path: "/request",
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
-];
-
-const AdminAppSidebar: React.FC = () => {
+const AppSidebar: React.FC = () => {
+  const user = useSelector(selectCurrentUser);
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 
@@ -96,16 +23,22 @@ const AdminAppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
     (path: string) => location.pathname === path,
     [location.pathname]
   );
 
+  const getRoleSpecificItems = (): { menu: NavItem[]; others: NavItem[] } => {
+    return GetUserRoutesNav(user?.role!);
+  };
+
   useEffect(() => {
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
+      const items =
+        menuType === "main"
+          ? getRoleSpecificItems().menu
+          : getRoleSpecificItems().others;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -290,29 +223,9 @@ const AdminAppSidebar: React.FC = () => {
       >
         <Link to="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+            <Logo variant="full" />
           ) : (
-            <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+            <Logo variant="icon" />
           )}
         </Link>
       </div>
@@ -333,7 +246,7 @@ const AdminAppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6 text-[#D4AF37]" />
                 )}
               </h2>
-              {renderMenuItems(navItems, "main")}
+              {user && renderMenuItems(getRoleSpecificItems().menu, "main")}
             </div>
             <div className="">
               <h2
@@ -349,14 +262,13 @@ const AdminAppSidebar: React.FC = () => {
                   <HorizontaLDots className="text-[#D4AF37]" />
                 )}
               </h2>
-              {renderMenuItems(othersItems, "others")}
+              {user && renderMenuItems(getRoleSpecificItems().others, "others")}
             </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
       </div>
     </aside>
   );
 };
 
-export default AdminAppSidebar;
+export default AppSidebar;

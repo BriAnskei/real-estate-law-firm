@@ -16,6 +16,8 @@ authRouter.post(
   asyncHandler(AuthController.googleSignin)
 );
 
+authRouter.post("/signup", asyncHandler(AuthController.signUp));
+
 authRouter.get(
   "/signup/google",
   asyncHandler(verifyProviderToken),

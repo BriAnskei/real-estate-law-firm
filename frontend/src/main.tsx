@@ -9,17 +9,20 @@ import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { Provider } from "react-redux";
 import { store } from "./store/store.ts";
 import { axiosInterceptor } from "./util/api/axiosInstance.ts";
+import { BrowserRouter } from "react-router-dom";
 
 axiosInterceptor(store);
 
 createRoot(document.getElementById("root")!).render(
-  <Provider store={store}>
-    <StrictMode>
-      <ThemeProvider>
-        <AppWrapper>
-          <App />
-        </AppWrapper>
-      </ThemeProvider>
-    </StrictMode>
-  </Provider>
+  <BrowserRouter>
+    <Provider store={store}>
+      <StrictMode>
+        <ThemeProvider>
+          <AppWrapper>
+            <App />
+          </AppWrapper>
+        </ThemeProvider>
+      </StrictMode>
+    </Provider>
+  </BrowserRouter>
 );

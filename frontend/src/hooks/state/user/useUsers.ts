@@ -17,10 +17,6 @@ export const useUsers = () => {
   const curUser = useSelector(selectCurrentUser);
 
   useEffect(() => {
-    console.log("curr user data: ", curUser);
-  }, [curUser]);
-
-  useEffect(() => {
     async function fetchCurUser() {
       try {
         if (!accessToken || !isAuthenticated)

@@ -54,7 +54,7 @@ export const useApprovalModal = (
     );
 
     closeApprovalModal();
-  }, []);
+  }, [registration]);
 
   return {
     isApprovalOpen,

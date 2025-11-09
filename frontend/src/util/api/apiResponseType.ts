@@ -1,4 +1,4 @@
-export type ApiResponseeType<T> = {
+export type ApiResponseType<T> = {
   success: boolean;
   message?: string;
   data?: T;

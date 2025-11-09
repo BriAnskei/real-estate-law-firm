@@ -1,6 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { SignInInputType } from "../../hooks/useSignInVerification";
 import { AuthApi } from "../../util/api/auth.api";
+import { clearUserState } from "./userSlice";
+import { SignUpInputType } from "../../hooks/useSignUpVerification";
 
 export const signIn = createAsyncThunk(
   "auth/signup",
@@ -41,12 +43,24 @@ export const googleSignIn = createAsyncThunk(
   }
 );
 
+export const signUp = createAsyncThunk(
+  "auth/signup",
+  async (sigupInput: SignUpInputType, { rejectWithValue }) => {
+    try {
+      const res = await AuthApi.signUp(sigupInput);
+
+      if (!res.success) {
+        return rejectWithValue(res.message);
+      }
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
 export const googleSignUp = createAsyncThunk(
   "auth/signup/google",
-  async (
-    payload: { token: string; rememberMe: boolean },
-    { rejectWithValue }
-  ) => {
+  async (payload: { token: string; role: string }, { rejectWithValue }) => {
     try {
       const res = await AuthApi.googleSignUp(payload);
 
@@ -65,6 +79,7 @@ export const signOut = createAsyncThunk(
     try {
       await AuthApi.onSignOut();
       dispatch(clearAuth());
+      dispatch(clearUserState());
     } catch (error) {
       return rejectWithValue(error);
     }

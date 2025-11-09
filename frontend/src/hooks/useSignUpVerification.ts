@@ -7,9 +7,9 @@ import { useToast } from "./useToast";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
-import { googleSignUp } from "../store/Slice/authSlice";
+import { googleSignUp, signIn, signUp } from "../store/Slice/authSlice";
 
-type SignUpInputType = {
+export type SignUpInputType = {
   role:
     | "select-option"
     | "founding-manager"
@@ -69,36 +69,12 @@ const useSignUpVerification = () => {
   };
 
   const handleSignUp = async () => {
-    try {
-      if (!signUpInputFilled())
-        return errorToast("Please complete all required fields to continue.");
-
-      successToast(
-        "Submission successful. Please wait for the Administrator’s approval."
-      );
-
-      setSignUpInput(initialInput);
-    } catch (error) {
-    } finally {
-      navigate("/signin");
-    }
-  };
-
-  const handleSignUpProvider = async () => {
-    if (signUpInput.role === "select-option")
-      return errorToast("Please select your role to continue.");
-
-    const res = await signInWithPopup(auth, provider);
-
-    const token = await res.user.getIdToken();
+    if (!signUpInputFilled())
+      return errorToast("Please complete all required fields to continue.");
 
     await promiseToast(
       async () => {
-        await dispatch(
-          googleSignUp({ token, role: signUpInput.role })
-        ).unwrap();
-
-        navigate("/signin");
+        await dispatch(signUp(signUpInput)).unwrap();
       },
       {
         loading: "Submitting registration...",
@@ -110,6 +86,36 @@ const useSignUpVerification = () => {
           }`,
       }
     );
+    setSignUpInput(initialInput);
+
+    navigate("/signin");
+  };
+
+  const handleSignUpProvider = async () => {
+    if (signUpInput.role === "select-option")
+      return errorToast("Please select your role to continue.");
+
+    const res = await signInWithPopup(auth, provider);
+    const token = await res.user.getIdToken();
+
+    await promiseToast(
+      async () => {
+        await dispatch(
+          googleSignUp({ token, role: signUpInput.role })
+        ).unwrap();
+      },
+      {
+        loading: "Submitting registration...",
+        success: () =>
+          "Registration successful! Please wait for the Administrator's approval.",
+        error: (err) =>
+          `Failed to register: ${
+            err || "Something went wrong. Please try again."
+          }`,
+      }
+    );
+
+    navigate("/signin");
   };
 
   return {

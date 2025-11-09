@@ -1,9 +1,9 @@
 import { RegistrationType } from "../../hooks/state/accountRequest/useAccountRequest";
-import { ApiResponseeType } from "./apiResponseType";
+import { ApiResponseType } from "./apiResponseType";
 import api from "./axiosInstance";
 
 export class RegistrationApi {
-  static async fetch(): Promise<ApiResponseeType<RegistrationType[]>> {
+  static async fetch(): Promise<ApiResponseType<RegistrationType[]>> {
     try {
       const res = await api.get("/api/registration/get");
 

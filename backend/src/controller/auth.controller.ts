@@ -54,6 +54,28 @@ export class AuthController {
     res.json({ success: true, data: response.data?.accessToken });
   }
 
+  static async signUp(req: AuthRequest, res: Response): Promise<any> {
+    const { firstName, lastName, password, role, email } = req.body;
+
+    const response = await AuthService.signUp({
+      firstName,
+      lastName,
+      password,
+      role,
+      email,
+    });
+
+    if (!response.success) {
+      return res.json({ success: false, message: response.message });
+    }
+
+    res.json({
+      success: true,
+      message:
+        "Submission successful. Please wait for the Administrator’s approval.",
+    });
+  }
+
   static async googleSignup(req: AuthRequest, res: Response): Promise<any> {
     const userData = req.user;
     const role = req.query.role as any;
@@ -91,7 +113,8 @@ export class AuthController {
     const refreshToken = req.cookies.refreshToken;
 
     // no token to refresh
-    if (!refreshToken) return;
+    if (!refreshToken)
+      return res.json({ success: false, message: "Error please login again" });
 
     const response = await AuthService.refreshUserTokens(refreshToken);
 
