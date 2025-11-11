@@ -32,10 +32,12 @@ export const googleSignIn = createAsyncThunk(
       const res = await AuthApi.googleSignIn(payload);
 
       if (!res.success) {
-        return rejectWithValue(res.message);
+        rejectWithValue(res.message);
+        return { success: false, message: res.message };
       }
 
       dispatch(setTokens(res.data));
+      return { success: true };
     } catch (error) {
       console.log("Error: ", error);
       return rejectWithValue("Failed, " + error);
@@ -86,6 +88,19 @@ export const signOut = createAsyncThunk(
   }
 );
 
+export const refreshTokens = createAsyncThunk(
+  "auth/refresh",
+  async (_: void, { rejectWithValue, dispatch }) => {
+    try {
+      const newAccessToken = await AuthApi.refreshAccessToken();
+
+      dispatch(setTokens(newAccessToken));
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
 type AuthState = {
   accessToken?: string | null;
   isAuthenticated: boolean;
@@ -124,6 +139,17 @@ const authSlice = createSlice({
         state.loading = false;
       })
       .addCase(signIn.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.loading = true;
+      })
+
+      .addCase(refreshTokens.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(refreshTokens.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(refreshTokens.rejected, (state, action) => {
         state.error = action.payload as string;
         state.loading = true;
       });

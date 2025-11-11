@@ -28,6 +28,45 @@ export class UsersService {
     }
   }
 
+  static async fetchAllUsers(): Promise<users[]> {
+    try {
+      const [rows] = await pool.query<(users & RowDataPacket)[]>(
+        "SELECT * FROM users WHERE role != 'founding-manager/admin' ORDER BY id DESC"
+      );
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   *  for filtering by name or emial
+   */
+  static async findByEmailOrName(
+    searchTerm: string
+  ): Promise<users[] | undefined> {
+    try {
+      const query = `
+      SELECT * FROM users 
+      WHERE role != 'founding-manager/admin'
+        AND (
+          email LIKE ? 
+          OR firstName LIKE ? 
+          OR lastName LIKE ?
+        )
+      ORDER BY id DESC
+    `;
+
+      const likeValue = `%${searchTerm}%`;
+      const params = [likeValue, likeValue, likeValue];
+
+      const [rows] = await pool.query<(users & RowDataPacket)[]>(query, params);
+      return rows;
+    } catch (error) {
+      throw new Error("findByEmailOrName -> " + error);
+    }
+  }
+
   static async findUserById(userId: string): Promise<ResponseType<users>> {
     try {
       const [rows] = await pool.execute<(users & RowDataPacket)[]>(

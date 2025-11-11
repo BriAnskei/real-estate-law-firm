@@ -69,7 +69,6 @@ export const useAccountRequest = () => {
 
   const rejectionConfirmation = async (reason: string) => {
     if (!registration) return;
-
     await confirmRejection(reason);
 
     setRegistrationRequests((prev) =>

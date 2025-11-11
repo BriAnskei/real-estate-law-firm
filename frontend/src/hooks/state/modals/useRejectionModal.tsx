@@ -36,26 +36,30 @@ export const useRejectionModal = (
     setIsOpen(false);
     setregistration(undefined);
   }, []);
+
   const toggleModal = useCallback(() => setIsOpen((prev) => !prev), []);
 
-  const confirmRejection = useCallback(async (reason: string) => {
-    if (!registration) return;
+  const confirmRejection = useCallback(
+    async (reason: string) => {
+      if (!registration) return;
 
-    await promiseToast(
-      async () => {
-        await RegistrationApi.rejectRegistration({
-          reason,
-          registrationReq: registration,
-        });
-      },
-      {
-        loading: "Rejecting registration...",
-        success: "Registration rejected successfully.",
-        error: (err) =>
-          `Failed to reject registration: ${err || "Unknown error"}`,
-      }
-    );
-  }, []);
+      await promiseToast(
+        async () => {
+          await RegistrationApi.rejectRegistration({
+            reason,
+            registrationReq: registration,
+          });
+        },
+        {
+          loading: "Rejecting registration...",
+          success: "Registration rejected successfully.",
+          error: (err) =>
+            `Failed to reject registration: ${err || "Unknown error"}`,
+        }
+      );
+    },
+    [registration]
+  );
 
   return {
     isOpen,

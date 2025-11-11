@@ -6,6 +6,8 @@ import {
   PlugInIcon,
   Notification,
   LegalRecords,
+  TaskIcon,
+  Signout,
 } from "../icons";
 import { GridIcon } from "lucide-react";
 
@@ -16,6 +18,26 @@ export type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
+// cases
+const casses: NavItem = {
+  icon: <LegalRecords />,
+  name: "Legal Records",
+  subItems: [
+    {
+      name: "Consultation",
+      path: "/consultation",
+    },
+    {
+      name: "All Cases",
+      path: "/request",
+    },
+    {
+      name: "Clients",
+      path: "/users",
+    },
+  ],
+};
+
 const adminItems: NavItem[] = [
   {
     icon: <GridIcon />,
@@ -23,20 +45,7 @@ const adminItems: NavItem[] = [
     path: "/",
   },
 
-  {
-    icon: <LegalRecords />,
-    name: "Legal Records",
-    subItems: [
-      {
-        name: "All Cases",
-        path: "/request",
-      },
-      {
-        name: "Clients",
-        path: "/users",
-      },
-    ],
-  },
+  casses,
   {
     icon: <CalenderIcon />,
     name: "Calendar",
@@ -54,7 +63,7 @@ const adminOtherItems: NavItem[] = [
       },
       {
         name: "All Accounts",
-        path: "/users",
+        path: "/accounts",
       },
     ],
   },
@@ -62,6 +71,52 @@ const adminOtherItems: NavItem[] = [
     icon: <Notification />,
     name: "Notifications",
     path: "/df",
+  },
+];
+
+const attorneyItems: NavItem[] = [
+  {
+    icon: <GridIcon />,
+    name: "Dashboard",
+    path: "/",
+  },
+
+  {
+    name: "Legal Records",
+    subItems: [
+      {
+        name: "All Cases",
+        path: "/request",
+      },
+      {
+        name: "Clients",
+        path: "/users",
+      },
+    ],
+    icon: <LegalRecords />,
+  },
+
+  {
+    icon: <TaskIcon />,
+    name: "Task",
+    path: "/calendar",
+  },
+  {
+    icon: <CalenderIcon />,
+    name: "Calendar",
+    path: "/calendar",
+  },
+];
+const attorneyOtherItems: NavItem[] = [
+  {
+    icon: <Notification />,
+    name: "Notifications",
+    path: "/df",
+  },
+  {
+    icon: <Signout />,
+    name: "Sign out",
+    path: "/sdfsd",
   },
 ];
 
@@ -108,6 +163,9 @@ export default function GetUserRoutesNav(roles: Roles): {
   switch (roles) {
     case Roles.foundingManager:
       return { menu: adminItems, others: adminOtherItems };
+
+    case Roles.lawyer:
+      return { menu: attorneyItems, others: attorneyOtherItems };
 
     default:
       return { menu: navItems, others: othersItems };

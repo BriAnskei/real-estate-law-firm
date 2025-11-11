@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { AuthService } from "../service/auth.service.js";
 import { AuthRequest } from "../types/express.types.js";
-import { messaging } from "firebase-admin";
 
 export class AuthController {
   static async signIn(req: Request, res: Response): Promise<any> {
@@ -41,7 +40,7 @@ export class AuthController {
     });
 
     if (!response.success) {
-      return res.json({ success: false, messaging: response.message! });
+      return res.json({ success: false, message: response.message! });
     }
 
     res.cookie("refreshToken", response.data?.refreshToken, {
@@ -129,6 +128,7 @@ export class AuthController {
       maxAge: response.data?.rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
     });
 
+    // only return the access token
     res.json({ success: true, accessToken: response.data?.accessToken });
   }
 }

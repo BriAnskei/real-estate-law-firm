@@ -18,6 +18,8 @@ import { AllowedUserPaths } from "./routes/userRouteNav";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./store/selector/user/userSelector";
 import Calendar from "./pages/Calendar";
+import AllAccountPage from "./pages/AdminPages/AllAccountsPage";
+import ConsultationPage from "./pages/LegalCase/ConsultationPage";
 
 const AppRoutes = () => {
   return (
@@ -30,12 +32,13 @@ const AppRoutes = () => {
       {/* Protected routes */}
       <Route element={<AppLayout />}>
         <Route index element={<Home />} />
-        {/* Others Page */}
-        <Route path="/profile" element={<UserProfiles />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/blank" element={<Blank />} />
 
+        {/* Lecal Case(admin, attorney, paralegal) */}
+        <Route path="/consultation" element={<ConsultationPage />} />
+
+        {/* Admin */}
         <Route path="/request" element={<AccountRequest />} />
+        <Route path="/accounts" element={<AllAccountPage />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

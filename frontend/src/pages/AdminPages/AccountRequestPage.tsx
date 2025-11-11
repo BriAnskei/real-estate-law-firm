@@ -4,7 +4,7 @@ import PageMeta from "../../components/common/PageMeta";
 import RegistrationRequestsTable from "../../components/tables/adminTables/RegistrationRequestsTable";
 import RejectionModal from "../../components/modal/adminModals/RejectionModal";
 import { useAccountRequest } from "../../hooks/state/accountRequest/useAccountRequest";
-import { useEffect } from "react";
+
 import ApproveRegistrationModal from "../../components/modal/adminModals/ApproveModal";
 
 export default function AccountRequest() {
@@ -19,10 +19,6 @@ export default function AccountRequest() {
     clearFilter,
     approvalModal,
   } = useAccountRequest();
-
-  useEffect(() => {
-    console.log("loading update: ", loading);
-  }, [loading]);
 
   return (
     <>

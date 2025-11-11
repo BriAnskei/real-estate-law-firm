@@ -78,13 +78,21 @@ const useSignInVerification = () => {
       const res = await signInWithPopup(auth, provider);
       const token = await res.user.getIdToken();
 
-      dispatch(
+      const signInRes = await dispatch(
         googleSignIn({
           token,
           rememberMe: signInInput.rememberMe,
         })
-      );
+      ).unwrap();
+
+      console.log("singin res: ", signInRes);
+
+      if (!signInRes?.success) {
+        errorToast(signInRes?.message || "Failed to signin");
+      }
     } catch (error) {
+      console.log("errorr: ", error);
+
       const res = await signInWithRedirect(auth, provider);
     }
   };

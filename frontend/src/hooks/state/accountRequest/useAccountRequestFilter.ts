@@ -37,7 +37,6 @@ export const useAccountRequestFilter = () => {
   }, [handleFilter]);
 
   const onSearchHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("filtreing: ", e.target.value);
     setSearch(e.target.value);
   };
 

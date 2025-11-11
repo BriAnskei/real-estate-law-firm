@@ -1,8 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { NormalizeState } from "./normalizeState";
 import { UserApi } from "../../util/api/user.api";
+import { normalizeResponse } from "../../util/normalizeResponse";
 
-export const fetchCurrentUSer = createAsyncThunk(
+export const fetchCurrentUser = createAsyncThunk(
   "user/fetchCurUSer",
   async (_: void, { rejectWithValue, dispatch }) => {
     try {
@@ -15,6 +16,40 @@ export const fetchCurrentUSer = createAsyncThunk(
       dispatch(setCurUser(res.data));
     } catch (error) {
       return rejectWithValue("Error, " + error);
+    }
+  }
+);
+
+export const fetchAllUsers = createAsyncThunk(
+  "user/fetchAll",
+  async (_: void, { rejectWithValue, dispatch }) => {
+    try {
+      const res = await UserApi.fetchAll();
+
+      if (!res.success) {
+        return rejectWithValue(res.message);
+      }
+
+      dispatch(addAllUsers(res.data));
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const filterUsers = createAsyncThunk(
+  "user/filter",
+  async (query: string, { rejectWithValue, dispatch }) => {
+    try {
+      const res = await UserApi.filter(query);
+
+      if (!res.success) {
+        return rejectWithValue(res.message);
+      }
+
+      dispatch(addAllFilter(res.data));
+    } catch (error) {
+      return rejectWithValue(error);
     }
   }
 );
@@ -67,6 +102,13 @@ const useSlice = createSlice({
       }
     },
 
+    addAllUsers: (state, action) => {
+      const { allIds, byId } = normalizeResponse(action.payload);
+
+      state.byId = byId;
+      state.allIds = allIds;
+    },
+
     clearUserState: (state) => {
       state.byId = {};
       state.allIds = [];
@@ -74,21 +116,61 @@ const useSlice = createSlice({
       state.filterIds = [];
       state.curUserId = "";
     },
+
+    addAllFilter: (state, action) => {
+      const { allIds, byId } = normalizeResponse(action.payload);
+
+      state.filterById = byId;
+      state.filterIds = allIds;
+    },
+
+    clearUserFilter: (state) => {
+      state.filterById = {};
+      state.filterIds = [];
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCurrentUSer.pending, (state) => {
+      .addCase(fetchCurrentUser.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCurrentUSer.fulfilled, (state, action) => {
+      .addCase(fetchCurrentUser.fulfilled, (state) => {
         state.loading = false;
       })
-      .addCase(fetchCurrentUSer.rejected, (state, action) => {
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(fetchAllUsers.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchAllUsers.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(fetchAllUsers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(filterUsers.pending, (state) => {
+        state.filterLoading = true;
+      })
+      .addCase(filterUsers.fulfilled, (state) => {
+        state.filterLoading = false;
+      })
+      .addCase(filterUsers.rejected, (state, action) => {
+        state.filterLoading = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { setCurUser, clearUserState } = useSlice.actions;
+export const {
+  setCurUser,
+  clearUserState,
+  addAllUsers,
+  addAllFilter,
+  clearUserFilter,
+} = useSlice.actions;
 export default useSlice.reducer;

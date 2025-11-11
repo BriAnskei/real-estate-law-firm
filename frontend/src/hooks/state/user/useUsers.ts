@@ -2,40 +2,51 @@ import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
 import { useDispatch } from "react-redux";
-import { fetchCurrentUSer } from "../../../store/Slice/userSlice";
-import { selectCurrentUser } from "../../../store/selector/user/userSelector";
-import { useNavigate } from "react-router";
+import { fetchAllUsers } from "../../../store/Slice/userSlice";
+import { useFilterUser } from "./useFilterUser";
+import { createFilterData } from "../../../util/createFilterData";
 
 export const useUsers = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
+
+  const { allIds, byId, filterIds, filterById, loading, filterLoading } =
+    useSelector((state: RootState) => state.user);
+
   const { accessToken, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
   );
-  const { loading, error } = useSelector((state: RootState) => state.user);
 
-  const curUser = useSelector(selectCurrentUser);
+  const { handleOnFilterChange, searchLoading, search, clearFilter, onFilter } =
+    useFilterUser({
+      dispatch,
+    });
+
+  const userStateData = createFilterData({
+    originalData: { allIds, byId },
+    filteredData: { byId: filterById, allIds: filterIds },
+    filterOptions: {
+      searchInput: search,
+      filterLoading: filterLoading || searchLoading,
+    },
+  });
 
   useEffect(() => {
-    async function fetchCurUser() {
-      try {
-        if (!accessToken || !isAuthenticated)
-          throw new Error(
-            "No accessToken or user is not authenticated do run fetch user state"
-          );
+    async function fetchAll() {
+      if (!accessToken || !isAuthenticated || userStateData.allIds.length > 0)
+        return;
 
-        await dispatch(fetchCurrentUSer());
-        navigate("/");
-      } catch (error) {
-        console.error("failed to fetch user", error);
-      }
+      await dispatch(fetchAllUsers());
     }
-    fetchCurUser();
-  }, [accessToken]);
+    fetchAll();
+  }, [accessToken, isAuthenticated]);
 
   return {
-    loading,
-    curUser,
-    role: curUser?.role,
+    loading: loading || filterLoading || searchLoading,
+    byId: userStateData.byId,
+    allIds: userStateData.allIds,
+    handleOnFilterChange,
+    clearFilter,
+    onFilter,
+    search,
   };
 };

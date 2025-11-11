@@ -8,16 +8,6 @@ import {
 } from "../../ui/table";
 import { RegistrationType } from "../../../hooks/state/accountRequest/useAccountRequest";
 
-// Helper function to format role names
-const formatRole = (role: string): string => {
-  const roleMap: Record<string, string> = {
-    lawyer: "Lawyer",
-    paralegal: "Paralegal",
-    "process-server": "Process Server",
-  };
-  return roleMap[role] || role;
-};
-
 type RegistrationRequestsTableType = {
   openRejectionModal: (registration: RegistrationType) => void;
   registrationData: RegistrationType[] | undefined;
@@ -27,6 +17,15 @@ type RegistrationRequestsTableType = {
   searchQuery: string;
   clearFilter: () => void;
   openOnApproveModal: (registration: RegistrationType) => void;
+};
+
+export const formatRole = (role: string): string => {
+  const roleMap: Record<string, string> = {
+    lawyer: "Lawyer",
+    paralegal: "Paralegal",
+    "process-server": "Process Server",
+  };
+  return roleMap[role] || role;
 };
 
 export default function RegistrationRequestsTable(
@@ -42,12 +41,6 @@ export default function RegistrationRequestsTable(
     clearFilter,
     openOnApproveModal,
   } = payload;
-
-  const handleApprove = (id: string, name: string) => {
-    console.log(`Approved request for ${name} (ID: ${id})`);
-    // TODO: Implement approval logic
-    // After approval, this request will be removed from the table
-  };
 
   const handleReject = (registration: RegistrationType) => {
     openRejectionModal(registration);

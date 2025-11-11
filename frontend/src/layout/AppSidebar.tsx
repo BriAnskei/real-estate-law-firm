@@ -1,15 +1,20 @@
 import { ChevronDownIcon } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useLocation, Link } from "react-router";
+import { useLocation, Link, useNavigate } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../store/selector/user/userSelector";
 import GetUserRoutesNav, { NavItem } from "../routes/userRouteNav";
-import { HorizontaLDots } from "../icons";
+import { HorizontaLDots, Signout } from "../icons";
 import { Logo } from "./Logo";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../store/store";
+import { signOut } from "../store/Slice/authSlice";
 
 const AppSidebar: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const user = useSelector(selectCurrentUser);
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
@@ -82,6 +87,11 @@ const AppSidebar: React.FC = () => {
       }
       return { type: menuType, index };
     });
+  };
+
+  const handleSignout = async () => {
+    await dispatch(signOut());
+    navigate("/signin");
   };
 
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
@@ -263,6 +273,21 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {user && renderMenuItems(getRoleSpecificItems().others, "others")}
+              <button
+                className={`menu-item group relative mt-3 transition-all duration-300 text-gray-700 dark:text-gray-400 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 dark:hover:bg-[#D4AF37]/10 border-l-4 border-transparent ${
+                  !isExpanded && !isHovered
+                    ? "lg:justify-center"
+                    : "lg:justify-start"
+                }`}
+                onClick={handleSignout}
+              >
+                <span className="menu-item-icon-size text-[#D4AF37]">
+                  <Signout />
+                </span>
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className="menu-item-text">Sign Out</span>
+                )}
+              </button>
             </div>
           </div>
         </nav>
