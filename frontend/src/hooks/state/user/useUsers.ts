@@ -12,10 +12,6 @@ export const useUsers = () => {
   const { allIds, byId, filterIds, filterById, loading, filterLoading } =
     useSelector((state: RootState) => state.user);
 
-  const { accessToken, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
-
   const { handleOnFilterChange, searchLoading, search, clearFilter, onFilter } =
     useFilterUser({
       dispatch,
@@ -29,16 +25,6 @@ export const useUsers = () => {
       filterLoading: filterLoading || searchLoading,
     },
   });
-
-  useEffect(() => {
-    async function fetchAll() {
-      if (!accessToken || !isAuthenticated || userStateData.allIds.length > 0)
-        return;
-
-      await dispatch(fetchAllUsers());
-    }
-    fetchAll();
-  }, [accessToken, isAuthenticated]);
 
   return {
     loading: loading || filterLoading || searchLoading,

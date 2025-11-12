@@ -73,7 +73,8 @@ interface UserState extends NormalizeState<UserType> {
   filterById: { [key: string]: UserType };
   filterIds: string[];
   filterLoading: boolean;
-  curUserId: string;
+
+  currUserData: UserType | null;
 }
 
 const initialState: UserState = {
@@ -84,7 +85,12 @@ const initialState: UserState = {
   filterById: {},
   filterIds: [],
   filterLoading: false,
-  curUserId: "",
+  currUserData: {
+    email: "",
+    firstName: "",
+    lastName: "",
+    role: Roles.foundingManager,
+  },
 };
 
 const useSlice = createSlice({
@@ -92,20 +98,13 @@ const useSlice = createSlice({
   initialState,
   reducers: {
     setCurUser: (state, action) => {
-      const curUserData = action.payload as UserType;
-      const curUserId = curUserData.id!;
-
-      state.curUserId = curUserId!;
-      if (!state.byId[curUserId!]) {
-        state.byId[curUserId!] = curUserData;
-        state.curUserId = curUserId;
-      }
+      state.currUserData = action.payload as UserType;
     },
 
     addAllUsers: (state, action) => {
       const { allIds, byId } = normalizeResponse(action.payload);
 
-      state.byId = byId;
+      state.byId = { ...state.byId, ...byId };
       state.allIds = allIds;
     },
 
@@ -114,7 +113,7 @@ const useSlice = createSlice({
       state.allIds = [];
       state.filterById = {};
       state.filterIds = [];
-      state.curUserId = "";
+      state.currUserData = null;
     },
 
     addAllFilter: (state, action) => {

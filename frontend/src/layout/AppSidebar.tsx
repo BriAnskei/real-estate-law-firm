@@ -5,7 +5,7 @@ import { useSidebar } from "../context/SidebarContext";
 
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../store/selector/user/userSelector";
-import GetUserRoutesNav, { NavItem } from "../routes/userRouteNav";
+import { NavItem, navRoutes } from "../routes/userRouteNav";
 import { HorizontaLDots, Signout } from "../icons";
 import { Logo } from "./Logo";
 import { useDispatch } from "react-redux";
@@ -18,6 +18,8 @@ const AppSidebar: React.FC = () => {
   const user = useSelector(selectCurrentUser);
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+
+  const sideBarNav = useRef(navRoutes[user?.role!]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -33,17 +35,15 @@ const AppSidebar: React.FC = () => {
     [location.pathname]
   );
 
-  const getRoleSpecificItems = (): { menu: NavItem[]; others: NavItem[] } => {
-    return GetUserRoutesNav(user?.role!);
-  };
-
   useEffect(() => {
+    if (!sideBarNav.current) return;
+
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
       const items =
         menuType === "main"
-          ? getRoleSpecificItems().menu
-          : getRoleSpecificItems().others;
+          ? sideBarNav.current.menu
+          : sideBarNav.current.others;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -62,7 +62,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [location, isActive]);
+  }, [location, isActive, sideBarNav.current]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -256,7 +256,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6 text-[#D4AF37]" />
                 )}
               </h2>
-              {user && renderMenuItems(getRoleSpecificItems().menu, "main")}
+              {user && renderMenuItems(sideBarNav.current.menu, "main")}
             </div>
             <div className="">
               <h2
@@ -272,7 +272,9 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="text-[#D4AF37]" />
                 )}
               </h2>
-              {user && renderMenuItems(getRoleSpecificItems().others, "others")}
+              {user &&
+                sideBarNav.current.others.length > 0 &&
+                renderMenuItems(sideBarNav.current.others, "others")}
               <button
                 className={`menu-item group relative mt-3 transition-all duration-300 text-gray-700 dark:text-gray-400 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 dark:hover:bg-[#D4AF37]/10 border-l-4 border-transparent ${
                   !isExpanded && !isHovered

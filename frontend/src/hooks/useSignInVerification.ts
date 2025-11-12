@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
 import { googleSignIn, signIn } from "../store/Slice/authSlice";
 import { useToast } from "./useToast";
+import { useNavigate } from "react-router";
 
 export type SignInInputType = {
   role:
@@ -22,6 +23,7 @@ export type SignInInputType = {
 
 const useSignInVerification = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
   const { errorToast } = useToast();
   const [signInInput, setSigninInput] = useState<SignInInputType>({
@@ -59,6 +61,7 @@ const useSignInVerification = () => {
       }
 
       await dispatch(signIn(signInInput)).unwrap();
+      navigate("/");
     } catch (error) {
       console.log(error);
       errorToast(error as string);
@@ -85,11 +88,10 @@ const useSignInVerification = () => {
         })
       ).unwrap();
 
-      console.log("singin res: ", signInRes);
-
       if (!signInRes?.success) {
-        errorToast(signInRes?.message || "Failed to signin");
+        return errorToast(signInRes?.message || "Failed to signin");
       }
+      navigate("/");
     } catch (error) {
       console.log("errorr: ", error);
 

@@ -2,14 +2,15 @@ import { Roles } from "../store/Slice/userSlice";
 import {
   CalenderIcon,
   AccountReqIcon,
-  BoxCubeIcon,
-  PlugInIcon,
   Notification,
   LegalRecords,
-  TaskIcon,
-  Signout,
 } from "../icons";
 import { GridIcon } from "lucide-react";
+import { JSX } from "react";
+import Home from "../pages/Dashboard/Home";
+import ConsultationPage from "../pages/LegalCase/ConsultationPage";
+import AccountRequest from "../pages/AdminPages/AccountRequestPage";
+import AllAccountPage from "../pages/AdminPages/AllAccountsPage";
 
 export type NavItem = {
   name: string;
@@ -18,8 +19,8 @@ export type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-// cases
-const casses: NavItem = {
+// allowed to admin, attonney, paralegals
+const cases: NavItem = {
   icon: <LegalRecords />,
   name: "Legal Records",
   subItems: [
@@ -38,157 +39,116 @@ const casses: NavItem = {
   ],
 };
 
-const adminItems: NavItem[] = [
+export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
   {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/",
-  },
+    [Roles.foundingManager]: {
+      menu: [
+        {
+          icon: <GridIcon />,
+          name: "Dashboard",
+          path: "/",
+        },
 
-  casses,
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-];
-const adminOtherItems: NavItem[] = [
-  {
-    icon: <AccountReqIcon />,
-    name: "Account Management",
-    subItems: [
-      {
-        name: "Account Requests",
-        path: "/request",
-      },
-      {
-        name: "All Accounts",
-        path: "/accounts",
-      },
-    ],
-  },
-  {
-    icon: <Notification />,
-    name: "Notifications",
-    path: "/df",
-  },
-];
+        cases,
+        {
+          icon: <CalenderIcon />,
+          name: "Calendar",
+          path: "/calendar",
+        },
+      ],
+      others: [
+        {
+          icon: <AccountReqIcon />,
+          name: "Account Management",
+          subItems: [
+            {
+              name: "Account Requests",
+              path: "/request",
+            },
+            {
+              name: "All Accounts",
+              path: "/accounts",
+            },
+          ],
+        },
+        {
+          icon: <Notification />,
+          name: "Notifications",
+          path: "/notifications",
+        },
+      ],
+    },
+    [Roles.lawyer]: {
+      menu: [],
+      others: [],
+    },
+    [Roles.paralegal]: {
+      menu: [],
+      others: [],
+    },
+    [Roles.processServer]: {
+      menu: [
+        {
+          icon: <GridIcon />,
+          name: "gegege",
+          path: "/",
+        },
 
-const attorneyItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/",
-  },
+        cases,
+        {
+          icon: <CalenderIcon />,
+          name: "hahaha",
+          path: "/calendar",
+        },
+      ],
+      others: [],
+    },
+  };
 
-  {
-    name: "Legal Records",
-    subItems: [
-      {
-        name: "All Cases",
-        path: "/request",
-      },
-      {
-        name: "Clients",
-        path: "/users",
-      },
-    ],
-    icon: <LegalRecords />,
-  },
+type AppRoutes = {
+  path: string;
+  element: JSX.Element;
+};
 
-  {
-    icon: <TaskIcon />,
-    name: "Task",
-    path: "/calendar",
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-];
-const attorneyOtherItems: NavItem[] = [
-  {
-    icon: <Notification />,
-    name: "Notifications",
-    path: "/df",
-  },
-  {
-    icon: <Signout />,
-    name: "Sign out",
-    path: "/sdfsd",
-  },
-];
+export const appRoutes: Record<Roles, AppRoutes[]> = {
+  [Roles.foundingManager]: [
+    { path: "/", element: <Home /> },
+    { path: "/consultation", element: <ConsultationPage /> },
+    { path: "/request", element: <AccountRequest /> },
+    { path: "/accounts", element: <AllAccountPage /> },
+  ],
+  [Roles.lawyer]: [],
+  [Roles.paralegal]: [],
+  [Roles.processServer]: [
+    { path: "/", element: <Home /> },
+    { path: "/consultation", element: <ConsultationPage /> },
+    { path: "/request", element: <AccountRequest /> },
+    { path: "/accounts", element: <AllAccountPage /> },
+  ],
+};
 
-const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/",
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-];
+// helper function to help validate allowed routes
+export const isRouteValid = (userRole: Roles): string[] => {
+  const allowedRoutes: string[] = [];
+  const userRoutes = { ...(navRoutes[userRole] || []) };
 
-const othersItems: NavItem[] = [
-  {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
-];
-
-export default function GetUserRoutesNav(roles: Roles): {
-  menu: NavItem[];
-  others: NavItem[];
-} {
-  switch (roles) {
-    case Roles.foundingManager:
-      return { menu: adminItems, others: adminOtherItems };
-
-    case Roles.lawyer:
-      return { menu: attorneyItems, others: attorneyOtherItems };
-
-    default:
-      return { menu: navItems, others: othersItems };
-  }
-}
-
-export const AllowedUserPaths = (role: Roles) => {
-  const navRoutes = GetUserRoutesNav(role);
-  const allowedPaths: string[] = [];
-
-  const allRoutes = [...navRoutes.menu, ...navRoutes.others];
-
-  allRoutes.forEach((route) => {
-    if (route.path) {
-      allowedPaths.push(route.path);
-    }
-
+  // main
+  userRoutes.menu.map((route) => {
     if (route.subItems) {
-      route.subItems.forEach((subRoute) => {
-        allowedPaths.push(subRoute.path);
-      });
+      route.subItems.map((r) => allowedRoutes.push(r.path));
+    } else {
+      allowedRoutes.push(route.path!);
     }
   });
 
-  return allowedPaths;
+  //others
+  userRoutes.others.map((route) => {
+    if (route.subItems) {
+      route.subItems.map((r) => allowedRoutes.push(r.path));
+    } else {
+      allowedRoutes.push(route.path!);
+    }
+  });
+
+  return allowedRoutes;
 };

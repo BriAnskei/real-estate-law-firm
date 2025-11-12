@@ -2,10 +2,10 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import RegistrationRequestsTable from "../../components/tables/adminTables/RegistrationRequestsTable";
-import RejectionModal from "../../components/modal/adminModals/RejectionModal";
+import RejectionModal from "../../components/modal/accounts/RejectionModal";
 import { useAccountRequest } from "../../hooks/state/accountRequest/useAccountRequest";
 
-import ApproveRegistrationModal from "../../components/modal/adminModals/ApproveModal";
+import ApproveRegistrationModal from "../../components/modal/accounts/ApproveModal";
 
 export default function AccountRequest() {
   const {

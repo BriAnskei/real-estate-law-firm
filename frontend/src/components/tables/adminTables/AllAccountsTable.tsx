@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useUsers } from "../../../hooks/state/user/useUsers";
 
 import {
@@ -28,10 +27,6 @@ export default function AllAccountsTable() {
     clearFilter,
     onFilter,
   } = useUsers();
-
-  useEffect(() => {
-    console.log("laoding update: ", loading);
-  }, [loading]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">

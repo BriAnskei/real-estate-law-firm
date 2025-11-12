@@ -1,9 +1,10 @@
-import React, { createContext, useEffect } from "react";
+import React, { createContext, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppDispatch, RootState } from "../store/store";
 import { refreshTokens } from "../store/Slice/authSlice";
-import { fetchCurrentUser } from "../store/Slice/userSlice";
+import { fetchAllUsers, fetchCurrentUser } from "../store/Slice/userSlice";
+import { selectCurrentUser } from "../store/selector/user/userSelector";
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     (state: RootState) => state.auth
   );
 
+  const userData = useSelector(selectCurrentUser);
+
+  // Track if we've already fetched the user to prevent re-fetching
+  const hasFetchedUser = useRef(false);
+
   useEffect(() => {
     const refreshAccessToken = async () => {
       try {
@@ -31,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     refreshAccessToken();
-  }, [dispatch, isAuthenticated, accessToken]);
+  }, [dispatch, isAuthenticated, accessToken, navigate]);
 
   useEffect(() => {
     /**
@@ -39,18 +45,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
      * will automatically fetch the current user
      */
     const fetchUser = async () => {
-      if (!accessToken || !isAuthenticated) return;
+      // Don't fetch if we don't have auth or if we already have user data
+      if (!accessToken || !isAuthenticated) {
+        hasFetchedUser.current = false;
+        return;
+      }
 
-      await dispatch(fetchCurrentUser()).unwrap();
+      // Only fetch if we haven't fetched yet
+      if (hasFetchedUser.current) return;
 
-      const authPaths = ["/signin", "/signup"];
-      if (authPaths.includes(location.pathname)) {
-        navigate("/");
+      try {
+        hasFetchedUser.current = true;
+        await dispatch(fetchCurrentUser()).unwrap();
+        await dispatch(fetchAllUsers()).unwrap();
+      } catch (error) {
+        hasFetchedUser.current = false;
+        console.error("Failed to fetch user:", error);
       }
     };
 
     fetchUser();
-  }, [accessToken, isAuthenticated, dispatch, navigate]);
+  }, [accessToken, isAuthenticated, dispatch]);
 
   return <AuthContext.Provider value={null}>{children}</AuthContext.Provider>;
 };

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Eye, X } from "lucide-react";
+import { useCases } from "../../hooks/case/useConsultCases";
 
 // Mock data - In real app, this would come from API
 const generateMockCases = (page) => {
@@ -64,10 +65,15 @@ const generateMockCases = (page) => {
   }));
 };
 
+// Main Consultation Page Component
 export default function ConsultationPage() {
+  const { viewCaseModalState, addNewCaseModalState } = useCases();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const totalPages = 5; // In real app, this would come from API
+
+  const [selectedCase, setSelectedCase] = useState(null);
+  const totalPages = 5;
   const cardsToShow = 4;
 
   const cases = generateMockCases(currentPage);
@@ -94,139 +100,153 @@ export default function ConsultationPage() {
     }
   };
 
-  const handleAddCase = () => {
-    alert("Add New Case functionality - Connect to your form/modal");
-  };
-
-  const handleViewCase = (caseId) => {
-    alert(`View Case ID: ${caseId} - Connect to your case detail page`);
-  };
-
   const canGoPrevious = currentPage > 1 || scrollPosition > 0;
   const canGoNext =
     currentPage < totalPages || scrollPosition + cardsToShow < cases.length;
 
   return (
-    <div>
-      {/* Page Meta would go here */}
-
-      {/* Breadcrumb and Add Button Row */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-            Consultation Cases
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Manage and review consultation cases
-          </p>
-        </div>
-        <button
-          onClick={handleAddCase}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:bg-blue-700 hover:shadow-xl active:scale-95"
-        >
-          <Plus className="h-4 w-4" />
-          Add New Case
-        </button>
-      </div>
-
-      {/* Main Content Container */}
-      <div className="rounded-2xl border border-gray-200 bg-white px-5 py-8 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        {/* Cards Container */}
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visibleCases.map((caseItem, index) => (
-              <div
-                key={caseItem.id}
-                className="group flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800/50"
-                style={{
-                  animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
-                }}
-              >
-                {/* Concern Title */}
-                <h3 className="mb-3 text-lg font-semibold text-gray-800 dark:text-white">
-                  {caseItem.concern}
-                </h3>
-
-                {/* Description */}
-                <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-                  {caseItem.description}
-                </p>
-
-                {/* Client Info */}
-                <div className="mb-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-900/50">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Client
-                  </p>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white">
-                    {caseItem.clientName}
-                  </p>
-                </div>
-
-                {/* Date and Button */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {caseItem.date}
-                  </span>
-                  <button
-                    onClick={() => handleViewCase(caseItem.id)}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-blue-700 active:scale-95"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    View Case
-                  </button>
-                </div>
-              </div>
-            ))}
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Breadcrumb and Add Button Row */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Consultation Cases
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Manage and review consultation cases
+            </p>
           </div>
+          <button
+            onClick={handleAddCase}
+            className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Add New Case
+          </button>
+        </div>
 
-          {/* Pagination Controls */}
-          <div className="mt-8 flex flex-col items-center gap-4">
-            {/* Page Indicators */}
-            <div className="flex items-center gap-2">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setCurrentPage(i + 1);
-                    setScrollPosition(0);
+        {/* Main Content Container */}
+        <div className="rounded-lg border-2 border-gray-200 bg-white px-6 py-8 dark:border-gray-700 dark:bg-gray-800 xl:px-10 xl:py-12">
+          {/* Cards Container */}
+          <div className="mx-auto max-w-7xl">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visibleCases.map((caseItem, index) => (
+                <div
+                  key={caseItem.id}
+                  className="group flex h-full flex-col rounded-lg border-2 border-gray-200 bg-white p-6 transition-all duration-300 hover:border-[#D4AF37] hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-[#D4AF37]"
+                  style={{
+                    animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
                   }}
-                  className={`h-2 rounded-full transition-all ${
-                    currentPage === i + 1
-                      ? "w-8 bg-blue-600"
-                      : "w-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
-                  }`}
-                  aria-label={`Go to page ${i + 1}`}
-                />
+                >
+                  {/* Concern Title */}
+                  <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-white">
+                    {caseItem.concern}
+                  </h3>
+
+                  {/* Gold Accent Line */}
+                  <div className="h-px w-12 bg-[#D4AF37] mb-4"></div>
+
+                  {/* Description */}
+                  <p className="mb-5 flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                    {caseItem.description}
+                  </p>
+
+                  {/* Client Info */}
+                  <div className="mb-5 rounded-lg bg-gray-50 p-4 dark:bg-gray-900">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Client
+                    </p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      {caseItem.clientName}
+                    </p>
+                  </div>
+
+                  {/* Date and Button */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                      {caseItem.date}
+                    </span>
+                    <button
+                      onClick={() =>
+                        viewCaseModalState.openViewConsultCaseModal(caseItem)
+                      }
+                      className="flex items-center gap-1.5 rounded-lg bg-[#D4AF37] px-4 py-2 text-xs font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      View
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handlePrevious}
-                disabled={!canGoPrevious}
-                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </button>
+            {/* Pagination Controls */}
+            <div className="mt-10 flex flex-col items-center gap-6">
+              {/* Page Indicators */}
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setCurrentPage(i + 1);
+                      setScrollPosition(0);
+                    }}
+                    className={`h-2 rounded-full transition-all ${
+                      currentPage === i + 1
+                        ? "w-8 bg-[#D4AF37]"
+                        : "w-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+                    }`}
+                    aria-label={`Go to page ${i + 1}`}
+                  />
+                ))}
+              </div>
 
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Page {currentPage} of {totalPages}
-              </span>
+              {/* Navigation Buttons */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handlePrevious}
+                  disabled={!canGoPrevious}
+                  className="flex items-center gap-2 rounded-lg border-2 border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-[#D4AF37] hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-[#D4AF37] dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800 dark:disabled:hover:border-gray-700"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </button>
 
-              <button
-                onClick={handleNext}
-                disabled={!canGoNext}
-                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-600"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </button>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  onClick={handleNext}
+                  disabled={!canGoNext}
+                  className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#D4AF37]"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <ViewCaseModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedCase(null);
+        }}
+        caseData={selectedCase}
+        onConfirm={handleConfirmPayment}
+      />
+
+      <AddCaseModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleSubmitNewCase}
+      />
 
       <style>{`
         @keyframes fadeIn {

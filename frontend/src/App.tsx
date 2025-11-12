@@ -1,27 +1,19 @@
-import { Route, Routes, useLocation } from "react-router-dom";
-
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { Toaster } from "sonner";
-
 import { AuthProvider } from "./context/AuthContext";
-import { useEffect } from "react";
 import SignInForm from "./components/auth/SignInForm";
 import SignUpForm from "./components/auth/SignUpForm";
 import AuthLayout from "./pages/AuthPages/AuthPageLayout";
-import { Home } from "lucide-react";
 import AppLayout from "./layout/AppLayout";
-import AccountRequest from "./pages/AdminPages/AccountRequestPage";
-import Blank from "./pages/Blank";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
-import { AllowedUserPaths } from "./routes/userRouteNav";
+import { appRoutes } from "./routes/userRouteNav";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./store/selector/user/userSelector";
-import Calendar from "./pages/Calendar";
-import AllAccountPage from "./pages/AdminPages/AllAccountsPage";
-import ConsultationPage from "./pages/LegalCase/ConsultationPage";
+import { Roles } from "./store/Slice/userSlice";
+import { useEffect } from "react";
 
-const AppRoutes = () => {
+const AppRoutes = ({ userRole }: { userRole: Roles }) => {
   return (
     <Routes>
       {/* public Routes */}
@@ -29,36 +21,34 @@ const AppRoutes = () => {
         <Route path="/signin" element={<SignInForm />} />
         <Route path="/signup" element={<SignUpForm />} />
       </Route>
+
       {/* Protected routes */}
       <Route element={<AppLayout />}>
-        <Route index element={<Home />} />
-
-        {/* Lecal Case(admin, attorney, paralegal) */}
-        <Route path="/consultation" element={<ConsultationPage />} />
-
-        {/* Admin */}
-        <Route path="/request" element={<AccountRequest />} />
-        <Route path="/accounts" element={<AllAccountPage />} />
+        {userRole &&
+          appRoutes[userRole].map((r) => (
+            <Route key={r.path} path={r.path} element={r.element} />
+          ))}
       </Route>
+
+      {/* Catch all - must be last */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
 
 export default function App() {
-  const location = useLocation();
+  const navigate = useNavigate();
   const user = useSelector(selectCurrentUser);
 
-  if (user && !AllowedUserPaths(user?.role!).includes(location.pathname)) {
-    return <NotFound />;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user]);
 
   return (
     <>
-      <AuthProvider>
-        <ScrollToTop />
-        <AppRoutes />
-      </AuthProvider>
+      <AppRoutes userRole={user?.role!} />
       <Toaster position="top-left" />
     </>
   );

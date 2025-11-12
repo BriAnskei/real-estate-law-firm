@@ -1,7 +1,6 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import AllAccountsTable from "../../components/tables/adminTables/AllAccountsTable";
-
 import PageMeta from "../../components/common/PageMeta";
 
 export default function AllAccountPage() {
