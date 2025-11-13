@@ -28,12 +28,8 @@ export class TokenUtils {
     return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(hash));
   }
 
-  static decodeToken(accessToken: string | undefined): string {
+  static decodeToken(accessToken: string): string {
     try {
-      if (!accessToken) {
-        throw new Error("Not Authorized, Login Again");
-      }
-
       const decoded = jwt.verify(
         accessToken,
         process.env.JWT_ACCESS_SECRET as string

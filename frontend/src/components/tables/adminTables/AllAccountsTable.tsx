@@ -1,4 +1,4 @@
-import { useUsers } from "../../../hooks/state/user/useUsers";
+import { useUsers } from "../../../hooks/state/userAccounts/useUsers";
 
 import {
   TableHeader,

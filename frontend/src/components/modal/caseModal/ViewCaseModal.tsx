@@ -1,17 +1,19 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 
-
-type ViewCaseModalProp {
+type ViewCaseModalProp = {
   isOpen: boolean;
   onClose: () => void;
   caseData: any;
-  onConfirm: (data: any) => void
-}
+  onConfirm: (data: any) => void;
+};
 
-
-
-export function ViewCaseModal({ isOpen, onClose, caseData, onConfirm }: ViewCaseModalProp) {
+export function ViewCaseModal({
+  isOpen,
+  onClose,
+  caseData,
+  onConfirm,
+}: ViewCaseModalProp) {
   const [paymentType, setPaymentType] = useState("");
   const [promiseToPayDate, setPromiseToPayDate] = useState("");
 

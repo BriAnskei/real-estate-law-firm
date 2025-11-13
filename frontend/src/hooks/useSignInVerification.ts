@@ -61,7 +61,6 @@ const useSignInVerification = () => {
       }
 
       await dispatch(signIn(signInInput)).unwrap();
-      navigate("/");
     } catch (error) {
       console.log(error);
       errorToast(error as string);
@@ -91,11 +90,12 @@ const useSignInVerification = () => {
       if (!signInRes?.success) {
         return errorToast(signInRes?.message || "Failed to signin");
       }
-      navigate("/");
     } catch (error) {
       console.log("errorr: ", error);
 
       const res = await signInWithRedirect(auth, provider);
+
+      // TODO: implement this functionnallity too.
     }
   };
 

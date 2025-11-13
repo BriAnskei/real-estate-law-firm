@@ -1,77 +1,57 @@
 import axios from "axios";
 import { Store } from "@reduxjs/toolkit";
-import { RootState } from "../../store/store";
+import { AppDispatch, RootState } from "../../store/store";
+import { refreshTokens } from "../../store/Slice/authSlice";
 
 const api = axios.create({
   baseURL: "http://localhost:4000",
   withCredentials: true,
 });
 
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
-
-function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
-  refreshSubscribers = [];
-}
-
-export function axiosInterceptor(store: Store) {
-  // Attach token
+export function setupAxiosInterceptors(store: Store) {
+  // Request interceptor
   api.interceptors.request.use(
     (config) => {
-      const token = (store.getState() as RootState).auth.accessToken;
+      // Get fresh token from store on each request
+      const { accessToken } = (store.getState() as RootState).auth;
 
-      if (token) config.headers["token"] = token;
+      if (accessToken && !config.headers["token"]) {
+        config.headers["token"] = `Bearer ${accessToken}`;
+      }
+
       return config;
     },
     (error) => Promise.reject(error)
   );
 
-  // // Handle 401 refresh logic
-  // api.interceptors.response.use(
-  //   (response) => response,
-  //   async (error) => {
-  //     const originalRequest = error.config;
+  // Response interceptor
+  api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error?.config;
 
-  //     if (error.response?.status === 401 && !originalRequest._retry) {
-  //       originalRequest._retry = true;
+      if (error?.response?.status === 403 && !originalRequest?._retry) {
+        originalRequest._retry = true;
 
-  //       if (isRefreshing) {
-  //         return new Promise((resolve) => {
-  //           refreshSubscribers.push((token) => {
-  //             originalRequest.headers["token"] = token;
-  //             resolve(api(originalRequest));
-  //           });
-  //         });
-  //       }
+        try {
+          await (store.dispatch as AppDispatch)(refreshTokens()).unwrap();
+          const { accessToken } = (store.getState() as RootState).auth;
 
-  //       isRefreshing = true;
+          // Update the original request with new token
+          if (accessToken) {
+            originalRequest.headers["token"] = `Bearer ${accessToken}`;
+          }
 
-  //       try {
-  //         const userId = store.getState().user.curUserId;
-  //         const res = await AuthApi.refreshToken(userId);
+          return api(originalRequest);
+        } catch (refreshError) {
+          // If refresh fails, reject and let AuthContext handle redirect
+          return Promise.reject(refreshError);
+        }
+      }
 
-  //         if (!res.success) {
-  //           store.dispatch(logout());
-  //           return Promise.reject(res.message);
-  //         }
-
-  //         const newToken = res.data;
-  //         store.dispatch(setTokens(newToken));
-  //         onRefreshed(newToken);
-  //         originalRequest.headers["token"] = newToken;
-  //         return api(originalRequest);
-  //       } catch (err) {
-  //         store.dispatch(logout());
-  //         return Promise.reject(err);
-  //       } finally {
-  //         isRefreshing = false;
-  //       }
-  //     }
-
-  //     return Promise.reject(error);
-  //   }
-  // );
+      return Promise.reject(error);
+    }
+  );
 }
 
 export default api;

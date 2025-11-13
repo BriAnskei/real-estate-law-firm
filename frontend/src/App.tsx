@@ -1,5 +1,4 @@
-import { Route, Routes, useNavigate } from "react-router-dom";
-import { ScrollToTop } from "./components/common/ScrollToTop";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import SignInForm from "./components/auth/SignInForm";
@@ -11,7 +10,6 @@ import { appRoutes } from "./routes/userRouteNav";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./store/selector/user/userSelector";
 import { Roles } from "./store/Slice/userSlice";
-import { useEffect } from "react";
 
 const AppRoutes = ({ userRole }: { userRole: Roles }) => {
   return (
@@ -37,19 +35,14 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
 };
 
 export default function App() {
-  const navigate = useNavigate();
   const user = useSelector(selectCurrentUser);
-
-  useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
-  }, [user]);
 
   return (
     <>
-      <AppRoutes userRole={user?.role!} />
-      <Toaster position="top-left" />
+      <AuthProvider>
+        <AppRoutes userRole={user?.role!} />
+        <Toaster position="top-left" />
+      </AuthProvider>
     </>
   );
 }

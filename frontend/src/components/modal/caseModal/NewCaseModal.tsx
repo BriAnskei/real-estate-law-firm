@@ -1,10 +1,11 @@
 import { X } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface AddCaseModalProp {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export default function AddCaseModal({
@@ -132,7 +133,6 @@ export default function AddCaseModal({
               value={formData.description}
               onChange={handleChange}
               placeholder="Enter detailed description of the case"
-              rows="4"
               className="w-full rounded-lg border-2 border-gray-200
                bg-white px-4 py-3 text-sm text-gray-900 transition-all
                 focus:border-[#D4AF37] focus:outline-none resize-none 
@@ -229,7 +229,6 @@ export default function AddCaseModal({
                   value={formData.address}
                   onChange={handleChange}
                   placeholder="Enter client address"
-                  rows="2"
                   className="w-full rounded-lg border-2 border-gray-200
                    bg-white px-4 py-3 text-sm text-gray-900 transition-all
                     focus:border-[#D4AF37] focus:outline-none resize-none

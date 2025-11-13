@@ -5,6 +5,7 @@ import authRouter from "./route/auth.routes.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./route/user.routes.js";
 import registrationRouter from "./route/registration.routes.js";
+import caseRoute from "./route/case.route.js";
 
 const app = express();
 const PORT = 4000;
@@ -17,17 +18,29 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/registration", registrationRouter);
 
+app.use("/api/case", caseRoute);
+
 app.get("/", (req: Request, res: Response) => {
   res.send("Brian Pogi");
 });
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(`Error in ${err.functionName || "unknown"}:`, err.message);
-  res.status(500).json({
-    message: err.message || "Something went wrong",
-    function: err.functionName || "unknown",
-    success: false,
-  });
+
+  if (err.functionName === "authMiddleware") {
+    console.log("accesToken");
+    res.status(403).json({
+      message: err.message || "Something went wrong",
+      function: err.functionName || "unknown",
+      success: false,
+    });
+  } else {
+    res.status(500).json({
+      message: err.message || "Something went wrong",
+      function: err.functionName || "unknown",
+      success: false,
+    });
+  }
 });
 
 app.listen(PORT, () => {

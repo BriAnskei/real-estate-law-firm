@@ -1,6 +1,8 @@
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Eye, X } from "lucide-react";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, Plus, Eye } from "lucide-react";
 import { useCases } from "../../hooks/case/useConsultCases";
+import AddCaseModal from "../../components/modal/caseModal/NewCaseModal";
+import { ViewCaseModal } from "../../components/modal/caseModal/ViewCaseModal";
 
 // Mock data - In real app, this would come from API
 const generateMockCases = (page) => {
@@ -72,7 +74,6 @@ export default function ConsultationPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [scrollPosition, setScrollPosition] = useState(0);
 
-  const [selectedCase, setSelectedCase] = useState(null);
   const totalPages = 5;
   const cardsToShow = 4;
 
@@ -118,7 +119,7 @@ export default function ConsultationPage() {
             </p>
           </div>
           <button
-            onClick={handleAddCase}
+            onClick={addNewCaseModalState.openAddNewCaseModal}
             className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 shadow-sm"
           >
             <Plus className="h-4 w-4" />
@@ -233,19 +234,16 @@ export default function ConsultationPage() {
 
       {/* Modals */}
       <ViewCaseModal
-        isOpen={isViewModalOpen}
-        onClose={() => {
-          setIsViewModalOpen(false);
-          setSelectedCase(null);
-        }}
-        caseData={selectedCase}
-        onConfirm={handleConfirmPayment}
+        isOpen={viewCaseModalState.isViewConsultCaseModalOpen}
+        onClose={viewCaseModalState.closeViewConsultCaseModal}
+        caseData={viewCaseModalState.selectedCase}
+        onConfirm={viewCaseModalState.confirmCase}
       />
 
       <AddCaseModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleSubmitNewCase}
+        isOpen={addNewCaseModalState.isAddNewCaseModal}
+        onClose={addNewCaseModalState.closeAddNewCaseModal}
+        onSubmit={addNewCaseModalState.onSubmit}
       />
 
       <style>{`

@@ -15,10 +15,13 @@ export const useViewConsultCaseModal = () => {
     setIsViewConsultCaseModalOpen(false);
   };
 
+  const confirmCase = async () => {};
+
   return {
     openViewConsultCaseModal,
     closeViewConsultCaseModal,
     selectedCase,
     isViewConsultCaseModalOpen,
+    confirmCase,
   };
 };

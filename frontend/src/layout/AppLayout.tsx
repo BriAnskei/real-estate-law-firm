@@ -31,9 +31,7 @@ const LayoutContent: React.FC = () => {
 const AppLayout: React.FC = () => {
   return (
     <SidebarProvider>
-      <AuthProvider>
-        <LayoutContent />
-      </AuthProvider>
+      <LayoutContent />
     </SidebarProvider>
   );
 };

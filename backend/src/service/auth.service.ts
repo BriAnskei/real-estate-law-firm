@@ -267,7 +267,7 @@ export class AuthService {
         },
       };
     } catch (error) {
-      throw new Error("refreshUserTokens -> " + error);
+      throw error;
     }
   }
 
