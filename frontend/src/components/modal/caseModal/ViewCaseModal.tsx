@@ -1,10 +1,15 @@
 import { X } from "lucide-react";
 import { useState } from "react";
+import { CaseType } from "../../../store/Slice/case.slice";
+import {
+  dateDisplay,
+  isTodayOrWithin3Days,
+} from "../../../hooks/case/useConsultCases";
 
 type ViewCaseModalProp = {
   isOpen: boolean;
   onClose: () => void;
-  caseData: any;
+  caseData: CaseType;
   onConfirm: (data: any) => void;
 };
 
@@ -97,7 +102,7 @@ export function ViewCaseModal({
                 Client Name
               </label>
               <p className="text-sm font-bold text-gray-900 dark:text-white mt-1">
-                {caseData.clientName}
+                {caseData.client_name}
               </p>
             </div>
             <div>
@@ -105,9 +110,29 @@ export function ViewCaseModal({
                 Date Filed
               </label>
               <p className="text-sm font-bold text-gray-900 dark:text-white mt-1">
-                {caseData.date}
+                {new Date(caseData.created_at!).toLocaleString([], {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
               </p>
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Consultation Date/Time
+            </label>
+            <p
+              className={`text-sm font-bold ${
+                isTodayOrWithin3Days(new Date(caseData.consultation_date!))
+                  ? "text-orange-400"
+                  : "text-gray-900 dark:text-white"
+              } mt-1`}
+            >
+              {dateDisplay(new Date(caseData.consultation_date!)) ||
+                "Not scheduled"}
+            </p>
           </div>
 
           <div className="h-px w-full bg-gray-200 dark:bg-gray-700"></div>

@@ -60,7 +60,10 @@ export class UsersService {
       const likeValue = `%${searchTerm}%`;
       const params = [likeValue, likeValue, likeValue];
 
-      const [rows] = await pool.query<(users & RowDataPacket)[]>(query, params);
+      const [rows] = await pool.execute<(users & RowDataPacket)[]>(
+        query,
+        params
+      );
       return rows;
     } catch (error) {
       throw new Error("findByEmailOrName -> " + error);

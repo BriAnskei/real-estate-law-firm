@@ -8,13 +8,13 @@ const caseRoute = express.Router();
 caseRoute.post(
   "/create",
   asyncHandler(authMiddleware),
-  asyncHandler(CaseController.new)
+  asyncHandler(CaseController.addNewCase)
 );
 
 caseRoute.get(
-  "/get/all",
-  asyncHandler(authMiddleware),
-  asyncHandler(CaseController.getAll)
+  "/get/unpaid",
+
+  asyncHandler(CaseController.getAllUnpaid)
 );
 
 export default caseRoute;

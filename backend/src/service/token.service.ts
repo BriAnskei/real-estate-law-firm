@@ -36,7 +36,7 @@ export class TokenService {
 
       return rows[0];
     } catch (error) {
-      throw new Error(`createRefreshToken -> ${(error as Error).message}`);
+      throw new Error(`findByToken -> ${(error as Error).message}`);
     }
   }
 

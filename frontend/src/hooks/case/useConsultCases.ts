@@ -5,13 +5,15 @@ import { useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "../../store/store";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { fetchAllCases } from "../../store/Slice/case.slice";
+import { fetchAllUnpaidCases } from "../../store/Slice/case.slice";
 
-export const useCases = () => {
+const useConsultationCases = () => {
   const dispatch = useDispatch<AppDispatch>();
   const viewCaseModalState = useViewConsultCaseModal();
-  const addNewCaseModalState = useAddNewConsultCase(dispatch);
-  const { byId, allIds } = useSelector((state: RootState) => state.case);
+
+  const caseState = useSelector((state: RootState) => state.case);
+  const addNewCaseModalState = useAddNewConsultCase(dispatch, caseState);
+  const { unpaidIds: allIds, unpaidById: byId, totalPages } = caseState;
 
   useEffect(() => {
     async function fetchAll() {
@@ -19,7 +21,7 @@ export const useCases = () => {
       if (allIds.length > 0) return;
 
       try {
-        await dispatch(fetchAllCases()).unwrap();
+        await dispatch(fetchAllUnpaidCases()).unwrap();
       } catch (error) {
         console.log(error);
       }
@@ -33,5 +35,42 @@ export const useCases = () => {
     addNewCaseModalState,
     allIds,
     byId,
+    totalPages,
   };
 };
+
+export function dateDisplay(dateData: Date): string {
+  const today = isToday(dateData);
+
+  return today
+    ? dateData.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : dateData.toLocaleString([], {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+}
+
+function isToday(date: Date): boolean {
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+export function isTodayOrWithin3Days(date: Date): boolean {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const consultDate = new Date(date);
+  consultDate.setHours(0, 0, 0, 0);
+
+  const diff = consultDate.getTime() - now.getTime();
+  const threeDays = 3 * 24 * 60 * 60 * 1000;
+
+  return diff >= 0 && diff <= threeDays;
+}
+
+export default useConsultationCases;
