@@ -13,8 +13,20 @@ caseRoute.post(
 
 caseRoute.get(
   "/get/unpaid",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.getAllNoPay)
+);
 
-  asyncHandler(CaseController.getAllUnpaid)
+caseRoute.patch(
+  "/update/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.update)
+);
+
+caseRoute.delete(
+  "/delete/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.delete)
 );
 
 export default caseRoute;

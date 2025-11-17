@@ -244,6 +244,9 @@ export class AuthService {
     }>
   > {
     try {
+      console.log(
+        "validating refresh token -------------------------------------------"
+      );
       const validationResponse = await TokenService.validateRefreshToken(
         refreshToken
       );
@@ -259,6 +262,9 @@ export class AuthService {
         rememberMeIssued: data?.rememberMe!,
       });
 
+      console.log(
+        "fetched new refresh token -------------------------------------------"
+      );
       return {
         success: true,
         data: {
@@ -267,6 +273,8 @@ export class AuthService {
         },
       };
     } catch (error) {
+      console.error("Failed to fetch token: ", error);
+
       throw error;
     }
   }

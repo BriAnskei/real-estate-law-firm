@@ -110,6 +110,7 @@ export class AuthController {
   /**Issue new tokens*/
   static async refreshToken(req: Request, res: Response): Promise<any> {
     const refreshToken = req.cookies.refreshToken;
+    console.log("refreshing token: ", refreshToken);
 
     // no token to refresh
     if (!refreshToken)

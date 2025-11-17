@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (error) {
         const err = error as AxiosError;
         hasFetchedUser.current = false;
-        console.log("Failed to fetch user:", err);
+        console.error(err);
         const status = err?.response?.status || err?.status;
         if (status === 401 || status === 403) {
           navigate("/signin", { replace: true });

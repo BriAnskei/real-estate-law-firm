@@ -5,10 +5,6 @@ export const useViewConsultCaseModal = () => {
     useState(false);
   const [selectedCase, setSelectedCase] = useState<any>(null);
 
-  useEffect(() => {
-    console.log("selected case: ", selectedCase);
-  }, [selectedCase]);
-
   const openViewConsultCaseModal = (selectedCase: any) => {
     setSelectedCase(selectedCase);
     setIsViewConsultCaseModalOpen(true);

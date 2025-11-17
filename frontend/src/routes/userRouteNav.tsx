@@ -11,6 +11,7 @@ import Home from "../pages/Dashboard/Home";
 import ConsultationPage from "../pages/LegalCase/ConsultationPage";
 import AccountRequest from "../pages/AdminPages/AccountRequestPage";
 import AllAccountPage from "../pages/AdminPages/AllAccountsPage";
+import ClientPage from "../pages/LegalCase/ClientsPage";
 
 export type NavItem = {
   name: string;
@@ -29,12 +30,12 @@ const cases: NavItem = {
       path: "/consultation",
     },
     {
-      name: "All Cases",
+      name: "Ongoing Case",
       path: "/request",
     },
     {
       name: "Clients",
-      path: "/users",
+      path: "/client",
     },
   ],
 };
@@ -114,6 +115,7 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
   [Roles.foundingManager]: [
     { path: "/", element: <Home /> },
     { path: "/consultation", element: <ConsultationPage /> },
+    { path: "/client", element: <ClientPage /> },
     { path: "/request", element: <AccountRequest /> },
     { path: "/accounts", element: <AllAccountPage /> },
   ],

@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import userRouter from "./route/user.routes.js";
 import registrationRouter from "./route/registration.routes.js";
 import caseRoute from "./route/case.route.js";
+import clientRoute from "./route/client.route.js";
 
 const app = express();
 const PORT = 4000;
@@ -17,8 +18,8 @@ app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/registration", registrationRouter);
-
 app.use("/api/case", caseRoute);
+app.use("/api/client", clientRoute);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Brian Pogi");

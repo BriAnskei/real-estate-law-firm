@@ -10,6 +10,7 @@ import { appRoutes } from "./routes/userRouteNav";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./store/selector/user/userSelector";
 import { Roles } from "./store/Slice/userSlice";
+import { RootState } from "./store/store";
 
 const AppRoutes = ({ userRole }: { userRole: Roles }) => {
   return (
@@ -35,6 +36,7 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
 };
 
 export default function App() {
+  const { loading } = useSelector((state: RootState) => state.auth);
   const user = useSelector(selectCurrentUser);
 
   return (

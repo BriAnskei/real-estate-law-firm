@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { CaseSerice } from "../service/case.service.js";
+import { CaseService } from "../service/case.service.js";
 
 export class CaseController {
-  static async addNewCase(req: Request, res: Response): Promise<any> {
+  static async addNewCase(req: Request, res: Response): Promise<void> {
     const { caseData, clientData } = req.body;
 
-    const newCaseData = await CaseSerice.handleNewCase({
+    const newCaseData = await CaseService.handleNewCase({
       caseData,
       clientData,
     });
@@ -13,13 +13,39 @@ export class CaseController {
     res.json({ success: true, data: newCaseData });
   }
 
-  static async getAllUnpaid(req: Request, res: Response): Promise<any> {
+  static async getAllNoPay(req: Request, res: Response): Promise<void> {
     const page = Number(req.query.page) || 1;
 
-    const unpaidPaginatedCases = await CaseSerice.getAllNoPay({
+    const filters = {
+      query: req.query.query as string,
+      sortFilter: req.query.sortFilter as string,
+    };
+
+    const unpaidPaginatedCases = await CaseService.fetchCases({
       page,
+      filters,
     });
 
     res.json({ success: true, data: unpaidPaginatedCases });
+  }
+
+  static async update(req: Request, res: Response): Promise<void> {
+    const id = req.params.id;
+    const { caseUpdate, clientUpdate } = req.body;
+
+    await CaseService.handleUpdateCaseConsultation({
+      caseId: id,
+      caseUpdate,
+      clientUpdate,
+    });
+    res.json({ success: true });
+  }
+
+  static async delete(req: Request, res: Response): Promise<void> {
+    const id = req.params.id;
+
+    await CaseService.deleteCaseById(id);
+
+    res.json({ success: true });
   }
 }

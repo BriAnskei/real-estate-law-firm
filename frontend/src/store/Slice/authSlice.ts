@@ -141,7 +141,18 @@ const authSlice = createSlice({
       })
       .addCase(signIn.rejected, (state, action) => {
         state.error = action.payload as string;
+        state.loading = false;
+      })
+
+      .addCase(signOut.pending, (state) => {
         state.loading = true;
+      })
+      .addCase(signOut.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(signOut.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.loading = false;
       })
 
       .addCase(refreshTokens.pending, (state) => {
@@ -152,7 +163,7 @@ const authSlice = createSlice({
       })
       .addCase(refreshTokens.rejected, (state, action) => {
         state.error = action.payload as string;
-        state.loading = true;
+        state.loading = false;
       });
   },
 });
