@@ -43,6 +43,25 @@ export class ClientService {
     }
   }
 
+  static async search(name: string): Promise<ClientModel[] | undefined> {
+    try {
+      const query = `
+    SELECT *
+    FROM client
+    WHERE client_name LIKE ?
+    ORDER BY client_name ASC
+  `;
+      const [rows] = await pool.execute<(ClientModel & RowDataPacket)[]>(
+        query,
+        [`%${name}%`]
+      );
+      return rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async findById(id: string): Promise<ResponseType<ClientModel>> {
     try {
       const [rows] = await pool.execute<(ClientModel & RowDataPacket)[]>(
@@ -113,7 +132,7 @@ export class ClientService {
 
       const [res] = await pool.execute(
         `
-  DELETE FROM client WHERE id = ?  ORDER BY created_at DEST
+  DELETE FROM client WHERE id = ?  
   `,
         [id]
       );

@@ -14,14 +14,19 @@ export type ClientFormType = {
 
 export type ClientType = ClientFormType & {
   id: string;
-  creeated_at: string;
+  created_at: string;
 };
 
 export const clientAdapter = createEntityAdapter<ClientType>();
-const initialState = clientAdapter.getInitialState({
+export const filteredClientAdapter = createEntityAdapter<ClientType>();
+
+const initialState = {
+  ...clientAdapter.getInitialState(),
+  filtered: filteredClientAdapter.getInitialState(),
+  filterLoading: false,
   loading: false,
   error: null as string | null,
-});
+};
 
 export const fetchClientById = createAsyncThunk(
   "client/find",
@@ -44,11 +49,24 @@ export const fetchAllClients = createAsyncThunk(
     try {
       const res = await ClientApi.fetch();
 
-      console.log("fteching responmse: ", res);
-
       if (!res.success) return rejectWithValue(res.message!);
 
       return res.data!;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const filterClient = createAsyncThunk(
+  "client/filter",
+  async (query: string, { rejectWithValue }) => {
+    try {
+      const res = await ClientApi.search(query);
+
+      if (!res.success)
+        return rejectWithValue(res.message || "Failed to fetch client");
+      return res.data;
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -75,6 +93,10 @@ export const clientSlice = createSlice({
   initialState,
   reducers: {
     addClient: clientAdapter.addOne,
+    updateClient: clientAdapter.updateOne,
+    clearClientFilter: (state) => {
+      filteredClientAdapter.removeAll(state.filtered);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -86,9 +108,9 @@ export const clientSlice = createSlice({
         state.loading = false;
         clientAdapter.upsertOne(state, action.payload);
       })
-      .addCase(fetchClientById.rejected, (state) => {
+      .addCase(fetchClientById.rejected, (state, action) => {
         state.loading = false;
-        state.error = "Failed to fetch clients.";
+        state.error = action.payload as string;
       })
 
       .addCase(fetchAllClients.pending, (state) => {
@@ -101,7 +123,19 @@ export const clientSlice = createSlice({
       })
       .addCase(fetchAllClients.rejected, (state) => {
         state.loading = false;
-        state.error = "Failed to fetch clients.";
+      })
+
+      .addCase(filterClient.pending, (state) => {
+        filteredClientAdapter.removeAll(state.filtered);
+        state.filterLoading = true;
+      })
+      .addCase(filterClient.fulfilled, (state, action) => {
+        filteredClientAdapter.setAll(state.filtered, action.payload!);
+        state.filterLoading = false;
+      })
+      .addCase(filterClient.rejected, (state, action) => {
+        state.filterLoading = false;
+        state.error = action.payload as string;
       })
 
       .addCase(deleteClient.pending, (state) => {
@@ -112,12 +146,13 @@ export const clientSlice = createSlice({
 
         state.loading = false;
       })
-      .addCase(deleteClient.rejected, (state) => {
+      .addCase(deleteClient.rejected, (state, action) => {
         state.loading = false;
-        state.error = "Failed to fetch clients.";
+        state.error = action.payload as string;
       });
   },
 });
 
-export const { addClient } = clientSlice.actions;
+export const { addClient, clearClientFilter, updateClient } =
+  clientSlice.actions;
 export default clientSlice.reducer;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { createChangeHandler } from "../util/createOnChangeHandler";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../provider/firebaseConfig";
@@ -91,32 +91,36 @@ const useSignUpVerification = () => {
     navigate("/signin");
   };
 
-  const handleSignUpProvider = async () => {
-    if (signUpInput.role === "select-option")
-      return errorToast("Please select your role to continue.");
+  const handleSignUpProvider = useCallback(async () => {
+    try {
+      if (signUpInput.role === "select-option")
+        return errorToast("Please select your role to continue.");
 
-    const res = await signInWithPopup(auth, provider);
-    const token = await res.user.getIdToken();
+      const res = await signInWithPopup(auth, provider);
+      const token = await res.user.getIdToken();
 
-    await promiseToast(
-      async () => {
-        await dispatch(
-          googleSignUp({ token, role: signUpInput.role })
-        ).unwrap();
-      },
-      {
-        loading: "Submitting registration...",
-        success: () =>
-          "Registration successful! Please wait for the Administrator's approval.",
-        error: (err) =>
-          `Failed to register: ${
-            err || "Something went wrong. Please try again."
-          }`,
-      }
-    );
+      await promiseToast(
+        async () => {
+          await dispatch(
+            googleSignUp({ token, role: signUpInput.role })
+          ).unwrap();
+        },
+        {
+          loading: "Submitting registration...",
+          success: () =>
+            "Registration successful! Please wait for the Administrator's approval.",
+          error: (err) =>
+            `Failed to register: ${
+              err || "Something went wrong. Please try again."
+            }`,
+        }
+      );
 
-    navigate("/signin");
-  };
+      navigate("/signin");
+    } catch (error) {
+      console.error(error);
+    }
+  }, [signUpInput]);
 
   return {
     handleRoleOnChange,

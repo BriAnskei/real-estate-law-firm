@@ -35,10 +35,9 @@ const useConsultationCases = () => {
     filterCurrentPage,
     totalPages,
     currentPage,
-    addLoading,
   } = useSelector((state: RootState) => state.case);
 
-  const caseFormModal = useCaseFormModal(dispatch, addLoading);
+  const caseFormModal = useCaseFormModal(dispatch);
   const deleteCaseModal = useDeleteCase(dispatch);
   const viewCaseModalState = useViewConsultCaseModal();
 

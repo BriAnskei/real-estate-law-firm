@@ -5,9 +5,11 @@ import { useDispatch } from "react-redux";
 import { fetchAllUsers } from "../../../store/Slice/userSlice";
 import { useFilterUser } from "./useFilterUser";
 import { createFilterData } from "../../../util/createFilterData";
+import { selectIsAuthenticated } from "../../../store/selector/authSelector";
 
 export const useUsers = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const { allIds, byId, filterIds, filterById, loading, filterLoading } =
     useSelector((state: RootState) => state.user);
@@ -16,6 +18,20 @@ export const useUsers = () => {
     useFilterUser({
       dispatch,
     });
+
+  useEffect(() => {
+    async function fetch() {
+      try {
+        if (!isAuthenticated) return;
+        else if (allIds.length) return;
+
+        await dispatch(fetchAllUsers());
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetch();
+  }, [isAuthenticated]);
 
   const userStateData = createFilterData({
     originalData: { allIds, byId },

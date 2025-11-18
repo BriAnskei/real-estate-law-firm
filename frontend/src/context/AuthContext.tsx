@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppDispatch, RootState } from "../store/store";
 import { refreshTokens } from "../store/Slice/authSlice";
-import { fetchAllUsers, fetchCurrentUser } from "../store/Slice/userSlice";
+import { fetchCurrentUser } from "../store/Slice/userSlice";
 import { AxiosError } from "axios";
 
 const AuthContext = createContext(null);

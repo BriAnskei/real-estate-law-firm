@@ -112,7 +112,7 @@ export class CaseService {
   }
 
   /**
-   * this function will be used for the consultiotation cases(not payment yet)
+   * this function will be used for the consultation cases(not payment yet)
    * implemented using pagiantion control
    */
   static async fetchCases(payload: {

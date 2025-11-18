@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { Link, useNavigate } from "react-router";
+import { Link, replace, useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { clearAuth, signOut } from "../../store/Slice/authSlice";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../store/selector/user/userSelector";
+import { Roles } from "../../store/Slice/userSlice";
 
 export default function UserDropdown() {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,7 +28,7 @@ export default function UserDropdown() {
     try {
       await dispatch(signOut()).unwrap();
 
-      navigate("/signin");
+      navigate("/signin", { replace: true });
     } catch (error) {
       console.error(error);
     }
@@ -83,7 +84,8 @@ export default function UserDropdown() {
             className="block font-medium text-gray-800 text-theme-sm
            dark:text-white"
           >
-            {curUser?.firstName} {curUser?.lastName}
+            {curUser?.firstName} {curUser?.lastName}{" "}
+            {curUser?.role !== Roles.foundingManager && `(${curUser?.role})`}
           </span>
           <span
             className="mt-0.5 block text-theme-xs text-gray-600

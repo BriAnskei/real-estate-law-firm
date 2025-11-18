@@ -12,6 +12,7 @@ import ConsultationPage from "../pages/LegalCase/ConsultationPage";
 import AccountRequest from "../pages/AdminPages/AccountRequestPage";
 import AllAccountPage from "../pages/AdminPages/AllAccountsPage";
 import ClientPage from "../pages/LegalCase/ClientsPage";
+import OngoingCase from "../pages/LegalCase/OngoingCase";
 
 export type NavItem = {
   name: string;
@@ -31,7 +32,7 @@ const cases: NavItem = {
     },
     {
       name: "Ongoing Case",
-      path: "/request",
+      path: "/ongoing",
     },
     {
       name: "Clients",
@@ -80,8 +81,27 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
       ],
     },
     [Roles.lawyer]: {
-      menu: [],
-      others: [],
+      menu: [
+        {
+          icon: <GridIcon />,
+          name: "Dashboard",
+          path: "/",
+        },
+
+        cases,
+        {
+          icon: <CalenderIcon />,
+          name: "Calendar",
+          path: "/calendar",
+        },
+      ],
+      others: [
+        {
+          icon: <Notification />,
+          name: "Notifications",
+          path: "/notifications",
+        },
+      ],
     },
     [Roles.paralegal]: {
       menu: [],
@@ -119,7 +139,17 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/request", element: <AccountRequest /> },
     { path: "/accounts", element: <AllAccountPage /> },
   ],
-  [Roles.lawyer]: [],
+  [Roles.lawyer]: [
+    { path: "/", element: <Home /> },
+
+    // cases
+    { path: "/consultation", element: <ConsultationPage /> },
+    { path: "/ongoing", element: <OngoingCase /> },
+    { path: "/client", element: <ClientPage /> },
+
+    { path: "/request", element: <AccountRequest /> },
+    { path: "/accounts", element: <AllAccountPage /> },
+  ],
   [Roles.paralegal]: [],
   [Roles.processServer]: [
     { path: "/", element: <Home /> },

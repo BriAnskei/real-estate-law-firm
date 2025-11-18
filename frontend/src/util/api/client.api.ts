@@ -9,6 +9,8 @@ export class ClientApi {
 
       return { ...res.data };
     } catch (error) {
+      console.error(error);
+
       throw error;
     }
   }
@@ -19,6 +21,23 @@ export class ClientApi {
 
       return res.data;
     } catch (error) {
+      console.error(error);
+
+      throw error;
+    }
+  }
+
+  static async search(
+    query: string
+  ): Promise<ApiResponseType<ClientType[] | undefined>> {
+    try {
+      const res = await api.get("/api/client/search", {
+        params: { query },
+      });
+
+      return res.data;
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }
@@ -29,6 +48,7 @@ export class ClientApi {
 
       return res.data;
     } catch (error) {
+      console.error(error);
       throw error;
     }
   }

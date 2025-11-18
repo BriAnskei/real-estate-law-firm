@@ -3,6 +3,9 @@ import {
   selectClientEntities,
   selectClientIds,
   selectClientLoading,
+  selectFilterClientEntities,
+  selectFilterClientIds,
+  selectFilterClientLoading,
 } from "../../store/selector/clientSelector";
 import { useEffect } from "react";
 
@@ -11,14 +14,17 @@ const useClientSelector = () => {
   const allIds = useSelector(selectClientIds);
   const byId = useSelector(selectClientEntities);
 
-  useEffect(() => {
-    console.log("updated: ", allIds, loading);
-  }, [loading, allIds]);
+  const filterloading = useSelector(selectFilterClientLoading);
+  const filterIds = useSelector(selectFilterClientIds);
+  const filterbyId = useSelector(selectFilterClientEntities);
 
   return {
     loading,
     byId,
     allIds,
+    filterloading,
+    filterIds,
+    filterbyId,
   };
 };
 

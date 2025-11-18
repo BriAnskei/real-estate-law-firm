@@ -1,66 +1,100 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useClientSelector from "../../selectors/useClientSelector";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "../../../store/selector/authSelector";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import {
-  deleteClient,
+  clearClientFilter,
+  ClientType,
   fetchAllClients,
+  filterClient,
 } from "../../../store/Slice/client.slice";
-import { useToast } from "../../useToast";
+import { useDeleteClient } from "./useDeleteClient";
+import { debouncer } from "../../../util/debouncer";
+import { createFilterData } from "../../../util/createFilterData";
 
 export const useClient = () => {
-  const { loading, byId, allIds } = useClientSelector();
+  const { loading, byId, allIds, filterloading, filterIds, filterbyId } =
+    useClientSelector();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const dispatch = useDispatch<AppDispatch>();
 
-  const { errorToast, successToast } = useToast();
-
-  const [search, setSearch] = useState<string | undefined>(undefined);
+  // other hooks
+  const deleteModal = useDeleteClient(dispatch);
 
   const [fetchingLoading, setFetchingLoading] = useState(false);
 
+  // filters
+  const [search, setSearch] = useState<string | undefined>(undefined);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const debounceFilterRef = useRef<ReturnType<typeof debouncer> | null>(null);
+
   useEffect(() => {
     async function initialFetch() {
-      setFetchingLoading(true);
       try {
-        // cancel inital fetch if not authentiacet or already has data
-        if (allIds.length > 0) return;
-        else if (!isAuthenticated) return;
+        // cancel inital fetch if not authenticaed or already has data
+        if (!isAuthenticated) return;
+        else if (allIds.length > 0) return;
 
+        setFetchingLoading(true);
         await dispatch(fetchAllClients()).unwrap();
-        setFetchingLoading(false);
       } catch (error) {
         console.error(error);
+      } finally {
+        setFetchingLoading(false);
       }
     }
 
     initialFetch();
   }, [isAuthenticated]);
 
-  const deleteData = useCallback(async (id: string) => {
-    try {
-      dispatch(deleteClient(id)).unwrap();
+  const clearFilter = () => {
+    console.log("clearing filters");
+    setSearch(undefined);
+    dispatch(clearClientFilter());
+  };
 
-      successToast("Client successfully removed");
+  // filters
+  const handleFilter = useCallback(async (query: string) => {
+    try {
+      await dispatch(filterClient(query)).unwrap();
     } catch (error) {
-      errorToast(error as string);
+      console.error(error);
+    } finally {
+      setIsFiltering(false);
     }
   }, []);
 
-  const clearFilter = () => {
-    setSearch(undefined);
-    // TODO: implememnt a dispatcher to to clear the filter state
-  };
+  useEffect(() => {
+    if (search?.trim()) {
+      setIsFiltering(true);
+      debounceFilterRef.current!(search);
+    }
+  }, [search]);
+
+  // initialize ref for filter
+  useEffect(() => {
+    if (!debounceFilterRef.current) {
+      debounceFilterRef.current = debouncer(handleFilter, 400);
+    }
+  }, [handleFilter]);
+
+  const displayData = createFilterData<ClientType>({
+    originalData: { byId, allIds },
+    filteredData: { byId: filterbyId, allIds: filterIds },
+    filterOptions: {
+      searchInput: search ?? undefined,
+      filterLoading: isFiltering,
+    },
+  });
 
   return {
     setSearch,
     search,
-    loading: loading || fetchingLoading,
-    byId,
-    allIds,
-    deleteData,
+    loading: loading || filterloading || fetchingLoading || isFiltering,
+    displayData,
+    deleteModal,
     clearFilter,
   };
 };

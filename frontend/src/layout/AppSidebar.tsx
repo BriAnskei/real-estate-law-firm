@@ -1,5 +1,5 @@
 import { ChevronDownIcon } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useLocation, Link, useNavigate } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 
@@ -19,7 +19,7 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 
-  const sideBarNav = useRef(navRoutes[user?.role!]);
+  const sideBarNav = useMemo(() => navRoutes[user?.role!], [user]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -36,14 +36,11 @@ const AppSidebar: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!sideBarNav.current) return;
+    if (!sideBarNav) return;
 
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
-      const items =
-        menuType === "main"
-          ? sideBarNav.current.menu
-          : sideBarNav.current.others;
+      const items = menuType === "main" ? sideBarNav.menu : sideBarNav.others;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -62,7 +59,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [location, isActive, sideBarNav.current]);
+  }, [location, isActive, sideBarNav]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -256,7 +253,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6 text-[#D4AF37]" />
                 )}
               </h2>
-              {user && renderMenuItems(sideBarNav.current.menu, "main")}
+              {user && renderMenuItems(sideBarNav.menu, "main")}
             </div>
             <div className="">
               <h2
@@ -273,8 +270,8 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {user &&
-                sideBarNav.current.others.length > 0 &&
-                renderMenuItems(sideBarNav.current.others, "others")}
+                sideBarNav.others.length > 0 &&
+                renderMenuItems(sideBarNav.others, "others")}
               <button
                 className={`menu-item group relative mt-3 transition-all duration-300 text-gray-700 dark:text-gray-400 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 dark:hover:bg-[#D4AF37]/10 border-l-4 border-transparent ${
                   !isExpanded && !isHovered

@@ -11,6 +11,7 @@ type ViewCaseModalProp = {
   onClose: () => void;
   caseData: CaseType;
   onConfirm: (data: any) => void;
+  isInputEnable?: boolean;
 };
 
 export function ViewCaseModal({
@@ -18,6 +19,7 @@ export function ViewCaseModal({
   onClose,
   caseData,
   onConfirm,
+  isInputEnable,
 }: ViewCaseModalProp) {
   const [paymentType, setPaymentType] = useState("");
   const [promiseToPayDate, setPromiseToPayDate] = useState("");
@@ -143,39 +145,43 @@ export function ViewCaseModal({
 
             <div className="h-px w-full bg-gray-200 dark:bg-gray-700"></div>
 
-            {/* Payment Type Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Payment Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={paymentType}
-                onChange={(e) => setPaymentType(e.target.value)}
-                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37]"
-              >
-                <option value="">Select payment type</option>
-                <option value="paid">Paid in Full</option>
-                <option value="partial">Partial Payment</option>
-              </select>
-            </div>
-
-            {/* Promise to Pay Date (only shown for partial payment) */}
-            {paymentType === "partial" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  Promise to Pay Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={promiseToPayDate}
-                  onChange={(e) => setPromiseToPayDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37]"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Select the date when the remaining payment is expected
-                </p>
-              </div>
+            {isInputEnable && (
+              <>
+                {/* Payment Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Payment Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentType}
+                    onChange={(e) => setPaymentType(e.target.value)}
+                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37]"
+                  >
+                    <option value="">Select payment type</option>
+                    <option value="paid">Paid in Full</option>
+                    <option value="partial">Partial Payment</option>
+                  </select>
+                </div>
+                {/* Promise to Pay Date (only shown for partial payment) */}
+                {paymentType === "partial" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      Promise to Pay Date{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={promiseToPayDate}
+                      onChange={(e) => setPromiseToPayDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37]"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Select the date when the remaining payment is expected
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -185,14 +191,16 @@ export function ViewCaseModal({
               onClick={handleClose}
               className="rounded-lg border-2 border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-700"
             >
-              Cancel
+              {isInputEnable ? "Cancel" : "Close"}
             </button>
-            <button
-              onClick={handleConfirm}
-              className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95"
-            >
-              Confirm & Move to Ongoing
-            </button>
+            {isInputEnable && (
+              <button
+                onClick={handleConfirm}
+                className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95"
+              >
+                Confirm & Move to Ongoing
+              </button>
+            )}
           </div>
         </div>
       </div>

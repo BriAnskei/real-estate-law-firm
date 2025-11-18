@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { NormalizeState } from "./normalizeState";
 import { caseApi } from "../../util/api/case.api";
 import { normalizeResponse } from "../../util/normalizeResponse";
-import { addClient, ClientFormType } from "./client.slice";
+import { addClient, ClientFormType, updateClient } from "./client.slice";
 
 export type CaseType = {
   id?: string;
@@ -28,9 +28,11 @@ export const addNewCase = createAsyncThunk(
 
       if (!res.success) return rejectWithValue(res.message);
 
-      dispatch(createCase(res.data?.newCaseData));
+      const client = res.data?.newClientData!;
+      client.id = String(client.id);
+      dispatch(addClient(client));
 
-      dispatch(addClient(res.data?.newClietData!));
+      dispatch(createCase(res.data?.newCaseData));
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -107,6 +109,10 @@ export const updateCase = createAsyncThunk(
         return rejectWithValue(res.message);
       }
       dispatch(updateCaseData({ id: payload.id, updates: payload.caseUpdate }));
+
+      const clientId = payload.caseUpdate.client_id;
+      const updatedClient = payload.clientUpdate;
+      dispatch(updateClient({ id: clientId!, changes: updatedClient }));
     } catch (error) {
       return rejectWithValue(error);
     }

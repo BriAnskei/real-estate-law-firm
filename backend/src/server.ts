@@ -36,7 +36,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       success: false,
     });
   } else {
-    res.status(500).json({
+    res.json({
       message: err.message || "Something went wrong",
       function: err.functionName || "unknown",
       success: false,

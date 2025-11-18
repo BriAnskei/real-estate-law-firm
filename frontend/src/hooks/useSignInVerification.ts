@@ -23,7 +23,6 @@ export type SignInInputType = {
 
 const useSignInVerification = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
 
   const { errorToast } = useToast();
   const [signInInput, setSigninInput] = useState<SignInInputType>({

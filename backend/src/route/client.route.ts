@@ -17,6 +17,12 @@ clientRoute.get(
   asyncHandler(ClientController.fetchAll)
 );
 
+clientRoute.get(
+  "/search",
+
+  asyncHandler(ClientController.search)
+);
+
 clientRoute.delete(
   "/delete/:id",
   asyncHandler(authMiddleware),

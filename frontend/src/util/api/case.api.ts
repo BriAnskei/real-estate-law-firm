@@ -8,13 +8,11 @@ export class caseApi {
     caseData: CaseType;
     clientData: ClientFormType;
   }): Promise<
-    ApiResponseType<{ newCaseData: CaseType; newClietData: ClientType }>
+    ApiResponseType<{ newCaseData: CaseType; newClientData: ClientType }>
   > {
     try {
       const res = await api.post("/api/case/create", payload);
-      if (!res.data.success) {
-        return { success: false, message: res.data.message };
-      }
+
       return res.data;
     } catch (error) {
       console.log(error);

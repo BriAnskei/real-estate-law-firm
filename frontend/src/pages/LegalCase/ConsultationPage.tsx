@@ -17,9 +17,14 @@ import useConsultationCases, {
   isTodayOrWithin3Days,
 } from "../../hooks/case/useConsultCases";
 import { DeleteCaseModal } from "../../components/modal/caseModal/deleteCaseModal";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "../../store/selector/user/userSelector";
+import { Roles } from "../../store/Slice/userSlice";
 
 // Main Consultation Page Component
 export default function ConsultationPage() {
+  const user = useSelector(selectCurrentUser);
+
   const {
     viewCaseModalState,
     caseFormModal,
@@ -99,15 +104,17 @@ export default function ConsultationPage() {
               Manage and review consultation cases
             </p>
           </div>
-          <button
-            onClick={() => caseFormModal.openCaseFormModal()}
-            className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-5 
+          {[Roles.paralegal, Roles.foundingManager].includes(user?.role!) && (
+            <button
+              onClick={() => caseFormModal.openCaseFormModal()}
+              className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-5 
             py-3 text-sm font-medium text-white transition-all 
             hover:bg-[#C4A037] active:scale-95 shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Add New Case
-          </button>
+            >
+              <Plus className="h-4 w-4" />
+              Add New Case
+            </button>
+          )}
         </div>
 
         {/* Search Bar and Filters */}
@@ -231,39 +238,43 @@ export default function ConsultationPage() {
                             }s both`,
                           }}
                         >
-                          <div
-                            className="absolute top-3 right-3 flex gap-1 
+                          {[Roles.paralegal, Roles.foundingManager].includes(
+                            user?.role!
+                          ) && (
+                            <div
+                              className="absolute top-3 right-3 flex gap-1 
                           opacity-0 group-hover:opacity-100 transition-opacity
                            duration-200"
-                          >
-                            <button
-                              onClick={() =>
-                                caseFormModal.openCaseFormModal(caseData)
-                              }
-                              className="rounded-md bg-gray-100 dark:bg-inherit
+                            >
+                              <button
+                                onClick={() =>
+                                  caseFormModal.openCaseFormModal(caseData)
+                                }
+                                className="rounded-md bg-gray-100 dark:bg-inherit
                                p-1.5 text-gray-600 dark:text-gray-400 
                                transition-all hover:text-blue-500 
                                dark:hover:text-blue-400 active:scale-95"
-                              title="Edit case"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                deleteCaseModal.openDeleteCase({
-                                  caseId: caseData.id!,
-                                  concern: caseData.concern,
-                                })
-                              }
-                              className="rounded-md bg-gray-100 dark:bg-inherit
+                                title="Edit case"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  deleteCaseModal.openDeleteCase({
+                                    caseId: caseData.id!,
+                                    concern: caseData.concern,
+                                  })
+                                }
+                                className="rounded-md bg-gray-100 dark:bg-inherit
                                p-1.5 text-gray-600 dark:text-gray-400
                                 transition-all hover:text-red-500 
                                 dark:hover:text-red-400 active:scale-95"
-                              title="Delete case"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
+                                title="Delete case"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
 
                           {/* Concern Title */}
                           <h3
@@ -506,6 +517,9 @@ export default function ConsultationPage() {
         dateForm={caseFormModal.dateForm}
       />
       <ViewCaseModal
+        isInputEnable={[Roles.foundingManager, Roles.paralegal].includes(
+          user?.role!
+        )}
         isOpen={viewCaseModalState.isViewConsultCaseModalOpen}
         onClose={viewCaseModalState.closeViewConsultCaseModal}
         caseData={viewCaseModalState.selectedCase}

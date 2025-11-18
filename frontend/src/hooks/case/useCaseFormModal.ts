@@ -1,12 +1,13 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createChangeHandler } from "../../util/createOnChangeHandler";
 import { addNewCase, CaseType, updateCase } from "../../store/Slice/case.slice";
-import { AppDispatch } from "../../store/store";
+import { AppDispatch, RootState } from "../../store/store";
 import {
   ClientFormType,
   fetchClientById,
 } from "../../store/Slice/client.slice";
 import { useToast } from "../useToast";
+import { useSelector } from "react-redux";
 
 const initialCaseInput: CaseType = {
   concern: "",
@@ -24,11 +25,9 @@ const initialClientInput: ClientFormType = {
   email: "",
 };
 
-export const useCaseFormModal = (
-  dispatch: AppDispatch,
-  addLoading: boolean
-) => {
-  const { successToast } = useToast();
+export const useCaseFormModal = (dispatch: AppDispatch) => {
+  const addLoading = useSelector((state: RootState) => state.case.addLoading);
+  const { successToast, errorToast } = useToast();
 
   // modal opner hook
   const [isCaseFormModal, setIsCaseFormModal] = useState(false);
@@ -141,6 +140,9 @@ export const useCaseFormModal = (
 
   const onNewCaseSubmit = async () => {
     try {
+      const check = validateCaseForm();
+      if (!check.valid) return errorToast(check.message);
+
       setIsSubmitting(true);
       await dispatch(
         addNewCase({
@@ -152,9 +154,9 @@ export const useCaseFormModal = (
           },
         })
       ).unwrap();
+      setIsSubmitting(false);
       successToast("Case successfully added");
       closeCaseFormModal();
-      setIsSubmitting(false);
     } catch (error) {
       console.error(error);
     }
@@ -162,6 +164,9 @@ export const useCaseFormModal = (
 
   const onEditCaseSubmit = async () => {
     try {
+      const check = validateCaseForm();
+      if (!check.valid) return errorToast(check.message);
+
       setIsSubmitting(true);
       await dispatch(
         updateCase({
@@ -184,6 +189,14 @@ export const useCaseFormModal = (
 
   const mode: "edit" | "new" = selectedCase ? "edit" : "new";
 
+  const validateCaseForm = newFunction(
+    selectedCase,
+    newCaseInput,
+    selectedClient,
+    newClientInput,
+    dateForm
+  );
+
   return {
     caseInputValue: selectedCase ?? newCaseInput,
     clientInputValue: selectedClient ?? newClientInput,
@@ -202,3 +215,58 @@ export const useCaseFormModal = (
     fetchingClient,
   };
 };
+
+function newFunction(
+  selectedCase: CaseType | undefined,
+  newCaseInput: CaseType,
+  selectedClient: ClientFormType | undefined,
+  newClientInput: ClientFormType,
+  dateForm: { consultationDate: string; contultationTime: string }
+) {
+  return useCallback(() => {
+    const caseData = selectedCase ?? newCaseInput;
+    const clientData = selectedClient ?? newClientInput;
+
+    // --- 1. Check required client fields ---
+    if (
+      !clientData.client_name.trim() ||
+      !clientData.address.trim() ||
+      !clientData.email.trim() ||
+      clientData.contact_number === null
+    ) {
+      return { valid: false, message: "Please fill in all client fields." };
+    }
+
+    // --- 2. Check required case fields ---
+    if (!caseData.concern.trim() || !caseData.description.trim()) {
+      return { valid: false, message: "Please fill in all case fields." };
+    }
+
+    // --- 3. Check date and time selections ---
+    if (!dateForm.consultationDate || !dateForm.contultationTime) {
+      return {
+        valid: false,
+        message: "Please select consultation date and time.",
+      };
+    }
+
+    // Build date for comparison
+    const combinedDate = new Date(
+      `${dateForm.consultationDate} ${dateForm.contultationTime}`
+    );
+
+    if (isNaN(combinedDate.getTime())) {
+      return { valid: false, message: "Invalid consultation date/time." };
+    }
+
+    const now = new Date();
+    if (combinedDate < now) {
+      return {
+        valid: false,
+        message: "Consultation date/time cannot be in the past.",
+      };
+    }
+
+    return { valid: true, message: "" };
+  }, [newCaseInput, newClientInput, selectedCase, selectedClient, dateForm]);
+}

@@ -10,8 +10,16 @@ export class ClientController {
     res.json({ ...response });
   }
 
-  static async fetchAll(req: Request, res: Response) {
+  static async fetchAll(_: Request, res: Response) {
     const response = await ClientService.getAll();
+
+    res.json({ success: true, data: response });
+  }
+
+  static async search(req: Request, res: Response) {
+    const { query } = req.query;
+
+    const response = await ClientService.search(query as string);
 
     res.json({ success: true, data: response });
   }
