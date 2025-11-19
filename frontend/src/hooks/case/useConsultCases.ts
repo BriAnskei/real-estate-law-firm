@@ -39,7 +39,7 @@ const useConsultationCases = () => {
 
   const caseFormModal = useCaseFormModal(dispatch);
   const deleteCaseModal = useDeleteCase(dispatch);
-  const viewCaseModalState = useViewConsultCaseModal();
+  const viewCaseModalState = useViewConsultCaseModal(dispatch);
 
   // filter hooks
   const [search, setSearch] = useState<string | undefined>(undefined);

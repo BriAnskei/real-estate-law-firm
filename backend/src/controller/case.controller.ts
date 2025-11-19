@@ -41,6 +41,21 @@ export class CaseController {
     res.json({ success: true });
   }
 
+  static async markOngoing(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const { paymentMode, promiseToPay } = req.body;
+
+    await CaseService.markAsOngoing({ id, paymentMode, promiseToPay });
+
+    res.json({ success: true });
+  }
+
+  static async fetchAll(_: Request, res: Response): Promise<void> {
+    const response = await CaseService.fetchAllOngoing();
+
+    res.json({ success: true, data: response });
+  }
+
   static async delete(req: Request, res: Response): Promise<void> {
     const id = req.params.id;
 

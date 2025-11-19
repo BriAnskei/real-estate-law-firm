@@ -19,6 +19,22 @@ export class caseApi {
       throw error;
     }
   }
+
+  static async getAll(): Promise<ApiResponseType<CaseType[]>> {
+    try {
+      const res = await api.get("/api/case/get");
+
+      if (!res.data.success) {
+        throw new Error(res.data.message || "Failed to fetch all cases");
+      }
+
+      return res.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async getAllUnpaid(payload: {
     page?: number;
     filters?: { query?: string; sortFilter?: string };
@@ -66,6 +82,24 @@ export class caseApi {
       });
 
       return res.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async markAsOngoing(payload: {
+    id: string;
+    paymentMode: string;
+    promiseToPay: string;
+  }): Promise<void> {
+    try {
+      const { id, paymentMode, promiseToPay } = payload;
+      const res = await api.patch(`api/case/mark/ongoing/${id}`, {
+        paymentMode,
+        promiseToPay,
+      });
+      if (!res.data.success) throw new Error(res.data.message);
     } catch (error) {
       console.error(error);
       throw error;

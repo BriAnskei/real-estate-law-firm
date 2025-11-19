@@ -9,6 +9,7 @@ export const fetchCurrentUser = createAsyncThunk(
     try {
       const res = await UserApi.fetchUser();
 
+      console.log("fetching curr user");
       if (!res.success) {
         return rejectWithValue(res.message);
       }

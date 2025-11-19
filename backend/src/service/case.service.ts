@@ -112,8 +112,8 @@ export class CaseService {
   }
 
   /**
-   * this function will be used for the consultation cases(not payment yet)
-   * implemented using pagiantion control
+   * this function will be used for the consultation cases(no payment yet)
+   * paginated implmentation
    */
   static async fetchCases(payload: {
     page?: number;
@@ -176,6 +176,19 @@ export class CaseService {
         total,
       };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  static async fetchAllOngoing(): Promise<CasesModel[]> {
+    try {
+      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(`
+       SELECT * FROM cases WHERE paid IN ('partial', 'paid')
+      `);
+
+      return rows;
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }
@@ -272,6 +285,41 @@ export class CaseService {
       if (res.affectedRows === 0) throw new Error("Case not found");
     } catch (error) {
       console.error(error);
+      throw error;
+    }
+  }
+
+  static async markAsOngoing(payload: {
+    id: string;
+    paymentMode: string;
+    promiseToPay?: Date;
+  }) {
+    const { id, paymentMode, promiseToPay } = payload;
+
+    const updates: string[] = ["status = 'ongoing'"];
+    const values: any[] = [];
+
+    if (paymentMode === "partial") {
+      updates.push("promise_to_pay = ?");
+      values.push(promiseToPay);
+    }
+
+    updates.push("paid = ?");
+    values.push(paymentMode);
+
+    values.push(id);
+
+    const query = `
+    UPDATE cases 
+    SET ${updates.join(", ")} 
+    WHERE id = ?
+  `;
+
+    try {
+      const [rows] = await pool.execute<ResultSetHeader>(query, values);
+      if (rows.affectedRows === 0) throw new Error("Case not found");
+    } catch (error) {
+      console.error("Error updating case:", error);
       throw error;
     }
   }

@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import SignInForm from "./components/auth/SignInForm";
@@ -6,12 +6,20 @@ import SignUpForm from "./components/auth/SignUpForm";
 import AuthLayout from "./pages/AuthPages/AuthPageLayout";
 import AppLayout from "./layout/AppLayout";
 import NotFound from "./pages/OtherPage/NotFound";
-import { appRoutes } from "./routes/userRouteNav";
+import {
+  appRoutes,
+  caseTransaction,
+  CaseTransactionRoles,
+} from "./routes/userRouteNav";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./store/selector/user/userSelector";
 import { Roles } from "./store/Slice/userSlice";
 import { RootState } from "./store/store";
-import { useEffect } from "react";
+import AppInitializationLoader from "./components/ui/loading/AppInitializationLoader";
+
+function useCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
+  return role !== Roles.processServer;
+}
 
 const AppRoutes = ({ userRole }: { userRole: Roles }) => {
   return (
@@ -30,6 +38,14 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
           ))}
       </Route>
 
+      {/* Case transaction - whole page */}
+      {useCaseTransactionRole(userRole) && (
+        <Route
+          key={caseTransaction[userRole].path}
+          path={caseTransaction[userRole].path}
+          element={caseTransaction[userRole].element}
+        />
+      )}
       {/* Catch all - must be last */}
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -37,13 +53,17 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
 };
 
 export default function App() {
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const { loading } = useSelector((state: RootState) => state.user);
   const user = useSelector(selectCurrentUser);
 
   return (
     <>
       <AuthProvider>
-        <AppRoutes userRole={user?.role!} />
+        {loading ? (
+          <AppInitializationLoader isLoading={loading} />
+        ) : (
+          <AppRoutes userRole={user?.role!} />
+        )}
         <Toaster position="top-left" />
       </AuthProvider>
     </>

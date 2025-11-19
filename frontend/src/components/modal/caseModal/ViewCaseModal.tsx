@@ -12,6 +12,10 @@ type ViewCaseModalProp = {
   caseData: CaseType;
   onConfirm: (data: any) => void;
   isInputEnable?: boolean;
+  setPaymentType?: React.Dispatch<React.SetStateAction<string>>;
+  paymentType?: string;
+  setPromiseToPayDate?: React.Dispatch<React.SetStateAction<string>>;
+  promiseToPayDate?: string;
 };
 
 export function ViewCaseModal({
@@ -20,46 +24,19 @@ export function ViewCaseModal({
   caseData,
   onConfirm,
   isInputEnable,
+  setPaymentType,
+  paymentType,
+  setPromiseToPayDate,
+  promiseToPayDate,
 }: ViewCaseModalProp) {
-  const [paymentType, setPaymentType] = useState("");
-  const [promiseToPayDate, setPromiseToPayDate] = useState("");
-
   if (!isOpen || !caseData) return null;
-
-  const handleConfirm = () => {
-    if (!paymentType) {
-      alert("Please select a payment type");
-      return;
-    }
-
-    if (paymentType === "partial" && !promiseToPayDate) {
-      alert("Please select a promise to pay date for partial payment");
-      return;
-    }
-
-    onConfirm({
-      caseId: caseData.id,
-      paymentType,
-      ...(paymentType === "partial" && { promiseToPayDate }),
-      status: "ongoing",
-    });
-
-    setPaymentType("");
-    setPromiseToPayDate("");
-  };
-
-  const handleClose = () => {
-    setPaymentType("");
-    setPromiseToPayDate("");
-    onClose();
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleClose}
+        onClick={onClose}
       />
       <div className="relative z-10 w-full max-w-lg mx-4 animate-fadeIn">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -74,7 +51,7 @@ export function ViewCaseModal({
               </p>
             </div>
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="rounded-lg p-2 text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             >
               <X className="h-5 w-5" />
@@ -154,7 +131,7 @@ export function ViewCaseModal({
                   </label>
                   <select
                     value={paymentType}
-                    onChange={(e) => setPaymentType(e.target.value)}
+                    onChange={(e) => setPaymentType!(e.target.value)}
                     className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37]"
                   >
                     <option value="">Select payment type</option>
@@ -172,7 +149,7 @@ export function ViewCaseModal({
                     <input
                       type="date"
                       value={promiseToPayDate}
-                      onChange={(e) => setPromiseToPayDate(e.target.value)}
+                      onChange={(e) => setPromiseToPayDate!(e.target.value)}
                       min={new Date().toISOString().split("T")[0]}
                       className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37]"
                     />
@@ -188,14 +165,14 @@ export function ViewCaseModal({
           {/* Modal Footer */}
           <div className="flex items-center justify-end gap-3 border-t-2 border-gray-200 dark:border-gray-700 px-6 py-4">
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="rounded-lg border-2 border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-700"
             >
               {isInputEnable ? "Cancel" : "Close"}
             </button>
             {isInputEnable && (
               <button
-                onClick={handleConfirm}
+                onClick={onConfirm}
                 className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95"
               >
                 Confirm & Move to Ongoing

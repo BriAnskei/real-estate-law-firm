@@ -17,6 +17,18 @@ caseRoute.get(
   asyncHandler(CaseController.getAllNoPay)
 );
 
+caseRoute.get(
+  "/get",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.fetchAll)
+);
+
+caseRoute.patch(
+  "/mark/ongoing/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.markOngoing)
+);
+
 caseRoute.patch(
   "/update/:id",
   asyncHandler(authMiddleware),

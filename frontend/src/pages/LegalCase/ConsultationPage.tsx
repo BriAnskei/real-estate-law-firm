@@ -520,9 +520,13 @@ export default function ConsultationPage() {
         isInputEnable={[Roles.foundingManager, Roles.paralegal].includes(
           user?.role!
         )}
+        setPaymentType={viewCaseModalState.setPaymentType}
+        paymentType={viewCaseModalState.paymentType}
+        setPromiseToPayDate={viewCaseModalState.setPromiseToPayDate}
+        promiseToPayDate={viewCaseModalState.promiseToPayDate}
         isOpen={viewCaseModalState.isViewConsultCaseModalOpen}
         onClose={viewCaseModalState.closeViewConsultCaseModal}
-        caseData={viewCaseModalState.selectedCase}
+        caseData={viewCaseModalState.selectedCase!}
         onConfirm={viewCaseModalState.confirmCase}
       />
       <DeleteCaseModal

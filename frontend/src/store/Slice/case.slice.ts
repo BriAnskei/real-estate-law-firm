@@ -13,8 +13,8 @@ export type CaseType = {
   paid: "no" | "partial" | "paid";
   status: "ongiong" | "complete";
   consultation_date: string;
-  promise_to_pay?: Date;
-  created_at?: Date;
+  promise_to_pay?: string;
+  created_at?: string;
 };
 
 export const addNewCase = createAsyncThunk(
@@ -33,6 +33,21 @@ export const addNewCase = createAsyncThunk(
       dispatch(addClient(client));
 
       dispatch(createCase(res.data?.newCaseData));
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const fetchAllCases = createAsyncThunk(
+  "case/get",
+  async (_: void, { rejectWithValue, dispatch }) => {
+    try {
+      const res = await caseApi.getAll();
+
+      dispatch(setAllCases(res.data));
+
+      return res.data;
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -77,7 +92,7 @@ export const filterUnpaidCases = createAsyncThunk(
     try {
       const res = await caseApi.getAllUnpaid(payload);
 
-      if (!res.success) rejectWithValue(res.message);
+      if (!res.success) return rejectWithValue(res.message);
 
       dispatch(
         setFilterCases({
@@ -113,6 +128,25 @@ export const updateCase = createAsyncThunk(
       const clientId = payload.caseUpdate.client_id;
       const updatedClient = payload.clientUpdate;
       dispatch(updateClient({ id: clientId!, changes: updatedClient }));
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const markCaseAsOngoing = createAsyncThunk(
+  "case/ongoing",
+  async (
+    payload: {
+      id: string;
+      paymentMode: string;
+      promiseToPay: string;
+    },
+    { rejectWithValue, dispatch }
+  ) => {
+    try {
+      await caseApi.markAsOngoing(payload);
+      dispatch(markOngoingCase(payload));
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -193,6 +227,37 @@ const caseSlice = createSlice({
       if (state.unpaidById[id]) {
         state.unpaidById[id] = { ...state.unpaidById[id], ...updates };
       }
+
+      if (state.filterById[id]) {
+        state.filterById[id] = { ...state.filterById[id], ...updates };
+      }
+    },
+
+    markOngoingCase: (state, action) => {
+      const { id, paymentMode, promiseToPay } = action.payload;
+
+      const caseData = state.unpaidById[id];
+      const isPromiseTopayIssue = paymentMode === "partial";
+
+      delete state.unpaidById[id];
+      state.unpaidIds = state.unpaidIds.filter((caseId) => caseId !== id);
+
+      delete state.filterById[id];
+      state.filterIds = state.filterIds.filter((caseId) => caseId !== id);
+
+      state.byId[id] = {
+        ...caseData,
+        paid: paymentMode,
+        ...(isPromiseTopayIssue && { promise_to_pay: promiseToPay }),
+      };
+      state.allIds.push(id);
+    },
+
+    setAllCases: (state, action) => {
+      const { byId, allIds } = normalizeResponse(action.payload);
+
+      state.byId = byId;
+      state.allIds = allIds;
     },
 
     setUnpaidCases: (state, action) => {
@@ -235,6 +300,17 @@ const caseSlice = createSlice({
       })
       .addCase(addNewCase.rejected, (state, action) => {
         state.addLoading = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(fetchAllCases.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchAllCases.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(fetchAllCases.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload as string;
       })
 
@@ -304,5 +380,7 @@ export const {
   updateCaseData,
   setFilterCases,
   clearCaseFilter,
+  setAllCases,
+  markOngoingCase,
 } = caseSlice.actions;
 export default caseSlice.reducer;
