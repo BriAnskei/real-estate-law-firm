@@ -13,7 +13,13 @@ export class CaseController {
     res.json({ success: true, data: newCaseData });
   }
 
-  static async getAllNoPay(req: Request, res: Response): Promise<void> {
+  static async fetchAll(_: Request, res: Response): Promise<void> {
+    const response = await CaseService.fetchAllOngoing();
+
+    res.json({ success: true, data: response });
+  }
+
+  static async getPending(req: Request, res: Response): Promise<void> {
     const page = Number(req.query.page) || 1;
 
     const filters = {
@@ -27,6 +33,17 @@ export class CaseController {
     });
 
     res.json({ success: true, data: unpaidPaginatedCases });
+  }
+
+  static async findById(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+
+    const response = await CaseService.findById(id);
+
+    if (!response.success)
+      throw new Error(response.message || "Failed to find case");
+
+    res.json({ success: true, data: response.data });
   }
 
   static async update(req: Request, res: Response): Promise<void> {
@@ -45,15 +62,9 @@ export class CaseController {
     const { id } = req.params;
     const { paymentMode, promiseToPay } = req.body;
 
-    await CaseService.markAsOngoing({ id, paymentMode, promiseToPay });
+    await CaseService.setCaseAsOngiong({ id, paymentMode, promiseToPay });
 
     res.json({ success: true });
-  }
-
-  static async fetchAll(_: Request, res: Response): Promise<void> {
-    const response = await CaseService.fetchAllOngoing();
-
-    res.json({ success: true, data: response });
   }
 
   static async delete(req: Request, res: Response): Promise<void> {

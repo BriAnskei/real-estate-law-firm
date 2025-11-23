@@ -8,12 +8,40 @@ export type CaseType = {
   id?: string;
   client_id?: string;
   client_name: string;
+  opposing_party: string;
   concern: string;
   description: string;
   paid: "no" | "partial" | "paid";
-  status: "ongiong" | "complete";
+  status: "pending" | "ongiong" | "complete";
   consultation_date: string;
   promise_to_pay?: string;
+  created_at?: string;
+};
+
+export type Stages = "MANAGE_REQUIREMENTS" | "FILING_DOCS" | "HEARING";
+export type CaseStageStatus = "ongoing" | "complete";
+
+export type CaseStagesType = {
+  id?: string;
+  case_id: string;
+  stage_name: Stages;
+  stage_status: CaseStageStatus;
+  create_at?: string;
+};
+
+export type CaseTransactionTask = {
+  id?: string;
+  case_stage_id: string;
+  stage_name: string;
+  title: string;
+  description: string;
+  assign_by: string;
+  assign_to: string;
+  assignee_name?: string;
+  assigner_name?: string;
+  due_date: string;
+  status: "pending" | "rejected" | "approved";
+  comments_count?: string;
   created_at?: string;
 };
 
@@ -30,6 +58,7 @@ export const addNewCase = createAsyncThunk(
 
       const client = res.data?.newClientData!;
       client.id = String(client.id);
+
       dispatch(addClient(client));
 
       dispatch(createCase(res.data?.newCaseData));

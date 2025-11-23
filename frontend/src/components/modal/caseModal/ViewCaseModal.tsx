@@ -81,6 +81,15 @@ export function ViewCaseModal({
               </p>
             </div>
 
+            <div>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Opposing Party
+              </label>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                {caseData.opposing_party || "Not specified"}
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">

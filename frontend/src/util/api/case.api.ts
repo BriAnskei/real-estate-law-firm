@@ -68,6 +68,19 @@ export class caseApi {
     }
   }
 
+  static async find(id: string): Promise<CaseType> {
+    try {
+      const res = await api.get(`/api/case/find/${id}`);
+
+      if (!res.data.success) throw new Error(res.data.message);
+
+      return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async update(payload: {
     id: string;
     caseUpdate: Partial<CaseType>;

@@ -244,9 +244,6 @@ export class AuthService {
     }>
   > {
     try {
-      console.log(
-        "validating refresh token -------------------------------------------"
-      );
       const validationResponse = await TokenService.validateRefreshToken(
         refreshToken
       );
@@ -254,7 +251,7 @@ export class AuthService {
 
       // if it exist or expired
       if (!validationResponse.success) {
-        return { success, message };
+        return { success };
       }
 
       const generatedTokens = await TokenService.handleTokenRotation({
@@ -262,9 +259,6 @@ export class AuthService {
         rememberMeIssued: data?.rememberMe!,
       });
 
-      console.log(
-        "fetched new refresh token -------------------------------------------"
-      );
       return {
         success: true,
         data: {

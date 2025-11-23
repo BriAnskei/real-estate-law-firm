@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 
 const initialCaseInput: CaseType = {
   concern: "",
+  opposing_party: "",
   description: "",
   paid: "no",
   status: "ongiong",
@@ -230,6 +231,7 @@ function newFunction(
     // --- 1. Check required client fields ---
     if (
       !clientData.client_name.trim() ||
+      !clientData.client_name.trim() ||
       !clientData.address.trim() ||
       !clientData.email.trim() ||
       clientData.contact_number === null
@@ -238,7 +240,11 @@ function newFunction(
     }
 
     // --- 2. Check required case fields ---
-    if (!caseData.concern.trim() || !caseData.description.trim()) {
+    if (
+      !caseData.concern.trim() ||
+      !caseData.description.trim() ||
+      !caseData.opposing_party.trim()
+    ) {
       return { valid: false, message: "Please fill in all case fields." };
     }
 

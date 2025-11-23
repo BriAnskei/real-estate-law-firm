@@ -4,6 +4,7 @@ import { CasesModel } from "../model/cases.model.js";
 import { ClientModel } from "../model/clientModel.js";
 import { ResponseType } from "../types/auth.types.js";
 import { ClientService } from "./client.service.js";
+import { CaseStageService } from "./case_stage.service.js";
 
 export class CaseService {
   static async handleNewCase(payload: {
@@ -39,16 +40,15 @@ export class CaseService {
       const [row] = await connection.execute<ResultSetHeader>(
         `
   INSERT INTO cases
-    (client_id, client_name,  concern, description, paid, status, consultation_date)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+    (client_id, client_name,   	opposing_party, concern, description, consultation_date)
+  VALUES (?, ?, ?, ?, ?, ?)
   `,
         [
           newCaseData.client_id,
           newCaseData.client_name,
+          newCaseData.opposing_party,
           newCaseData.concern,
           newCaseData.description,
-          newCaseData.paid,
-          newCaseData.status,
           newCaseData.consultation_date,
         ]
       );
@@ -112,8 +112,7 @@ export class CaseService {
   }
 
   /**
-   * this function will be used for the consultation cases(no payment yet)
-   * paginated implmentation
+   * this fetches the cases under consultation(pending status)
    */
   static async fetchCases(payload: {
     page?: number;
@@ -121,7 +120,7 @@ export class CaseService {
     filters?: {
       query: string;
       sortFilter: string;
-      paid?: string;
+      status?: string;
     };
   }): Promise<{
     page: number;
@@ -131,7 +130,7 @@ export class CaseService {
   }> {
     const { page = 1, limit = 12, filters } = payload;
 
-    const { query, sortFilter = "created_at", paid = "no" } = filters!;
+    const { query, sortFilter = "created_at", status = "pending" } = filters!;
 
     try {
       const offset = (page - 1) * limit;
@@ -144,9 +143,9 @@ export class CaseService {
         params.push(`%${query}%`, `%${query}%`);
       }
 
-      if (paid) {
-        whereParts.push("paid = ?");
-        params.push(paid);
+      if (status) {
+        whereParts.push("status = ?");
+        params.push(status);
       }
 
       const whereClause =
@@ -289,15 +288,41 @@ export class CaseService {
     }
   }
 
-  static async markAsOngoing(payload: {
+  static async setCaseAsOngiong(payload: {
     id: string;
     paymentMode: string;
     promiseToPay?: Date;
   }) {
+    const connection = await pool.getConnection();
+    try {
+      await this.setPayment(payload, connection);
+      await this.markAsOngoing(payload.id, connection);
+
+      // stages
+      await CaseStageService.create(payload.id, connection);
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error updating case:", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  private static async setPayment(
+    payload: {
+      id: string;
+      paymentMode: string;
+      promiseToPay?: Date;
+    },
+    connection: PoolConnection
+  ): Promise<void> {
     const { id, paymentMode, promiseToPay } = payload;
 
-    const updates: string[] = ["status = 'ongoing'"];
-    const values: any[] = [];
+    const updates = [];
+    const values = [];
 
     if (paymentMode === "partial") {
       updates.push("promise_to_pay = ?");
@@ -316,10 +341,29 @@ export class CaseService {
   `;
 
     try {
-      const [rows] = await pool.execute<ResultSetHeader>(query, values);
+      const [rows] = await connection.execute<ResultSetHeader>(query, values);
       if (rows.affectedRows === 0) throw new Error("Case not found");
     } catch (error) {
-      console.error("Error updating case:", error);
+      console.error(error);
+      throw error;
+    }
+  }
+
+  private static async markAsOngoing(
+    id: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      const [rows] = await connection.execute<ResultSetHeader>(
+        `
+        UPDATE cases SET status = 'ongoing' WHERE id = ?
+        `,
+        [id]
+      );
+
+      if (rows.affectedRows === 0) throw new Error("Case not found");
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }

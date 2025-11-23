@@ -165,6 +165,29 @@ export default function CaseFormModal({
               />
             </div>
 
+            {/* Opposing Party */}
+            <div>
+              <label
+                className="block text-sm font-medium text-gray-900
+             dark:text-white mb-2"
+              >
+                Opposing Party
+              </label>
+              <input
+                type="text"
+                name="opposing_party"
+                value={caseInput.opposing_party || ""}
+                onChange={onCaseChangeInput}
+                placeholder="Enter opposing party name/details"
+                disabled={submitting}
+                className="w-full rounded-lg border-2 border-gray-200 bg-white
+               px-4 py-3 text-sm text-gray-900 transition-all 
+               focus:border-[#D4AF37] focus:outline-none dark:border-gray-700
+                dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37]
+                disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+
             {/* Consultation Date and Time */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

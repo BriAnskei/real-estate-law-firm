@@ -14,7 +14,6 @@ export function useFilter<T extends string = string>(
 ) {
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState<FilterOptions<T>>({});
-
   const debouncedFilterChange = useMemo(
     () =>
       debouncer((newSearch: string, newFilters: FilterOptions<T>) => {

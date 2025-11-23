@@ -25,8 +25,6 @@ export class TokenService {
     try {
       const hashedRefreshToken = TokenUtils.hashToken(token);
 
-      console.log("refresh token: ", hashedRefreshToken);
-
       const [rows] = await pool.execute<(refreshToken & RowDataPacket)[]>(
         `SELECT * FROM refresh_tokens WHERE token = ? LIMIT 1`,
         [hashedRefreshToken]

@@ -246,7 +246,9 @@ function TableRows({
         <div className="inline-flex items-center gap-2">
           {/* View Button */}
           <button
-            onClick={() => navigate("/case/transaction")}
+            onClick={() =>
+              navigate(`/case/transaction/${caseItem.id}`, { replace: true })
+            }
             className="inline-flex items-center justify-center w-8 h-8 
             text-[#D4AF37] hover:text-white hover:bg-[#D4AF37] 
             dark:text-[#D4AF37] dark:hover:text-white dark:hover:bg-[#D4AF37]

@@ -167,7 +167,7 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
 // case transaction, process-server should not access it
 export type CaseTransactionRoles = Exclude<Roles, Roles.processServer>;
 const caseTransactionPath: AppRoutes = {
-  path: "/case/transaction",
+  path: "/case/transaction/:id/*",
   element: <CaseTransaction />,
 };
 export const caseTransaction: Record<CaseTransactionRoles, AppRoutes> = {

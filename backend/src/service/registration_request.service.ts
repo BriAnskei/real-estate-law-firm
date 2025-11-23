@@ -105,7 +105,6 @@ export class RegistrationRequestService {
   static async getAllRegistrationRequests(
     userId: string
   ): Promise<ResponseType<registration_request[]>> {
-    console.log("fetching request");
     try {
       const response = await UsersService.isUserAdmin(userId);
 

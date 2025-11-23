@@ -12,27 +12,33 @@ caseRoute.post(
 );
 
 caseRoute.get(
-  "/get/unpaid",
-  asyncHandler(authMiddleware),
-  asyncHandler(CaseController.getAllNoPay)
-);
-
-caseRoute.get(
   "/get",
   asyncHandler(authMiddleware),
   asyncHandler(CaseController.fetchAll)
 );
 
-caseRoute.patch(
-  "/mark/ongoing/:id",
+caseRoute.get(
+  "/get/unpaid",
   asyncHandler(authMiddleware),
-  asyncHandler(CaseController.markOngoing)
+  asyncHandler(CaseController.getPending)
+);
+
+caseRoute.get(
+  "/find/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.findById)
 );
 
 caseRoute.patch(
   "/update/:id",
   asyncHandler(authMiddleware),
   asyncHandler(CaseController.update)
+);
+
+caseRoute.patch(
+  "/mark/ongoing/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.markOngoing)
 );
 
 caseRoute.delete(

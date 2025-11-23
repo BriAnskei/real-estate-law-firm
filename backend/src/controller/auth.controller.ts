@@ -107,28 +107,48 @@ export class AuthController {
     res.json({ success: true, message: "Logged out successfully" });
   }
 
-  /**Issue new tokens*/
   static async refreshToken(req: Request, res: Response): Promise<any> {
-    const refreshToken = req.cookies.refreshToken;
+    try {
+      const refreshToken = req.cookies.refreshToken;
 
-    // no token to refresh
-    if (!refreshToken)
-      return res.json({ success: false, message: "Error please login again" });
+      if (!refreshToken) {
+        res.clearCookie("refreshToken");
+        return res.json({
+          success: false,
+          message: "Error please login again",
+        });
+      }
 
-    const response = await AuthService.refreshUserTokens(refreshToken);
+      const response = await AuthService.refreshUserTokens(refreshToken);
 
-    if (!response.success) {
-      return res.json({ success: false, message: response.message });
+      if (!response.success) {
+        res.clearCookie("refreshToken", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+        });
+
+        return res.json({ success: false, message: response.message });
+      }
+
+      res.cookie("refreshToken", response.data?.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: response.data?.rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
+      });
+
+      return res.json({
+        success: true,
+        accessToken: response.data?.accessToken,
+      });
+    } catch (error) {
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+      throw error;
     }
-
-    res.cookie("refreshToken", response.data?.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: response.data?.rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
-    });
-
-    // only return the access token
-    res.json({ success: true, accessToken: response.data?.accessToken });
   }
 }

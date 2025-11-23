@@ -7,6 +7,8 @@ import userRouter from "./route/user.routes.js";
 import registrationRouter from "./route/registration.routes.js";
 import caseRoute from "./route/case.route.js";
 import clientRoute from "./route/client.route.js";
+import caseStageRoute from "./route/case_stages.route.js";
+import taskRoute from "./route/task.route.js";
 
 const app = express();
 const PORT = 4000;
@@ -19,6 +21,9 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/registration", registrationRouter);
 app.use("/api/case", caseRoute);
+app.use("/api/case/stages", caseStageRoute);
+app.use("/api/task", taskRoute);
+
 app.use("/api/client", clientRoute);
 
 app.get("/", (req: Request, res: Response) => {

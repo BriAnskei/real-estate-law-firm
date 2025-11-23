@@ -1,13 +1,14 @@
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { CaseStageModel } from "../model/cases.model.js";
+import { PoolConnection } from "mysql2/promise";
 
-export class caseStageService {
-  static async create(id: string) {
+export class CaseStageService {
+  static async create(id: string, connection: PoolConnection) {
     try {
-      await pool.execute(
+      await connection.execute(
         `
-    INSERT INTO case_stage (case_id, stage_name, stage_status)
+    INSERT INTO case_stages (case_id, stage_name, stage_status)
       SELECT ?, stage, 'ongoing'
       FROM (
       SELECT 'MANAGE_REQUIREMENTS' AS stage
@@ -25,17 +26,36 @@ export class caseStageService {
     }
   }
 
-  static async getAllCaseStages(id: string): Promise<CaseStageModel[]> {
+  static async getAllCaseStages(id: string): Promise<{
+    requirementsStage: CaseStageModel;
+    documentsStage: CaseStageModel;
+    hearingStage: CaseStageModel;
+  }> {
     try {
       const [rows] = await pool.execute<(CaseStageModel & RowDataPacket)[]>(
         `
-        SELECT ^ FROM case_stages WHERE case_id = ?
+        SELECT * FROM case_stages WHERE case_id = ?
 
         `,
         [id]
       );
 
-      return rows;
+      if (rows.length === 0) throw new Error("Cannot find case stages");
+
+      // object each stages
+      const requirementsStage = rows.find(
+        (s) => s.stage_name === "MANAGE_REQUIREMENTS"
+      ) as CaseStageModel;
+
+      const documentsStage = rows.find(
+        (s) => s.stage_name === "FILING_DOCS"
+      ) as CaseStageModel;
+
+      const hearingStage = rows.find(
+        (s) => s.stage_name === "HEARING"
+      ) as CaseStageModel;
+
+      return { requirementsStage, documentsStage, hearingStage };
     } catch (error) {
       console.error(error);
       throw error;
