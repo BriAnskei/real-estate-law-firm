@@ -48,6 +48,7 @@ type CaseTransactionContextType = {
   // tab hook
   setActiveTab: React.Dispatch<React.SetStateAction<TabTypes>>;
   activeTab: TabTypes;
+  addTask: (payload: { stage: Stages; newTask: CaseTransactionTask }) => void;
 };
 
 export type TabTypes = "details" | "requirements" | "documents" | "hearings";
@@ -126,6 +127,27 @@ export const CaseTransactionProvider: React.FC<{
     initializeData();
   }, [caseId]);
 
+  const addTask = useCallback(
+    (payload: { stage: Stages; newTask: CaseTransactionTask }) => {
+      const { stage, newTask } = payload;
+
+      switch (stage) {
+        case "MANAGE_REQUIREMENTS":
+          setRequirementsTask((prev) => [newTask, ...(prev || [])]);
+          break;
+        case "FILING_DOCS":
+          setDocumentsTask((prev) => [newTask, ...(prev || [])]);
+          break;
+        case "HEARING":
+          setHearingTask((prev) => [newTask, ...(prev || [])]);
+          break;
+        default:
+          throw new Error("Invalid stage selection");
+      }
+    },
+    [setRequirementsTask, setDocumentsTask, setHearingTask]
+  );
+
   const fetchStageTask = useCallback(
     async (payload: { stageId: string; stageName: Stages }) => {
       if (taskLoading) return;
@@ -175,8 +197,6 @@ export const CaseTransactionProvider: React.FC<{
       status: CaseStageStatus;
     }) => {
       const { stageId, stageName, status } = payload;
-
-      // TODO: implement a function for the server that will update date status at the DB
 
       switch (stageName) {
         case "MANAGE_REQUIREMENTS":
@@ -236,6 +256,7 @@ export const CaseTransactionProvider: React.FC<{
 
           activeTab,
           setActiveTab,
+          addTask,
         } satisfies CaseTransactionContextType
       }
     >

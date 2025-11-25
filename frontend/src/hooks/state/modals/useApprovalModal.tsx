@@ -39,21 +39,23 @@ export const useApprovalModal = (
   }, []);
 
   const confirmApproval = useCallback(async () => {
-    if (!registration) return;
+    if (!registration) return false;
 
-    await promiseToast(
-      async () => {
-        await RegistrationApi.approveRegistration(registration);
-      },
-      {
-        loading: "Approving registration...",
-        success: "Registration aprroved successfully.",
-        error: (err) =>
-          `Failed to aprroved registration: ${err || "Unknown error"}`,
-      }
-    );
+    try {
+      await promiseToast(
+        () => RegistrationApi.approveRegistration(registration),
+        {
+          loading: "Approving...",
+          success: "Approved!",
+          error: (err) => `Error: ${err}`,
+        }
+      );
 
-    closeApprovalModal();
+      closeApprovalModal();
+      return true;
+    } catch (err) {
+      return false;
+    }
   }, [registration]);
 
   return {

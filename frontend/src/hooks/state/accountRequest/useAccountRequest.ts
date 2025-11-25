@@ -81,15 +81,17 @@ export const useAccountRequest = () => {
   };
 
   const appoveRegistrationReq = async () => {
-    await confirmApproval();
+    const isSucess = await confirmApproval();
 
-    setRegistrationRequests((prev) =>
-      prev?.filter((request) => request.id !== approvalRegistration!.id)
-    );
+    if (isSucess) {
+      setRegistrationRequests((prev) =>
+        prev?.filter((request) => request.id !== approvalRegistration!.id)
+      );
 
-    setFiltered((prev) =>
-      prev?.filter((request) => request.id !== approvalRegistration!.id)
-    );
+      setFiltered((prev) =>
+        prev?.filter((request) => request.id !== approvalRegistration!.id)
+      );
+    }
   };
 
   return {

@@ -13,6 +13,12 @@ userRouter.get(
 );
 
 userRouter.get(
+  "/get/role/:role",
+  asyncHandler(authMiddleware),
+  asyncHandler(UserController.fetchByRole, "UserController.fetchByRole")
+);
+
+userRouter.get(
   "/filter",
   asyncHandler(authMiddleware),
   asyncHandler(UserController.filter, "UserController.filter")

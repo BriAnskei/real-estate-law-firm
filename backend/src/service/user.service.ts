@@ -3,6 +3,7 @@ import pool from "../config/db.js";
 import { users } from "../model/user.model.js";
 import { PasswordUtils } from "../util/password.util.js";
 import { ResponseType, SignInPayload } from "../types/auth.types.js";
+import { Roles } from "../model/registration_request.model.js";
 
 export class UsersService {
   static async createUser(user: users): Promise<void> {
@@ -30,11 +31,25 @@ export class UsersService {
 
   static async fetchAllUsers(): Promise<users[]> {
     try {
-      const [rows] = await pool.query<(users & RowDataPacket)[]>(
-        "SELECT * FROM users WHERE role != 'founding-manager/admin' ORDER BY id DESC"
+      const [rows] = await pool.execute<(users & RowDataPacket)[]>(
+        "SELECT * FROM users WHERE role != 'founding-manager/admin'"
       );
       return rows;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  static async ftechByRole(role: Roles): Promise<users[]> {
+    try {
+      const [rows] = await pool.execute<(users & RowDataPacket)[]>(
+        "SELECT * FROM users WHERE role  = ?",
+        [role]
+      );
+
+      return rows;
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }
@@ -46,7 +61,7 @@ export class UsersService {
     searchTerm: string
   ): Promise<users[] | undefined> {
     try {
-      const query = `
+      const query = ` 
       SELECT * FROM users 
       WHERE role != 'founding-manager/admin'
         AND (
@@ -95,6 +110,8 @@ export class UsersService {
       );
       return rows[0];
     } catch (error) {
+      console.error(error);
+
       throw new Error("-> findUserByEmail, " + error);
     }
   }

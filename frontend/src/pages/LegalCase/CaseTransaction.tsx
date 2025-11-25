@@ -1,11 +1,4 @@
-import React, {
-  JSX,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { JSX, useCallback, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -15,17 +8,17 @@ import {
   XCircle,
   AlertCircle,
   Plus,
+  User,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 
-import { formatDate } from "@fullcalendar/core/index.js";
 import StatusDropdown from "../../components/ui/dropdown/caseTransaction/StatusDropdown";
 import { Route, Routes, useNavigate, useParams } from "react-router";
 
 import {
   CaseStageStatus,
-  CaseStagesType,
   CaseTransactionTask,
-  Stages,
 } from "../../store/Slice/case.slice";
 import {
   CaseTransactionProvider,
@@ -34,10 +27,7 @@ import {
 } from "../../context/CaseTransactionContext";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
 import useCaseStage from "../../hooks/case/ongoing/useCaseTransaction";
-import {
-  AddTaskModal,
-  TaskFormData,
-} from "../../components/modal/caseModal/AddTaskModal";
+import { AddTaskModal } from "../../components/modal/caseModal/AddTaskModal";
 import { useSelector } from "react-redux";
 import {
   selectAuthLoading,
@@ -46,17 +36,71 @@ import {
 import ExampleViewTask from "./TaskViewPage";
 import TaskReviewPage from "./TaskReviewPage";
 import { RootState } from "../../store/store";
+import { Roles } from "../../store/Slice/userSlice";
+import TaskFormPage from "./TaskFormPage";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const { id } = useParams();
 
+  // before rendeer wait for the refresh token
   if (!accessToken) return;
 
   return (
     <CaseTransactionProvider caseId={id}>
       <Routes>
         <Route path="" element={<Content />} />
+        <Route
+          path="/form"
+          element={
+            <TaskFormPage
+              onClose={function (): void {
+                throw new Error("Function not implemented.");
+              }}
+              onSubmit={function (): void {
+                throw new Error("Function not implemented.");
+              }}
+              taskTypeLabel={""}
+              RolesOption={[]}
+              selectedUsersByRole={undefined}
+              fetchLoading={false}
+              taskInput={{
+                title: "",
+                description: "",
+                assign_to: "",
+                due_date: "",
+              }}
+              taskInputOnchangeHandler={function (
+                e: React.ChangeEvent<
+                  HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+                >
+              ): void {
+                throw new Error("Function not implemented.");
+              }}
+              setSelectedRole={function (
+                value: React.SetStateAction<
+                  | Roles.lawyer
+                  | Roles.paralegal
+                  | Roles.processServer
+                  | undefined
+                >
+              ): void {
+                throw new Error("Function not implemented.");
+              }}
+              selectedRole={undefined}
+              handleSelectAssignedUser={function (payload: {
+                userId: string;
+                name: string;
+              }): void {
+                throw new Error("Function not implemented.");
+              }}
+              setNameInput={function (query: string): void {
+                throw new Error("Function not implemented.");
+              }}
+              nameInput={""}
+            />
+          }
+        />
         <Route path="task/:taskId" element={<ExampleViewTask />} />
         <Route path="review/" element={<TaskReviewPage />} />
       </Routes>
@@ -390,14 +434,6 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
 
         <AllTasks tasks={task!} formatDate={formatDate} loading={taskLoading} />
       </div>
-      <AddTaskModal
-        isOpen={addTaskState.isOpen}
-        onClose={addTaskState.closeModal}
-        onSubmit={function (taskData: TaskFormData): void {
-          throw new Error("Function not implemented.");
-        }}
-        taskType={"requirements"}
-      />
     </>
   );
 }
@@ -537,14 +573,50 @@ const AllTasks = React.memo(function AllTasks({
         <div
           key={task.id}
           className="group relative flex h-full flex-col rounded-lg border-2 
-          border-gray-200 bg-white p-6 transition-all duration-300 
-          hover:border-[#D4AF37] hover:shadow-lg dark:border-gray-700 
-          dark:bg-gray-800 dark:hover:border-[#D4AF37]"
+    border-gray-200 bg-white p-6 transition-all duration-300 
+    hover:border-[#D4AF37] hover:shadow-lg dark:border-gray-700 
+    dark:bg-gray-800 dark:hover:border-[#D4AF37] cursor-pointer"
           style={{
             animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
           }}
           onClick={() => navigate(`task/${task.id!}`)}
         >
+          {/* This buttons should only be available for the assigner_name */}
+          <div
+            className="absolute top-3 right-3 flex gap-1 
+    opacity-0 group-hover:opacity-100 transition-opacity
+    duration-200"
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Add your edit handler here
+                console.log("Edit task:", task.id);
+              }}
+              className="rounded-md bg-gray-100 dark:bg-inherit
+      p-1.5 text-gray-600 dark:text-gray-400 
+      transition-all hover:text-blue-500 
+      dark:hover:text-blue-400 active:scale-95"
+              title="Edit task"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Add your delete handler here
+                console.log("Delete task:", task.id);
+              }}
+              className="rounded-md bg-gray-100 dark:bg-inherit
+      p-1.5 text-gray-600 dark:text-gray-400
+      transition-all hover:text-red-500 
+      dark:hover:text-red-400 active:scale-95"
+              title="Delete task"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
           <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-white">
             {task.title}
           </h3>
@@ -556,6 +628,27 @@ const AllTasks = React.memo(function AllTasks({
             <Calendar className="h-4 w-4" />
             <span>{formatDate(task.due_date)}</span>
           </div>
+
+          {/* Assignment Information */}
+          <div className="mb-4 flex items-start justify-start gap-3">
+            <div className="space-y-1.5 text-left">
+              <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <span>
+                  Assigned by:{" "}
+                  <span className="font-medium">{task.assigner_name}</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                <User className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                <span>
+                  Assigned to:{" "}
+                  <span className="font-medium">{task.assignee_name}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
             <div
               className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(

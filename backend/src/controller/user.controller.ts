@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UsersService } from "../service/user.service.js";
 import { AuthRequest } from "../types/express.types.js";
+import { Roles } from "../model/registration_request.model.js";
 
 export class UserController {
   static async fetchUserById(req: AuthRequest, res: Response) {
@@ -14,6 +15,14 @@ export class UserController {
     const allUsers = await UsersService.fetchAllUsers();
 
     res.json({ success: true, data: allUsers });
+  }
+
+  static async fetchByRole(req: Request, res: Response) {
+    const { role } = req.params;
+
+    const response = await UsersService.ftechByRole(role as Roles);
+
+    res.json({ success: true, data: response });
   }
 
   static async filter(req: AuthRequest, res: Response) {

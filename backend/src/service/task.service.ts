@@ -13,14 +13,7 @@ const TASK_SELECT_BASE = `
 `;
 
 export class TaskService {
-  static async add(payload: {
-    case_stage_id: string;
-    stage_name: string;
-    title: string;
-    description: string;
-    assign_by: string;
-    assign_to: string;
-  }): Promise<TaskType> {
+  static async add(payload: taskModel): Promise<TaskType> {
     try {
       const {
         case_stage_id,
@@ -29,15 +22,24 @@ export class TaskService {
         description,
         assign_by,
         assign_to,
+        due_date,
       } = payload;
 
       const [row] = await pool.execute<ResultSetHeader>(
         `
         INSERT INTO tasks
-        (case_stage_id, stage_name, title, description, assign_by, assign_to)
-         VALUES (?, ?, ?, ?, ?, ?)
+        (case_stage_id, stage_name, title, description, assign_by, assign_to, due_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
-        [case_stage_id, stage_name, title, description, assign_by, assign_to]
+        [
+          case_stage_id,
+          stage_name,
+          title,
+          description,
+          assign_by,
+          assign_to,
+          due_date,
+        ]
       );
 
       return await this.findById(row.insertId.toString());
@@ -55,7 +57,7 @@ export class TaskService {
       const { case_stage_id, stage_name } = payload;
       const [rows] = await pool.execute<(TaskType & RowDataPacket)[]>(
         `
-     ${TASK_SELECT_BASE} WHERE case_stage_id  = ? AND stage_name = ?;
+     ${TASK_SELECT_BASE} WHERE case_stage_id  = ? AND stage_name = ?  ORDER BY created_at DESC;
     `,
         [case_stage_id, stage_name]
       );

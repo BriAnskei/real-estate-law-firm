@@ -69,7 +69,7 @@ export class RegistrationRequestService {
       >(`SELECT * FROM registration_requests WHERE email = ?`, [email]);
       return rows[0];
     } catch (error) {
-      throw new Error("-> findUserByEmail, " + error);
+      throw new Error("-> findRegistrationByEmail, " + error);
     }
   }
 

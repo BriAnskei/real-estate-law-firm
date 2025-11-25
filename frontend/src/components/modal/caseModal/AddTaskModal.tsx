@@ -1,11 +1,46 @@
 import { X, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { Roles, UserType } from "../../../store/Slice/userSlice";
+import { TaskFormType } from "../../../hooks/case/ongoing/useCaseTransaction";
 
 type AddTaskModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (taskData: TaskFormData) => void;
-  taskType: "requirements" | "documents" | "hearings";
+  onSubmit: () => void;
+  // header text
+  taskTypeLabel: string;
+
+  isSelectionRoleEnabled?: boolean;
+  RolesOption: {
+    value: string;
+    text: string;
+  }[];
+
+  // data
+  selectedUsersByRole: UserType[] | undefined;
+  fetchLoading: boolean;
+
+  // input
+  taskInput: TaskFormType;
+  taskInputOnchangeHandler: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => void;
+  setSelectedRole: React.Dispatch<
+    React.SetStateAction<
+      Roles.lawyer | Roles.paralegal | Roles.processServer | undefined
+    >
+  >;
+  selectedRole:
+    | Roles.lawyer
+    | Roles.paralegal
+    | Roles.processServer
+    | undefined;
+
+  handleSelectAssignedUser: (payload: { userId: string; name: string }) => void;
+  setNameInput: (query: string) => void;
+  nameInput: string;
 };
 
 export type TaskFormData = {
@@ -21,86 +56,21 @@ export function AddTaskModal({
   isOpen,
   onClose,
   onSubmit,
-  taskType,
+  taskTypeLabel,
+  isSelectionRoleEnabled = true,
+  RolesOption,
+  selectedUsersByRole,
+  fetchLoading,
+  taskInput,
+  setSelectedRole,
+  selectedRole,
+  taskInputOnchangeHandler,
+  handleSelectAssignedUser,
+
+  setNameInput,
+  nameInput,
 }: AddTaskModalProps) {
-  // Mock users - replace with actual users from your API
-  const mockUsers = [
-    { id: "1", name: "John Doe", role: "lawyer" },
-    { id: "2", name: "Jane Smith", role: "paralegal" },
-    { id: "3", name: "Mike Johnson", role: "lawyer" },
-    { id: "4", name: "Sarah Williams", role: "process-server" },
-    { id: "5", name: "Robert Brown", role: "paralegal" },
-    { id: "6", name: "Emily Davis", role: "lawyer" },
-  ];
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
-  const [nameInput, setNameInput] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [dueDate, setDueDate] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-
-  // Filter users based on selected role and name input
-  const filteredUsers = mockUsers.filter(
-    (user) =>
-      user.role === selectedRole &&
-      user.name.toLowerCase().includes(nameInput.toLowerCase())
-  );
-
-  const getTaskTypeLabel = () => {
-    switch (taskType) {
-      case "requirements":
-        return "Case Requirement";
-      case "documents":
-        return "Legal Document";
-      case "hearings":
-        return "Hearing/Case Proper";
-      default:
-        return "Task";
-    }
-  };
-
-  const handleSubmit = () => {
-    if (
-      !title ||
-      !description ||
-      !selectedRole ||
-      !selectedUserId ||
-      !dueDate
-    ) {
-      alert("Please fill in all required fields");
-      return;
-    }
-
-    const taskData: TaskFormData = {
-      title,
-      description,
-      role: selectedRole,
-      assignTo: selectedUserId,
-      assignToName: nameInput,
-      dueDate,
-    };
-
-    onSubmit(taskData);
-  };
-
-  const handleUserSelect = (user: {
-    id: string;
-    name: string;
-    role: string;
-  }) => {
-    setSelectedUserId(user.id);
-    setNameInput(user.name);
-    setShowDropdown(false);
-  };
-
-  const handleRoleChange = (value: string) => {
-    setSelectedRole(value);
-    setNameInput("");
-    setSelectedUserId("");
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -120,7 +90,7 @@ export function AddTaskModal({
                 Add New Task
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Create a new {getTaskTypeLabel().toLowerCase()} task
+                Create a new {taskTypeLabel.toLowerCase()} task
               </p>
             </div>
             <button
@@ -140,8 +110,9 @@ export function AddTaskModal({
               </label>
               <input
                 type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                name="title"
+                value={taskInput.title}
+                onChange={taskInputOnchangeHandler}
                 placeholder="Enter task title"
                 className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400"
               />
@@ -153,8 +124,9 @@ export function AddTaskModal({
                 Description <span className="text-red-500">*</span>
               </label>
               <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                name="description"
+                value={taskInput.description}
+                onChange={taskInputOnchangeHandler}
                 rows={4}
                 placeholder="Provide detailed description of the task"
                 className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-[#D4AF37] focus:outline-none resize-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400"
@@ -163,90 +135,112 @@ export function AddTaskModal({
 
             <div className="h-px w-full bg-gray-200 dark:bg-gray-700"></div>
 
-            {/* Role Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Role <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedRole}
-                onChange={(e) => handleRoleChange(e.target.value)}
-                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white cursor-pointer"
-              >
-                <option value="">Select a role</option>
-                <option value="lawyer">Lawyer</option>
-                <option value="paralegal">Paralegal</option>
-                <option value="process-server">Process Server</option>
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Choose the role for this task assignment
-              </p>
-            </div>
+            {/* Role Selection - Only shown when isSelectionRoleEnabled is true */}
+            {isSelectionRoleEnabled && (
+              <div>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value as any)}
+                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white cursor-pointer"
+                >
+                  <option value="">Select a role</option>
+                  {RolesOption &&
+                    RolesOption.map((option, index) => (
+                      <option key={index} value={option.value}>
+                        {option.text}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Choose the role for this task assignment
+                </p>
+              </div>
+            )}
 
             {/* Assign To - Name Input with Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 Assign To <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={nameInput}
-                  onChange={(e) => {
-                    setNameInput(e.target.value);
-                    setShowDropdown(true);
-                  }}
-                  onFocus={() => setShowDropdown(true)}
-                  onBlur={() => {
-                    // Delay to allow clicking dropdown items
-                    setTimeout(() => setShowDropdown(false), 200);
-                  }}
-                  placeholder={
-                    selectedRole
-                      ? "Type to search users..."
-                      : "Select a role first"
-                  }
-                  disabled={!selectedRole}
-                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-[#D4AF37] focus:outline-none disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-800"
-                />
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
 
-                {/* Dropdown List */}
-                {showDropdown &&
-                  selectedRole &&
-                  nameInput &&
-                  filteredUsers.length > 0 && (
-                    <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto custom-scrollbar">
-                      {filteredUsers.map((user) => (
-                        <button
-                          key={user.id}
-                          type="button"
-                          onClick={() => handleUserSelect(user)}
-                          className="w-full px-4 py-3 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                        >
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                            {user.role.replace("-", " ")}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              {/* Loading Skeleton */}
+              {fetchLoading ? (
+                <div className="w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-4 py-3 animate-pulse">
+                  <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => {
+                      setNameInput(e.target.value);
+                      setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    onBlur={() => {
+                      setTimeout(() => setShowDropdown(false), 200);
+                    }}
+                    placeholder={
+                      !isSelectionRoleEnabled
+                        ? "Type to search users..."
+                        : selectedRole
+                        ? "Type to search users..."
+                        : "Select a role first"
+                    }
+                    disabled={isSelectionRoleEnabled && !selectedRole}
+                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-[#D4AF37] focus:outline-none disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-800"
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
 
-                {/* No Results Message */}
-                {showDropdown &&
-                  selectedRole &&
-                  nameInput &&
-                  filteredUsers.length === 0 && (
-                    <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg shadow-lg px-4 py-3">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        No users found matching "{nameInput}"
-                      </p>
-                    </div>
-                  )}
-              </div>
+                  {/* Dropdown List */}
+                  {showDropdown &&
+                    (!isSelectionRoleEnabled ||
+                      (isSelectionRoleEnabled && selectedRole)) &&
+                    selectedUsersByRole && (
+                      <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg shadow-lg min-h-[180px] max-h-48 overflow-y-auto custom-scrollbar">
+                        {selectedUsersByRole?.map((user) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            className="w-full px-4 py-3 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                            onClick={() =>
+                              handleSelectAssignedUser({
+                                userId: user.id?.toString()!,
+                                name: `${user.firstName}  ${user.lastName}`,
+                              })
+                            }
+                          >
+                            <div className="font-medium">{`${user.firstName} ${user.lastName}`}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                              {user.role.replace("-", " ")}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                  {/* No Results Message */}
+                  {showDropdown &&
+                    (!isSelectionRoleEnabled ||
+                      (isSelectionRoleEnabled && selectedRole)) &&
+                    selectedUsersByRole?.length === 0 && (
+                      <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg shadow-lg px-4 py-3">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          No users found matching "{nameInput}"
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
+
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Type to search and select a user with the chosen role
+                {!isSelectionRoleEnabled
+                  ? "Type to search and select a process server"
+                  : "Type to search and select a user with the chosen role"}
               </p>
             </div>
 
@@ -257,8 +251,9 @@ export function AddTaskModal({
               </label>
               <input
                 type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                name="due_date"
+                value={taskInput.due_date}
+                onChange={taskInputOnchangeHandler}
                 min={new Date().toISOString().split("T")[0]}
                 className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
               />
@@ -279,7 +274,7 @@ export function AddTaskModal({
             </button>
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={onSubmit}
               className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95"
             >
               Create Task
