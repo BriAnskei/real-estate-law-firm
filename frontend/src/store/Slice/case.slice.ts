@@ -45,6 +45,21 @@ export type CaseTransactionTask = {
   created_at?: string;
 };
 
+// task pff file types
+export enum file_type {
+  uploader = "ASSIGNER_UPLOAD",
+  submitter = "SUBMISSION",
+}
+export type taskFileType = {
+  id?: string;
+  task_id: string;
+  file_name: string;
+  original_name: string;
+  file_path: string;
+  file_type: file_type;
+  created_at?: string;
+};
+
 export const addNewCase = createAsyncThunk(
   "case/add",
   async (

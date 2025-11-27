@@ -1,72 +1,61 @@
 import { X, ChevronDown, ArrowLeft, Upload, FileText } from "lucide-react";
-import { useState, useRef } from "react";
-import { TaskFormType } from "../../hooks/case/ongoing/useCaseTransaction";
-import { UserType, Roles } from "../../store/Slice/userSlice";
+import { useState, useRef, useEffect } from "react";
 
-type AddTaskPageProps = {
-  onClose: () => void;
-  onSubmit: () => void;
-  // header text
-  taskTypeLabel: string;
+import useTaskForm from "../../hooks/case/ongoing/useTaskForm";
+import { ScrollToTop } from "../../components/common/ScrollToTop";
+import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
+import DatePicker from "../../components/form/date-picker";
 
-  isSelectionRoleEnabled?: boolean;
-  RolesOption: {
-    value: string;
-    text: string;
-  }[];
+export default function TaskFormPage() {
+  const {
+    taskLabel,
+    rolesOption,
+    isPageNotReady,
+    selectedUsersByRole,
+    input,
+    selectedRole,
+    nameInput,
+    setNameInput,
+    hanldeDropdownSelection,
+    onChangeHandler,
+    handleRoleSelection,
+    fetchingUsersLoading,
+    isSelectionRoleEnabled,
+    handleSubmit,
 
-  // data
-  selectedUsersByRole: UserType[] | undefined;
-  fetchLoading: boolean;
+    // file state
+    formatFileSize,
+    addFiles,
+    removeFile,
+    uploadedFiles,
 
-  // input
-  taskInput: TaskFormType;
-  taskInputOnchangeHandler: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => void;
-  setSelectedRole: React.Dispatch<
-    React.SetStateAction<
-      Roles.lawyer | Roles.paralegal | Roles.processServer | undefined
-    >
-  >;
-  selectedRole:
-    | Roles.lawyer
-    | Roles.paralegal
-    | Roles.processServer
-    | undefined;
+    submitLoading,
+    goBack,
 
-  handleSelectAssignedUser: (payload: { userId: string; name: string }) => void;
-  setNameInput: (query: string) => void;
-  nameInput: string;
-};
+    isUpdating,
+    fetchingTaskLoading,
+  } = useTaskForm();
 
-interface UploadedFile {
-  id: string;
-  file: File;
-}
-
-export default function TaskFormPage({
-  onClose,
-  onSubmit,
-  taskTypeLabel,
-  isSelectionRoleEnabled = true,
-  RolesOption,
-  selectedUsersByRole,
-  fetchLoading,
-  taskInput,
-  setSelectedRole,
-  selectedRole,
-  taskInputOnchangeHandler,
-  handleSelectAssignedUser,
-  setNameInput,
-  nameInput,
-}: AddTaskPageProps) {
   const [showDropdown, setShowDropdown] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Dropdown close
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -76,13 +65,15 @@ export default function TaskFormPage({
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+
+    // only set false if truly leaving container
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -106,34 +97,24 @@ export default function TaskFormPage({
     }
   };
 
-  const addFiles = (files: File[]) => {
-    const newFiles = files.map((file) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-    }));
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-  };
-
-  const removeFile = (fileId: string) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-  };
+  if (isPageNotReady || fetchingTaskLoading)
+    return (
+      <CaseTransactionLoader
+        isLoading={isPageNotReady || fetchingTaskLoading}
+        loadingText="Initializing input for task update"
+      />
+    );
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      <ScrollToTop />
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <button
-          onClick={onClose}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 
             hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors mb-6"
+          disabled={submitLoading}
+          onClick={goBack}
         >
           <ArrowLeft className="h-5 w-5" />
           <span className="text-sm font-medium">Back</span>
@@ -142,10 +123,12 @@ export default function TaskFormPage({
         {/* Page Title */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Add New Task
+            {isUpdating ? "Update Task" : "Add New Task"}
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Create a new {taskTypeLabel.toLowerCase()} task
+            {isUpdating
+              ? `Update ${taskLabel.toLowerCase()} task`
+              : `Create a new ${taskLabel.toLowerCase()} task`}
           </p>
         </div>
 
@@ -164,8 +147,8 @@ export default function TaskFormPage({
               <input
                 type="text"
                 name="title"
-                value={taskInput.title}
-                onChange={taskInputOnchangeHandler}
+                value={input.title}
+                onChange={onChangeHandler}
                 placeholder="Enter task title"
                 className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400"
               />
@@ -178,8 +161,8 @@ export default function TaskFormPage({
               </label>
               <textarea
                 name="description"
-                value={taskInput.description}
-                onChange={taskInputOnchangeHandler}
+                value={input.description}
+                onChange={onChangeHandler}
                 rows={4}
                 placeholder="Provide detailed description of the task"
                 className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-[#D4AF37] focus:outline-none resize-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400"
@@ -198,12 +181,12 @@ export default function TaskFormPage({
                   </label>
                   <select
                     value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as any)}
+                    onChange={(e) => handleRoleSelection(e.target.value as any)}
                     className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white cursor-pointer"
                   >
                     <option value="">Select a role</option>
-                    {RolesOption &&
-                      RolesOption.map((option, index) => (
+                    {rolesOption &&
+                      rolesOption.map((option, index) => (
                         <option key={index} value={option.value}>
                           {option.text}
                         </option>
@@ -216,18 +199,24 @@ export default function TaskFormPage({
               )}
 
               {/* Due Date */}
+
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   Due Date <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="date"
-                  name="due_date"
-                  value={taskInput.due_date}
-                  onChange={taskInputOnchangeHandler}
-                  min={new Date().toISOString().split("T")[0]}
-                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+
+                <DatePicker
+                  value={input.due_date}
+                  onChange={(date) => {
+                    onChangeHandler({
+                      target: {
+                        name: "due_date",
+                        value: date,
+                      },
+                    } as React.ChangeEvent<HTMLInputElement>);
+                  }}
                 />
+
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Set the deadline for task completion
                 </p>
@@ -241,12 +230,12 @@ export default function TaskFormPage({
               </label>
 
               {/* Loading Skeleton */}
-              {fetchLoading ? (
+              {fetchingUsersLoading ? (
                 <div className="w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-4 py-3 animate-pulse">
                   <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
                 </div>
               ) : (
-                <div className="relative">
+                <div className="relative" ref={dropdownRef}>
                   <input
                     type="text"
                     value={nameInput}
@@ -255,9 +244,6 @@ export default function TaskFormPage({
                       setShowDropdown(true);
                     }}
                     onFocus={() => setShowDropdown(true)}
-                    onBlur={() => {
-                      setTimeout(() => setShowDropdown(false), 200);
-                    }}
                     placeholder={
                       !isSelectionRoleEnabled
                         ? "Type to search users..."
@@ -281,12 +267,13 @@ export default function TaskFormPage({
                             key={user.id}
                             type="button"
                             className="w-full px-4 py-3 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                            onClick={() =>
-                              handleSelectAssignedUser({
+                            onClick={() => {
+                              hanldeDropdownSelection({
                                 userId: user.id?.toString()!,
                                 name: `${user.firstName}  ${user.lastName}`,
-                              })
-                            }
+                              });
+                              setShowDropdown(false);
+                            }}
                           >
                             <div className="font-medium">{`${user.firstName} ${user.lastName}`}</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
@@ -414,15 +401,16 @@ export default function TaskFormPage({
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={onClose}
             className="rounded-lg border-2 border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-700"
+            disabled={submitLoading}
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={onSubmit}
+            onClick={handleSubmit}
             className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95"
+            disabled={submitLoading}
           >
             Create Task
           </button>

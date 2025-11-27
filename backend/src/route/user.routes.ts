@@ -12,6 +12,8 @@ userRouter.get(
   asyncHandler(UserController.fetchAll, "UserController.fetchAll")
 );
 
+userRouter.get("/get/id/:id", asyncHandler(UserController.feetchById));
+
 userRouter.get(
   "/get/role/:role",
   asyncHandler(authMiddleware),
@@ -27,7 +29,10 @@ userRouter.get(
 userRouter.get(
   "/current",
   asyncHandler(authMiddleware),
-  asyncHandler(UserController.fetchUserById, "UserController.fetchUserById")
+  asyncHandler(
+    UserController.fetchCurrentUser,
+    "UserController.fetchCurrentUser"
+  )
 );
 
 export default userRouter;

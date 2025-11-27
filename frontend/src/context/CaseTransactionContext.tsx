@@ -19,7 +19,7 @@ import { TaskApi } from "../util/api/task.api";
 import { ClientType } from "../store/Slice/client.slice";
 import { ClientApi } from "../util/api/client.api";
 
-type CaseTransactionContextType = {
+export type CaseTransactionContextType = {
   loading: boolean;
   taskLoading: boolean;
   caseData: CaseType | undefined;
@@ -38,6 +38,7 @@ type CaseTransactionContextType = {
     stageId: string;
     stageName: Stages;
   }) => Promise<void>;
+
   statusHandler: (
     stageId: string,
     stageName: Stages
@@ -173,9 +174,7 @@ export const CaseTransactionProvider: React.FC<{
       } catch (error) {
         console.error(error);
       } finally {
-        setTimeout(() => {
-          setTaskloading(false);
-        }, 2000);
+        setTaskloading(false);
       }
     },
     []

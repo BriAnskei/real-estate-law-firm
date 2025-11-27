@@ -9,6 +9,8 @@ import caseRoute from "./route/case.route.js";
 import clientRoute from "./route/client.route.js";
 import caseStageRoute from "./route/case_stages.route.js";
 import taskRoute from "./route/task.route.js";
+import taskFileRoute from "./route/task_file.route.js";
+import path from "path";
 
 const app = express();
 const PORT = 4000;
@@ -20,11 +22,17 @@ app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/registration", registrationRouter);
+
 app.use("/api/case", caseRoute);
 app.use("/api/case/stages", caseStageRoute);
+
 app.use("/api/task", taskRoute);
+app.use("/api/file", taskFileRoute);
 
 app.use("/api/client", clientRoute);
+
+//  static routes for files
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Brian Pogi");

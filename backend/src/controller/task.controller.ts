@@ -40,4 +40,15 @@ export class taskController {
 
     res.json({ success: true, data: response });
   }
+
+  /**
+   *  adding task failure rollback
+   * this will be used when the files failed to upload
+   */
+  static async rollBackDrop(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+
+    await TaskService.deleteById(id);
+    res.json({ sucess: true });
+  }
 }

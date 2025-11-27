@@ -16,6 +16,20 @@ export class UserApi {
       throw error;
     }
   }
+
+  static async fetchById(userId: string): Promise<UserType> {
+    try {
+      const res = await api.get(`api/user/get/id/${userId}`);
+
+      if (!res.data.success) throw new Error(res.data.message);
+
+      return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async fetchAll(): Promise<ApiResponseType<UserType>> {
     try {
       const res = await api.get("/api/user/get");

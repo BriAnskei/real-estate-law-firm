@@ -11,6 +11,7 @@ import {
   User,
   Edit2,
   Trash2,
+  Eye,
 } from "lucide-react";
 
 import StatusDropdown from "../../components/ui/dropdown/caseTransaction/StatusDropdown";
@@ -27,7 +28,6 @@ import {
 } from "../../context/CaseTransactionContext";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
 import useCaseStage from "../../hooks/case/ongoing/useCaseTransaction";
-import { AddTaskModal } from "../../components/modal/caseModal/AddTaskModal";
 import { useSelector } from "react-redux";
 import {
   selectAuthLoading,
@@ -36,7 +36,6 @@ import {
 import ExampleViewTask from "./TaskViewPage";
 import TaskReviewPage from "./TaskReviewPage";
 import { RootState } from "../../store/store";
-import { Roles } from "../../store/Slice/userSlice";
 import TaskFormPage from "./TaskFormPage";
 
 export default function CaseTransaction() {
@@ -51,55 +50,8 @@ export default function CaseTransaction() {
       <Routes>
         <Route path="" element={<Content />} />
         <Route
-          path="/form"
-          element={
-            <TaskFormPage
-              onClose={function (): void {
-                throw new Error("Function not implemented.");
-              }}
-              onSubmit={function (): void {
-                throw new Error("Function not implemented.");
-              }}
-              taskTypeLabel={""}
-              RolesOption={[]}
-              selectedUsersByRole={undefined}
-              fetchLoading={false}
-              taskInput={{
-                title: "",
-                description: "",
-                assign_to: "",
-                due_date: "",
-              }}
-              taskInputOnchangeHandler={function (
-                e: React.ChangeEvent<
-                  HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-                >
-              ): void {
-                throw new Error("Function not implemented.");
-              }}
-              setSelectedRole={function (
-                value: React.SetStateAction<
-                  | Roles.lawyer
-                  | Roles.paralegal
-                  | Roles.processServer
-                  | undefined
-                >
-              ): void {
-                throw new Error("Function not implemented.");
-              }}
-              selectedRole={undefined}
-              handleSelectAssignedUser={function (payload: {
-                userId: string;
-                name: string;
-              }): void {
-                throw new Error("Function not implemented.");
-              }}
-              setNameInput={function (query: string): void {
-                throw new Error("Function not implemented.");
-              }}
-              nameInput={""}
-            />
-          }
+          path="form/:stageId/:stage/:taskId?"
+          element={<TaskFormPage />}
         />
         <Route path="task/:taskId" element={<ExampleViewTask />} />
         <Route path="review/" element={<TaskReviewPage />} />
@@ -255,7 +207,7 @@ function Content() {
       />
     );
 
-  const StagesPage = (): JSX.Element => {
+  const Pages = (): JSX.Element => {
     switch (activeTab) {
       case "details":
         return <CaseDetailsTab />;
@@ -279,7 +231,7 @@ function Content() {
 
         {/* Content */}
         <div className="rounded-lg border-2 border-gray-200 bg-white px-6 py-8 dark:border-gray-700 dark:bg-gray-800 xl:px-10 xl:py-12">
-          <StagesPage />
+          <Pages />
         </div>
       </div>
 
@@ -395,24 +347,32 @@ function CaseDetailsTab() {
 }
 
 function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
+  const navigate = useNavigate();
   const {
     fetchStageTask,
-
     taskLoading,
     statusHandler,
     displayData,
     formatDate,
   } = useCaseTransaction();
 
+  // manage stage data by path
   const { stage, task } = useMemo(() => displayData[tabName], [tabName]);
-  const { handleStatusOnChange, displayHeaderText, addTaskState } =
-    useCaseStage({
-      stageData: stage,
-      stageTask: task,
-      fetchStageTask,
-      statusHandler,
-      taskLoading,
-    });
+
+  // handle header lable
+  const {
+    handleStatusOnChange,
+    displayHeaderText,
+    addtask,
+    updateTask,
+    viewTask,
+  } = useCaseStage({
+    stageData: stage,
+    stageTask: task,
+    fetchStageTask,
+    statusHandler,
+    taskLoading,
+  });
 
   const { title, description } = displayHeaderText[tabName];
 
@@ -423,16 +383,17 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
           title={title}
           description={description}
           status={stage!.stage_status}
-          onAddTask={() =>
-            addTaskState.openModal({
-              stage: stage.stage_name!,
-              stageId: stage.id!,
-            })
-          }
+          onAddTask={addtask}
           onStatusChange={handleStatusOnChange}
         />
 
-        <AllTasks tasks={task!} formatDate={formatDate} loading={taskLoading} />
+        <AllTasks
+          onEditTask={updateTask}
+          tasks={task!}
+          formatDate={formatDate}
+          loading={taskLoading}
+          onViewTask={viewTask}
+        />
       </div>
     </>
   );
@@ -490,12 +451,15 @@ const AllTasks = React.memo(function AllTasks({
   tasks,
   formatDate,
   loading = true,
+  onEditTask,
+  onViewTask,
 }: {
   tasks: CaseTransactionTask[] | undefined;
   formatDate: (dateString: string) => string;
   loading?: boolean;
+  onEditTask: (taskId: string) => void;
+  onViewTask: (taskId: string) => void;
 }) {
-  const navigate = useNavigate();
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case "approved":
@@ -579,9 +543,8 @@ const AllTasks = React.memo(function AllTasks({
           style={{
             animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
           }}
-          onClick={() => navigate(`task/${task.id!}`)}
         >
-          {/* This buttons should only be available for the assigner_name */}
+          {/* Action buttons - available on hover */}
           <div
             className="absolute top-3 right-3 flex gap-1 
     opacity-0 group-hover:opacity-100 transition-opacity
@@ -590,8 +553,20 @@ const AllTasks = React.memo(function AllTasks({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                // Add your edit handler here
-                console.log("Edit task:", task.id);
+                onViewTask(task.id!);
+              }}
+              className="rounded-md bg-gray-100 dark:bg-inherit
+      p-1.5 text-gray-600 dark:text-gray-400 
+      transition-all hover:text-[#D4AF37] 
+      dark:hover:text-[#D4AF37] active:scale-95"
+              title="View task"
+            >
+              <Eye className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditTask(task.id!);
               }}
               className="rounded-md bg-gray-100 dark:bg-inherit
       p-1.5 text-gray-600 dark:text-gray-400 

@@ -4,9 +4,17 @@ import { AuthRequest } from "../types/express.types.js";
 import { Roles } from "../model/registration_request.model.js";
 
 export class UserController {
-  static async fetchUserById(req: AuthRequest, res: Response) {
+  static async fetchCurrentUser(req: AuthRequest, res: Response) {
     const userId = req.userId;
     const response = await UsersService.findUserById(userId!);
+
+    res.json({ ...response });
+  }
+
+  static async feetchById(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const response = await UsersService.findUserById(id!);
 
     res.json({ ...response });
   }

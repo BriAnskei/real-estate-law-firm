@@ -88,4 +88,22 @@ export class TaskService {
       throw error;
     }
   }
+
+  static async deleteById(id: string): Promise<void> {
+    try {
+      const [res] = await pool.execute(
+        `
+        DELETE FROM tasks WHERE id =? , 
+
+        `,
+        [id]
+      );
+
+      if ((res as any).affectedRows === 0)
+        throw new Error("Task does not exist");
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
 }

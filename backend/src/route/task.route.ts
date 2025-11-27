@@ -23,4 +23,10 @@ taskRoute.get(
   asyncHandler(taskController.findOneById)
 );
 
+taskRoute.delete(
+  "/rollback/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(taskController.findOneById)
+);
+
 export default taskRoute;
