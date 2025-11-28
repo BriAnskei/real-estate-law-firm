@@ -11,16 +11,17 @@ import { TaskFileApi } from "./task_file.api";
 
 export class TaskApi {
   static async create(payload: {
+    case_id: string;
+    stage_name: Stages;
     formData: TaskFormType;
-    stageName: Stages;
     stageId: string;
     fileForm?: FormData;
   }): Promise<CaseTransactionTask> {
     try {
-      const { formData, stageName, stageId, fileForm } = payload;
+      const { case_id, stage_name, formData, stageId, fileForm } = payload;
 
       const taskApiRes = await api.post(
-        `/api/task/create/${stageName}/${stageId}`,
+        `/api/task/create/${stage_name}/${stageId}`,
         formData
       );
 
@@ -34,8 +35,10 @@ export class TaskApi {
         try {
           await TaskFileApi.uploadFiles({
             taskId: taskData.id,
-            file_type: file_type.uploader,
+            file_type: file_type.uploader, // uploader type for task manipulation
             fileForm,
+            case_id,
+            stage_name,
           });
         } catch (error) {
           // delete thee created task once the file upload fails
@@ -77,6 +80,28 @@ export class TaskApi {
     }
   }
 
+  static async update(payload: {
+    case_id: string;
+    stage_name: Stages;
+    updateForm: FormData;
+    task_id: string;
+  }): Promise<void> {
+    try {
+      const { case_id, stage_name, updateForm, task_id } = payload;
+
+      const res = await api.patch(
+        `/api/task/update/${case_id}/${stage_name}/${task_id}/${file_type.uploader}`,
+        updateForm
+      );
+
+      if (!res.data.success) throw new Error(res.data.message);
+      4;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async getTask(payload: {
     stageId: string;
     stageName: Stages;
@@ -92,6 +117,25 @@ export class TaskApi {
     } catch (error) {
       console.error(error);
 
+      throw error;
+    }
+  }
+
+  static async delete(payload: {
+    case_id: string;
+    stage_name: Stages;
+
+    task_id: string;
+  }): Promise<void> {
+    const { case_id, stage_name, task_id } = payload;
+    try {
+      const res = await api.delete(
+        `/api/task/delete/${case_id}/${stage_name}/${task_id}/${file_type.uploader}`
+      );
+
+      if (!res.data.success) throw new Error(res.data.message);
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }

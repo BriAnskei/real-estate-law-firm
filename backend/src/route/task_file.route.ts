@@ -6,7 +6,7 @@ import asyncHandler from "../util/asyncHandler.js";
 const taskFileRoute = exress.Router();
 
 taskFileRoute.post(
-  "/upload/:task_id/:file_type",
+  "/upload/:case_id/:stage_name/:task_id/:file_type",
   upload.array("uploadedPdfFiles"),
   asyncHandler(TaskFileController.uploadFiles)
 );

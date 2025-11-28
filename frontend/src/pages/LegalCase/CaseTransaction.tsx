@@ -37,6 +37,7 @@ import ExampleViewTask from "./TaskViewPage";
 import TaskReviewPage from "./TaskReviewPage";
 import { RootState } from "../../store/store";
 import TaskFormPage from "./TaskFormPage";
+import { DeleteTaskModal } from "../../components/modal/caseModal/DeleteTaskModal";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -366,6 +367,8 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
     addtask,
     updateTask,
     viewTask,
+
+    taskDeleteState,
   } = useCaseStage({
     stageData: stage,
     stageTask: task,
@@ -388,6 +391,7 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
         />
 
         <AllTasks
+          deleteTask={taskDeleteState.openModal}
           onEditTask={updateTask}
           tasks={task!}
           formatDate={formatDate}
@@ -395,6 +399,13 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
           onViewTask={viewTask}
         />
       </div>
+
+      <DeleteTaskModal
+        isOpen={taskDeleteState.isOpen}
+        onClose={taskDeleteState.closeModal}
+        onConfirm={taskDeleteState.deleteTask}
+        isDeleting={taskDeleteState.deleteLoading}
+      />
     </>
   );
 }
@@ -453,12 +464,16 @@ const AllTasks = React.memo(function AllTasks({
   loading = true,
   onEditTask,
   onViewTask,
+
+  deleteTask,
 }: {
   tasks: CaseTransactionTask[] | undefined;
   formatDate: (dateString: string) => string;
   loading?: boolean;
   onEditTask: (taskId: string) => void;
   onViewTask: (taskId: string) => void;
+
+  deleteTask: (taskId: string) => void;
 }) {
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
@@ -580,7 +595,7 @@ const AllTasks = React.memo(function AllTasks({
               onClick={(e) => {
                 e.stopPropagation();
                 // Add your delete handler here
-                console.log("Delete task:", task.id);
+                deleteTask(task.id!);
               }}
               className="rounded-md bg-gray-100 dark:bg-inherit
       p-1.5 text-gray-600 dark:text-gray-400

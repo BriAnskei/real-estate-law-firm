@@ -1,6 +1,9 @@
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { taskModel, TaskType } from "../model/taskModel.js";
+import { ResponseType } from "../types/auth.types.js";
+import { TaskFileService } from "./task_file.service.js";
+import { PoolConnection } from "mysql2/promise";
 
 const TASK_SELECT_BASE = `
     SELECT 
@@ -89,11 +92,100 @@ export class TaskService {
     }
   }
 
-  static async deleteById(id: string): Promise<void> {
+  static async processUpdateTask(payload: {
+    id: string;
+    formData: FormData;
+    file_type: string;
+    files?: Express.Multer.File[];
+  }): Promise<void> {
+    const { id, formData, file_type, files } = payload;
+
+    const connection = await pool.getConnection();
     try {
-      const [res] = await pool.execute(
+      await TaskFileService.proccessUpdateSavedFiles(
+        { task_id: id, file_type, files },
+        connection
+      );
+
+      if (!formData || Object.keys(formData).length === 0) {
+        // early commit, theres no need to update field in this case
+
+        await connection.commit();
+        return;
+      }
+      await this.update({ id, formData }, connection);
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+
+      console.error(error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async update(
+    payload: { id: string; formData: FormData },
+    connection: PoolConnection
+  ): Promise<void> {
+    const { id, formData } = payload;
+    try {
+      // SET key = ?
+      const setKeys = [];
+
+      // values
+      const values = [];
+
+      for (var key in formData) {
+        setKeys.push(`${key} = ?`);
+        values.push(formData[key as keyof FormData]);
+      }
+      values.push(id);
+
+      const [res] = await connection.execute<ResultSetHeader>(
         `
-        DELETE FROM tasks WHERE id =? , 
+        UPDATE tasks SET ${setKeys.join(", ")} WHERE id = ?
+        
+        `,
+        [...values]
+      );
+
+      if (res.affectedRows === 0) throw new Error("Task not Fount");
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async processTaskDeletion(id: string): Promise<void> {
+    const connection = await pool.getConnection();
+    try {
+      await this.deleteById(id, connection);
+      await TaskFileService.delete(id, connection);
+
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+
+      console.error(err);
+      throw err;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async deleteById(
+    id: string,
+    connection?: PoolConnection
+  ): Promise<void> {
+    try {
+      const poolRequest = connection ?? pool;
+
+      const [res] = await poolRequest.execute(
+        `
+        DELETE FROM tasks WHERE id = ?
 
         `,
         [id]

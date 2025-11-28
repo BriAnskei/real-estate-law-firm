@@ -41,14 +41,39 @@ export class taskController {
     res.json({ success: true, data: response });
   }
 
+  static async updateTask(req: Request, res: Response): Promise<void> {
+    const { task_id, file_type } = req.params;
+    const updatedFields = req.body;
+
+    const files = req.files as Express.Multer.File[];
+
+    await TaskService.processUpdateTask({
+      id: task_id,
+      formData: updatedFields,
+      files,
+      file_type,
+    });
+
+    res.json({ success: true });
+  }
+
   /**
    *  adding task failure rollback
    * this will be used when the files failed to upload
+   * when adding task
    */
   static async rollBackDrop(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
 
     await TaskService.deleteById(id);
     res.json({ sucess: true });
+  }
+
+  static async delete(req: Request, res: Response): Promise<void> {
+    const { task_id } = req.params;
+
+    await TaskService.processTaskDeletion(task_id);
+
+    res.json({ success: true });
   }
 }

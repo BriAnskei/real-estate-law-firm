@@ -18,6 +18,7 @@ import { CaseStagesApi } from "../util/api/case_stages.api";
 import { TaskApi } from "../util/api/task.api";
 import { ClientType } from "../store/Slice/client.slice";
 import { ClientApi } from "../util/api/client.api";
+import { TaskFormType } from "../hooks/case/ongoing/useTaskForm";
 
 export type CaseTransactionContextType = {
   loading: boolean;
@@ -50,6 +51,14 @@ export type CaseTransactionContextType = {
   setActiveTab: React.Dispatch<React.SetStateAction<TabTypes>>;
   activeTab: TabTypes;
   addTask: (payload: { stage: Stages; newTask: CaseTransactionTask }) => void;
+
+  updateTask: (payload: {
+    taskId: string;
+    input: TaskFormType;
+    stage: Stages;
+  }) => void;
+
+  deleteTask: (payload: { taskId: string; stage: Stages }) => void;
 };
 
 export type TabTypes = "details" | "requirements" | "documents" | "hearings";
@@ -121,13 +130,14 @@ export const CaseTransactionProvider: React.FC<{
         // ResponseTimeout
         setTimeout(() => {
           setLoading(false);
-        }, 2000);
+        }, 1500);
       }
     }
 
     initializeData();
   }, [caseId]);
 
+  // task functions
   const addTask = useCallback(
     (payload: { stage: Stages; newTask: CaseTransactionTask }) => {
       const { stage, newTask } = payload;
@@ -180,15 +190,50 @@ export const CaseTransactionProvider: React.FC<{
     []
   );
 
-  const formatDate = useCallback((dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }, []);
+  const updateTask = useCallback(
+    (payload: { taskId: string; input: TaskFormType; stage: Stages }) => {
+      const { taskId, input, stage } = payload;
 
-  // handle casee status
+      const setterMap = {
+        MANAGE_REQUIREMENTS: setRequirementsTask,
+        FILING_DOCS: setDocumentsTask,
+        HEARING: setHearingTask,
+      } as const;
+
+      const setter = setterMap[stage];
+      if (!setter) return;
+
+      setter((prev) =>
+        prev?.map((task) =>
+          task.id?.toString() === taskId.toString()
+            ? { ...task, ...input }
+            : task
+        )
+      );
+    },
+    [setRequirementsTask, setDocumentsTask, setHearingTask]
+  );
+
+  const deleteTask = useCallback(
+    (payload: { taskId: string; stage: Stages }) => {
+      const { taskId, stage } = payload;
+      const setterMap = {
+        MANAGE_REQUIREMENTS: setRequirementsTask,
+        FILING_DOCS: setDocumentsTask,
+        HEARING: setHearingTask,
+      } as const;
+
+      const setter = setterMap[stage];
+      if (!setter) return;
+
+      setter((prev) =>
+        prev?.filter((t) => t.id?.toString() !== taskId.toString())
+      );
+    },
+    [setRequirementsTask, setDocumentsTask, setHearingTask]
+  );
+
+  // stages functionss
   const updateStageStatus = useCallback(
     (payload: {
       stageId: string;
@@ -219,6 +264,14 @@ export const CaseTransactionProvider: React.FC<{
     return (status: CaseStageStatus) => {
       updateStageStatus({ stageId, stageName, status });
     };
+  }, []);
+
+  const formatDate = useCallback((dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   }, []);
 
   const displayData = useMemo(
@@ -256,6 +309,8 @@ export const CaseTransactionProvider: React.FC<{
           activeTab,
           setActiveTab,
           addTask,
+          updateTask,
+          deleteTask,
         } satisfies CaseTransactionContextType
       }
     >

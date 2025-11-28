@@ -1,12 +1,75 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   CaseStageStatus,
   CaseStagesType,
   CaseTransactionTask,
   Stages,
 } from "../../../store/Slice/case.slice";
-import { TabTypes } from "../../../context/CaseTransactionContext";
-import { useNavigate } from "react-router-dom";
+import {
+  CaseTransactionContextType,
+  TabTypes,
+  useCaseTransaction,
+} from "../../../context/CaseTransactionContext";
+import { useNavigate, useParams } from "react-router-dom";
+import { useToast } from "../../useToast";
+import { TaskApi } from "../../../util/api/task.api";
+
+const useDeleteTaskModal = (
+  stage: Stages,
+  caseTransactionContext: CaseTransactionContextType
+) => {
+  const { id } = useParams();
+  const { promiseToast } = useToast();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const openModal = (id: string) => {
+    setSelectedId(id);
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setSelectedId(undefined);
+    setIsOpen(false);
+  };
+
+  const deleteTask = async () => {
+    if (!selectedId) return;
+
+    setDeleteLoading(true);
+    await promiseToast(
+      async () => {
+        await TaskApi.delete({
+          case_id: id!,
+          stage_name: stage,
+          task_id: selectedId,
+        });
+      },
+      {
+        loading: "Deleting task....",
+        success(_: void) {
+          caseTransactionContext.deleteTask({ taskId: selectedId, stage });
+
+          closeModal();
+          return "Task deleted successfully";
+        },
+        error: (err) => `Failed to delete tas: ${err || "unknown error"}`,
+      }
+    );
+    setDeleteLoading(false);
+  };
+
+  return {
+    isOpen,
+    openModal,
+    closeModal,
+    deleteTask,
+    deleteLoading,
+  };
+};
 
 const useCaseStage = (payload: {
   stageData: CaseStagesType;
@@ -21,10 +84,17 @@ const useCaseStage = (payload: {
   ) => (status: CaseStageStatus) => void;
   taskLoading: boolean;
 }) => {
+  const caseTransactionContext = useCaseTransaction();
+
   const navigate = useNavigate();
 
   const { stageData, stageTask, fetchStageTask, statusHandler, taskLoading } =
     payload;
+
+  const taskDeleteState = useDeleteTaskModal(
+    stageData.stage_name,
+    caseTransactionContext
+  );
 
   useEffect(() => {
     async function fetchTask() {
@@ -82,6 +152,8 @@ const useCaseStage = (payload: {
     updateTask,
     addtask,
     viewTask,
+
+    taskDeleteState,
   };
 };
 
