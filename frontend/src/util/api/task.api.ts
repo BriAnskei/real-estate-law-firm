@@ -85,7 +85,7 @@ export class TaskApi {
     stage_name: Stages;
     updateForm: FormData;
     task_id: string;
-  }): Promise<void> {
+  }): Promise<CaseTransactionTask> {
     try {
       const { case_id, stage_name, updateForm, task_id } = payload;
 
@@ -95,7 +95,8 @@ export class TaskApi {
       );
 
       if (!res.data.success) throw new Error(res.data.message);
-      4;
+
+      return res.data.data;
     } catch (error) {
       console.error(error);
       throw error;

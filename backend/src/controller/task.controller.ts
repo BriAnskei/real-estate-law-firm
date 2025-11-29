@@ -47,14 +47,14 @@ export class taskController {
 
     const files = req.files as Express.Multer.File[];
 
-    await TaskService.processUpdateTask({
+    const response = await TaskService.processUpdateTask({
       id: task_id,
       formData: updatedFields,
       files,
       file_type,
     });
 
-    res.json({ success: true });
+    res.json({ success: true, data: response });
   }
 
   /**

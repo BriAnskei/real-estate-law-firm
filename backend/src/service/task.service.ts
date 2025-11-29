@@ -97,7 +97,7 @@ export class TaskService {
     formData: FormData;
     file_type: string;
     files?: Express.Multer.File[];
-  }): Promise<void> {
+  }): Promise<TaskType> {
     const { id, formData, file_type, files } = payload;
 
     const connection = await pool.getConnection();
@@ -111,11 +111,12 @@ export class TaskService {
         // early commit, theres no need to update field in this case
 
         await connection.commit();
-        return;
+        return await this.findById(id.toString());
       }
       await this.update({ id, formData }, connection);
 
       await connection.commit();
+      return await this.findById(id.toString());
     } catch (error) {
       await connection.rollback();
 

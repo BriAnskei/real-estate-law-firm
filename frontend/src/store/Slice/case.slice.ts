@@ -238,8 +238,11 @@ const initialState: CaseState = {
   filterCurrentPage: 0,
   filterTotalPage: 0,
 
+  // ongiong cases satte
   byId: {},
   allIds: [],
+
+  // pending/unpain cases
   unpaidById: {},
   unpaidIds: [],
   totalPages: 0,
@@ -286,14 +289,18 @@ const caseSlice = createSlice({
       delete state.unpaidById[id];
       state.unpaidIds = state.unpaidIds.filter((caseId) => caseId !== id);
 
+      // incase the case is filtered
       delete state.filterById[id];
       state.filterIds = state.filterIds.filter((caseId) => caseId !== id);
 
-      state.byId[id] = {
+      const newCaseData: CaseType = {
         ...caseData,
         paid: paymentMode,
+        status: "ongiong",
         ...(isPromiseTopayIssue && { promise_to_pay: promiseToPay }),
       };
+
+      state.byId[id] = newCaseData;
       state.allIds.push(id);
     },
 

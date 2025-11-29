@@ -133,6 +133,7 @@ const useCaseStage = (payload: {
     },
   };
 
+  // Navigation
   const updateTask = (taskId: string) => {
     navigate(`form/${stageData.id}/${stageData.stage_name}/${taskId}`);
   };

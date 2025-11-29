@@ -16,6 +16,10 @@ import { selectCurrentUser } from "./store/selector/user/userSelector";
 import { Roles } from "./store/Slice/userSlice";
 import { RootState } from "./store/store";
 import AppInitializationLoader from "./components/ui/loading/AppInitializationLoader";
+import { Content } from "./pages/LegalCase/CaseTransaction";
+import TaskFormPage from "./pages/LegalCase/TaskFormPage";
+import TaskReviewPage from "./pages/LegalCase/TaskReviewPage";
+import ExampleViewTask from "./pages/LegalCase/TaskViewPage";
 
 function useCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
   return role !== Roles.processServer;
@@ -44,7 +48,15 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
           key={caseTransaction[userRole].path}
           path={caseTransaction[userRole].path}
           element={caseTransaction[userRole].element}
-        />
+        >
+          <Route index element={<Content />} />
+          <Route
+            path="form/:stageId/:stage/:taskId?"
+            element={<TaskFormPage />}
+          />
+          <Route path="task/:taskId" element={<ExampleViewTask />} />
+          <Route path="review" element={<TaskReviewPage />} />
+        </Route>
       )}
       {/* Catch all - must be last */}
       <Route path="*" element={<NotFound />} />

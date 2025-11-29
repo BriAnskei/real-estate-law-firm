@@ -13,10 +13,10 @@ caseStageRoute.get(
   asyncHandler(CaseStagesController.getByCaseId)
 );
 
-caseStageRoute.get(
+caseStageRoute.patch(
   "/update/:id",
   asyncHandler(authMiddleware),
-  asyncHandler(CaseStagesController.getByCaseId)
+  asyncHandler(CaseStagesController.updateStatus)
 );
 
 export default caseStageRoute;

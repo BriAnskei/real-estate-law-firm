@@ -13,10 +13,10 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
+import Chart from "react-apexcharts";
 
 import StatusDropdown from "../../components/ui/dropdown/caseTransaction/StatusDropdown";
-import { Route, Routes, useNavigate, useParams } from "react-router";
-
+import { Outlet, useNavigate, useParams } from "react-router";
 import {
   CaseStageStatus,
   CaseTransactionTask,
@@ -33,69 +33,78 @@ import {
   selectAuthLoading,
   selectIsAuthenticated,
 } from "../../store/selector/authSelector";
-import ExampleViewTask from "./TaskViewPage";
-import TaskReviewPage from "./TaskReviewPage";
 import { RootState } from "../../store/store";
-import TaskFormPage from "./TaskFormPage";
 import { DeleteTaskModal } from "../../components/modal/caseModal/DeleteTaskModal";
+import { ApexOptions } from "apexcharts";
+import { ScrollToTop } from "../../components/common/ScrollToTop";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const { id } = useParams();
 
   // before rendeer wait for the refresh token
-  if (!accessToken) return;
+  if (!accessToken) return null;
 
   return (
     <CaseTransactionProvider caseId={id}>
-      <Routes>
-        <Route path="" element={<Content />} />
-        <Route
-          path="form/:stageId/:stage/:taskId?"
-          element={<TaskFormPage />}
-        />
-        <Route path="task/:taskId" element={<ExampleViewTask />} />
-        <Route path="review/" element={<TaskReviewPage />} />
-      </Routes>
+      <Outlet />
     </CaseTransactionProvider>
   );
 }
 
-const CircularProgress = ({ percentage }: { percentage: number }) => {
-  const radius = 50;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+const SemicircleProgress = ({ percentage }: { percentage: number }) => {
+  const series = [percentage];
+  const options: ApexOptions = {
+    colors: ["#D4AF37"],
+    chart: {
+      fontFamily: "Outfit, sans-serif",
+      type: "radialBar",
+      height: 280,
+      sparkline: {
+        enabled: true,
+      },
+    },
+    plotOptions: {
+      radialBar: {
+        startAngle: -85,
+        endAngle: 85,
+        hollow: {
+          size: "80%",
+        },
+        track: {
+          background: "#E4E7EC",
+          strokeWidth: "100%",
+          margin: 5,
+        },
+        dataLabels: {
+          name: {
+            show: false,
+          },
+          value: {
+            fontSize: "36px",
+            fontWeight: "600",
+            offsetY: -40,
+            color: "#1F2937",
+            formatter: function (val) {
+              return Math.round(val) + "%";
+            },
+          },
+        },
+      },
+    },
+    fill: {
+      type: "solid",
+      colors: ["#D4AF37"],
+    },
+    stroke: {
+      lineCap: "round",
+    },
+    labels: ["Progress"],
+  };
 
   return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width="120" height="120" className="transform -rotate-90">
-        <circle
-          cx="60"
-          cy="60"
-          r={radius}
-          stroke="#E5E7EB"
-          strokeWidth="10"
-          fill="none"
-          className="dark:stroke-gray-700"
-        />
-        <circle
-          cx="60"
-          cy="60"
-          r={radius}
-          stroke="#D4AF37"
-          strokeWidth="10"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          className="transition-all duration-500 ease-out"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold text-gray-900 dark:text-white">
-          {Math.round(percentage)}%
-        </span>
-      </div>
+    <div className="max-h-[280px]" id="chartDarkStyle">
+      <Chart options={options} series={series} type="radialBar" height={280} />
     </div>
   );
 };
@@ -113,10 +122,12 @@ function Header({
   getCompletedStagesCount: () => number;
   calculateProgress: () => number;
 }) {
+  const navigate = useNavigate();
+
   return (
     <div className="mb-8">
       <button
-        onClick={() => window.history.back()}
+        onClick={() => navigate("/", { replace: true })}
         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 
             hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors mb-4"
       >
@@ -124,9 +135,10 @@ function Header({
         <span className="text-sm font-medium">Back to Cases</span>
       </button>
 
-      <div className="flex items-start justify-between gap-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 md:gap-8">
+        {/* Left side: Text content */}
         <div className="flex-1">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
             {concern}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -134,9 +146,10 @@ function Header({
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-2">
-          <CircularProgress percentage={calculateProgress()} />
-          <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+        {/* Right side: Progress bar with info */}
+        <div className="flex flex-col items-center justify-center flex-shrink-0">
+          <SemicircleProgress percentage={calculateProgress()} />
+          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center -mt-2">
             {getCompletedStagesCount()} of 3 stages complete
           </p>
         </div>
@@ -179,27 +192,17 @@ function Tabs({
   );
 }
 
-function Content() {
-  const { loading, caseData, formatDate, setActiveTab, activeTab } =
-    useCaseTransaction();
+export function Content() {
+  const {
+    loading,
+    caseData,
+    formatDate,
+    setActiveTab,
+    activeTab,
+    calculateCompleteStages,
+  } = useCaseTransaction();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isAuthLoading = useSelector(selectAuthLoading);
-
-  // const calculateProgress = () => {
-  //   let completedStages = 0;
-  //   if (requirementsStatus === "complete") completedStages++;
-  //   if (documentsStatus === "complete") completedStages++;
-  //   if (hearingsStatus === "complete") completedStages++;
-  //   return (completedStages / 3) * 100;
-  // };
-
-  // const getCompletedStagesCount = () => {
-  //   let count = 0;
-  //   if (requirementsStatus === "complete") count++;
-  //   if (documentsStatus === "complete") count++;
-  //   if (hearingsStatus === "complete") count++;
-  //   return count;
-  // };
 
   if (loading || !isAuthenticated || isAuthLoading || caseData === undefined)
     return (
@@ -219,13 +222,16 @@ function Content() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      <ScrollToTop />
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Header
           formatDate={formatDate}
           date_filed={caseData?.created_at!}
           concern={caseData?.concern!}
-          getCompletedStagesCount={() => 2}
-          calculateProgress={() => 2}
+          getCompletedStagesCount={() =>
+            calculateCompleteStages()?.stageComplete ?? 0
+          }
+          calculateProgress={() => calculateCompleteStages()?.progress ?? 0}
         />
 
         <Tabs setActiveTab={setActiveTab} activeTab={activeTab} />
@@ -348,7 +354,6 @@ function CaseDetailsTab() {
 }
 
 function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
-  const navigate = useNavigate();
   const {
     fetchStageTask,
     taskLoading,
@@ -357,7 +362,7 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
     formatDate,
   } = useCaseTransaction();
 
-  // manage stage data by path
+  // manage stage data by stage tab
   const { stage, task } = useMemo(() => displayData[tabName], [tabName]);
 
   // handle header lable
@@ -427,16 +432,17 @@ function StageHeader({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <div className="mb-6 flex items-center justify-between">
-      <div>
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+    <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+      <div className="min-w-0">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
           {title}
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           {description}
         </p>
       </div>
-      <div className="flex items-center gap-3">
+
+      <div className="inline-flex items-center gap-3 flex-shrink-0">
         <StatusDropdown
           status={status}
           onStatusChange={onStatusChange}
@@ -445,11 +451,9 @@ function StageHeader({
         />
         <button
           onClick={onAddTask}
-          className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-5 
-            py-3 text-sm font-medium text-white transition-all 
-            hover:bg-[#C4A037] active:scale-95 shadow-sm"
+          className="inline-flex items-center gap-2 rounded-md bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 shadow-sm whitespace-nowrap"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 flex-shrink-0" />
           Add Task
         </button>
       </div>
@@ -503,158 +507,175 @@ const AllTasks = React.memo(function AllTasks({
 
   if (loading || tasks === undefined) {
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, index) => (
-          <div
-            key={index}
-            className="flex h-full flex-col rounded-lg border-2 border-gray-200 
-            bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
-            style={{
-              animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
-            }}
-          >
-            {/* Title skeleton */}
-            <div className="mb-3 h-6 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+      <div className="h-[600px] rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 scrollbar">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 p-6">
+          {[...Array(6)].map((_, index) => (
+            <div
+              key={index}
+              className="flex h-full flex-col rounded-lg border-2 border-gray-200 
+              bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
+              style={{
+                animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
+              }}
+            >
+              {/* Title skeleton */}
+              <div className="mb-3 h-6 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
 
-            {/* Divider skeleton */}
-            <div className="mb-4 h-px w-12 animate-pulse bg-gray-200 dark:bg-gray-700"></div>
+              {/* Divider skeleton */}
+              <div className="mb-4 h-px w-12 animate-pulse bg-gray-200 dark:bg-gray-700"></div>
 
-            {/* Description skeleton */}
-            <div className="mb-5 flex-1 space-y-2">
-              <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              <div className="h-4 w-4/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            </div>
+              {/* Description skeleton */}
+              <div className="mb-5 flex-1 space-y-2">
+                <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-4 w-4/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              </div>
 
-            {/* Date skeleton */}
-            <div className="mb-4 flex items-center gap-2">
-              <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            </div>
-
-            {/* Footer skeleton */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-              <div className="flex items-center gap-1.5">
+              {/* Date skeleton */}
+              <div className="mb-4 flex items-center gap-2">
                 <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                <div className="h-4 w-6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+
+              {/* Footer skeleton */}
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (!tasks || tasks.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 dark:text-gray-400 text-base font-medium">
+          No tasks added
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {tasks.map((task, index) => (
-        <div
-          key={task.id}
-          className="group relative flex h-full flex-col rounded-lg border-2 
-    border-gray-200 bg-white p-6 transition-all duration-300 
-    hover:border-[#D4AF37] hover:shadow-lg dark:border-gray-700 
-    dark:bg-gray-800 dark:hover:border-[#D4AF37] cursor-pointer"
-          style={{
-            animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
-          }}
-        >
-          {/* Action buttons - available on hover */}
+    <div className="h-[600px] overflow-y-auto">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {tasks.map((task, index) => (
           <div
-            className="absolute top-3 right-3 flex gap-1 
-    opacity-0 group-hover:opacity-100 transition-opacity
-    duration-200"
+            key={task.id}
+            className="group relative flex h-full flex-col rounded-lg border-2 
+      border-gray-200 bg-white p-6 transition-all duration-300 
+      hover:border-[#D4AF37] hover:shadow-lg dark:border-gray-700 
+      dark:bg-gray-800 dark:hover:border-[#D4AF37] cursor-pointer"
+            style={{
+              animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
+            }}
           >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewTask(task.id!);
-              }}
-              className="rounded-md bg-gray-100 dark:bg-inherit
-      p-1.5 text-gray-600 dark:text-gray-400 
-      transition-all hover:text-[#D4AF37] 
-      dark:hover:text-[#D4AF37] active:scale-95"
-              title="View task"
-            >
-              <Eye className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditTask(task.id!);
-              }}
-              className="rounded-md bg-gray-100 dark:bg-inherit
-      p-1.5 text-gray-600 dark:text-gray-400 
-      transition-all hover:text-blue-500 
-      dark:hover:text-blue-400 active:scale-95"
-              title="Edit task"
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                // Add your delete handler here
-                deleteTask(task.id!);
-              }}
-              className="rounded-md bg-gray-100 dark:bg-inherit
-      p-1.5 text-gray-600 dark:text-gray-400
-      transition-all hover:text-red-500 
-      dark:hover:text-red-400 active:scale-95"
-              title="Delete task"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-white">
-            {task.title}
-          </h3>
-          <div className="h-px w-12 bg-[#D4AF37] mb-4"></div>
-          <p className="mb-5 flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-            {task.description}
-          </p>
-          <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Calendar className="h-4 w-4" />
-            <span>{formatDate(task.due_date)}</span>
-          </div>
-
-          {/* Assignment Information */}
-          <div className="mb-4 flex items-start justify-start gap-3">
-            <div className="space-y-1.5 text-left">
-              <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                <span>
-                  Assigned by:{" "}
-                  <span className="font-medium">{task.assigner_name}</span>
-                </span>
-              </div>
-              <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                <User className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                <span>
-                  Assigned to:{" "}
-                  <span className="font-medium">{task.assignee_name}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+            {/* Action buttons - available on hover */}
             <div
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(
-                task.status
-              )}`}
+              className="absolute top-3 right-3 flex gap-1 
+      opacity-0 group-hover:opacity-100 transition-opacity
+      duration-200"
             >
-              {getStatusIcon(task.status)}
-              <span className="capitalize">{task.status}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewTask(task.id!);
+                }}
+                className="rounded-md bg-gray-100 dark:bg-inherit
+        p-1.5 text-gray-600 dark:text-gray-400 
+        transition-all hover:text-[#D4AF37] 
+        dark:hover:text-[#D4AF37] active:scale-95"
+                title="View task"
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditTask(task.id!);
+                }}
+                className="rounded-md bg-gray-100 dark:bg-inherit
+        p-1.5 text-gray-600 dark:text-gray-400 
+        transition-all hover:text-blue-500 
+        dark:hover:text-blue-400 active:scale-95"
+                title="Edit task"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Add your delete handler here
+                  deleteTask(task.id!);
+                }}
+                className="rounded-md bg-gray-100 dark:bg-inherit
+        p-1.5 text-gray-600 dark:text-gray-400
+        transition-all hover:text-red-500 
+        dark:hover:text-red-400 active:scale-95"
+                title="Delete task"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-              <MessageSquare className="h-4 w-4" />
-              <span className="text-xs font-medium">{task.comments_count}</span>
+
+            <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-white">
+              {task.title}
+            </h3>
+            <div className="h-px w-12 bg-[#D4AF37] mb-4"></div>
+            <p className="mb-5 flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+              {task.description}
+            </p>
+            <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Calendar className="h-4 w-4" />
+              <span>{formatDate(task.due_date)}</span>
+            </div>
+
+            {/* Assignment Information */}
+            <div className="mb-4 flex items-start justify-start gap-3">
+              <div className="space-y-1.5 text-left">
+                <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                  <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>
+                    Assigned by:{" "}
+                    <span className="font-medium">{task.assigner_name}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                  <User className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                  <span>
+                    Assigned to:{" "}
+                    <span className="font-medium">{task.assignee_name}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(
+                  task.status
+                )}`}
+              >
+                {getStatusIcon(task.status)}
+                <span className="capitalize">{task.status}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                <MessageSquare className="h-4 w-4" />
+                <span className="text-xs font-medium">
+                  {task.comments_count}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 });

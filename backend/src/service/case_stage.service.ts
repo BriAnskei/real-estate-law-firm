@@ -42,7 +42,7 @@ export class CaseStageService {
 
       if (rows.length === 0) throw new Error("Cannot find case stages");
 
-      // object each stages
+      // Encode stages in to an object
       const requirementsStage = rows.find(
         (s) => s.stage_name === "MANAGE_REQUIREMENTS"
       ) as CaseStageModel;

@@ -37,7 +37,25 @@ export default function TaskReviewPage() {
     },
   ]);
 
-  const files = [
+  const referenceFiles = [
+    {
+      name: "Case_Guidelines_Template.pdf",
+      size: "1.2 MB",
+      uploaded: "November 20, 2025",
+    },
+    {
+      name: "Affidavit_Sample_Format.pdf",
+      size: "856 KB",
+      uploaded: "November 20, 2025",
+    },
+    {
+      name: "Notarization_Requirements.pdf",
+      size: "642 KB",
+      uploaded: "November 20, 2025",
+    },
+  ];
+
+  const submittedFiles = [
     {
       name: "Client_Affidavit_Final.pdf",
       size: "2.34 MB",
@@ -71,6 +89,18 @@ export default function TaskReviewPage() {
       setComments([...comments, newComment]);
       setComment("");
     }
+  };
+
+  const handleDownloadAll = (type) => {
+    console.log(`Download all ${type} files`);
+  };
+
+  const handleViewFile = (file) => {
+    console.log("View file in new tab:", file.name);
+  };
+
+  const handleDownloadFile = (file) => {
+    console.log("Download file:", file.name);
   };
 
   return (
@@ -124,10 +154,10 @@ export default function TaskReviewPage() {
                 <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                 <div>
                   <p className="text-base font-medium text-gray-900 dark:text-white">
-                    Juan Dela Cruz
+                    Atty. Maria Santos
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Attorney
+                    Senior Attorney
                   </p>
                 </div>
               </div>
@@ -175,25 +205,28 @@ export default function TaskReviewPage() {
           </div>
         </div>
 
-        {/* Submitted Files Section */}
+        {/* Reference Documents Section */}
         <div className="rounded-lg border-2 border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800 mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Submitted Documents
+                Reference Documents
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Review files submitted by Juan Dela Cruz
+                Files provided by Atty. Maria Santos for this task
               </p>
             </div>
-            <button className="flex items-center gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white transition-all hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95">
+            <button
+              onClick={() => handleDownloadAll("reference")}
+              className="flex items-center gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white transition-all hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95"
+            >
               <Download className="h-4 w-4" />
               Download All
             </button>
           </div>
 
-          <div className="space-y-3 mb-6">
-            {files.map((file, index) => (
+          <div className="space-y-3">
+            {referenceFiles.map((file, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-yellow-600 dark:hover:border-yellow-500 transition-colors"
@@ -227,12 +260,88 @@ export default function TaskReviewPage() {
                 </div>
                 <div className="flex items-center gap-2 ml-3">
                   <button
+                    onClick={() => handleViewFile(file)}
                     className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-500 transition-colors"
                     title="View in new tab"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </button>
                   <button
+                    onClick={() => handleDownloadFile(file)}
+                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-500 transition-colors"
+                    title="Download"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Submitted Files Section */}
+        <div className="rounded-lg border-2 border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Submitted Documents
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Review files submitted by Juan Dela Cruz
+              </p>
+            </div>
+            <button
+              onClick={() => handleDownloadAll("submitted")}
+              className="flex items-center gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white transition-all hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95"
+            >
+              <Download className="h-4 w-4" />
+              Download All
+            </button>
+          </div>
+
+          <div className="space-y-3 mb-6">
+            {submittedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-yellow-600 dark:hover:border-yellow-500 transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded bg-red-100 dark:bg-red-900/30">
+                    <svg
+                      className="h-5 w-5 text-red-600 dark:text-red-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {file.name}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                      <span>{file.size}</span>
+                      <span>•</span>
+                      <span>Uploaded {file.uploaded}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 ml-3">
+                  <button
+                    onClick={() => handleViewFile(file)}
+                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-500 transition-colors"
+                    title="View in new tab"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDownloadFile(file)}
                     className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-500 transition-colors"
                     title="Download"
                   >

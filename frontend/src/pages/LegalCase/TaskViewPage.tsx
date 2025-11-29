@@ -9,52 +9,57 @@ import {
   Upload,
   X,
   Send,
+  Download,
+  ExternalLink,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router";
-import useTask from "../../hooks/case/ongoing/useTask";
-import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
 
-// Types
-interface TaskData {
+// Type definitions
+interface ReferenceFile {
+  id: string;
+  name: string;
+  size: string;
+  uploaded: string;
+  url?: string;
+}
+
+interface Task {
   id: string;
   title: string;
   description: string;
-  stage_name: string;
-  assigned_by: string;
-  assigned_to: string;
   due_date: string;
-  assigned_at: string;
+  status: "pending" | "approved" | "rejected";
   comments_count: number;
-  status: string;
+  stage_name: string;
+  assigner_name: string;
+  created_at: string;
+  reference_files?: ReferenceFile[];
 }
 
 interface Comment {
   id: string;
-  taskId: string;
-  reviewer_id: string;
   reviewer_name: string;
   reviewer_role: string;
-  content: string;
   reviewed_at: string;
+  content: string;
 }
 
 interface UploadedFile {
   id: string;
   file: File;
-  preview?: string;
 }
 
 interface ViewTaskProps {
-  task: TaskData;
+  task: Task;
   comments: Comment[];
-  formatDate: (dateString: string) => string;
+  formatDate: (date: string) => string;
   onBack: () => void;
   onSubmit: (files: File[]) => void;
-  onAddComment: (content: string) => void;
+  onAddComment: (comment: string) => void;
   onFileUpload: (files: File[]) => void;
 }
 
 const ViewTask: React.FC<ViewTaskProps> = ({
+  task,
   comments,
   formatDate,
   onBack,
@@ -62,35 +67,29 @@ const ViewTask: React.FC<ViewTaskProps> = ({
   onAddComment,
   onFileUpload,
 }) => {
-  const { taskId } = useParams();
-
-  const { task, loading } = useTask(taskId);
-
-  const navigate = useNavigate();
-
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [commentText, setCommentText] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
+  const [commentText, setCommentText] = useState<string>("");
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragEnter = (e: React.DragEvent) => {
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -112,7 +111,7 @@ const ViewTask: React.FC<ViewTaskProps> = ({
   };
 
   const addFiles = (files: File[]) => {
-    const newFiles = files.map((file) => ({
+    const newFiles: UploadedFile[] = files.map((file) => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
     }));
@@ -136,7 +135,7 @@ const ViewTask: React.FC<ViewTaskProps> = ({
     }
   };
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB"];
@@ -144,20 +143,34 @@ const ViewTask: React.FC<ViewTaskProps> = ({
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
-  if (loading || !task)
-    return (
-      <CaseTransactionLoader
-        isLoading={loading || !task}
-        loadingText="Initializing case task details..."
-      />
-    );
+  const handleDownloadAll = () => {
+    console.log("Download all reference files");
+    // Implementation: Download all reference files
+  };
+
+  const handleViewFile = (file: ReferenceFile) => {
+    console.log("View file in new tab:", file.name);
+    // Implementation: Open file URL in new tab
+    if (file.url) {
+      window.open(file.url, "_blank");
+    }
+  };
+
+  const handleDownloadFile = (file: ReferenceFile) => {
+    console.log("Download file:", file.name);
+    // Implementation: Download individual file
+  };
+
+  useEffect(() => {
+    console.log("task render: ", task);
+  }, [task]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={onBack}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 
             hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors mb-6"
         >
@@ -225,7 +238,7 @@ const ViewTask: React.FC<ViewTaskProps> = ({
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                 <p className="text-base text-gray-900 dark:text-white">
-                  {formatDate(task.created_at!)}
+                  {formatDate(task.created_at)}
                 </p>
               </div>
             </div>
@@ -242,6 +255,82 @@ const ViewTask: React.FC<ViewTaskProps> = ({
             </p>
           </div>
         </div>
+
+        {/* Reference Documents Section */}
+        {task.reference_files && task.reference_files.length > 0 && (
+          <div className="rounded-lg border-2 border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Reference Documents
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Files provided by {task.assigner_name} for this task
+                </p>
+              </div>
+              <button
+                onClick={handleDownloadAll}
+                className="flex items-center gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white transition-all hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95"
+              >
+                <Download className="h-4 w-4" />
+                Download All
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {task.reference_files.map((file) => (
+                <div
+                  key={file.id}
+                  className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-[#D4AF37] dark:hover:border-[#D4AF37] transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded bg-red-100 dark:bg-red-900/30">
+                      <svg
+                        className="h-5 w-5 text-red-600 dark:text-red-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {file.name}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                        <span>{file.size}</span>
+                        <span>•</span>
+                        <span>Uploaded {file.uploaded}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-3">
+                    <button
+                      onClick={() => handleViewFile(file)}
+                      className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
+                      title="View in new tab"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDownloadFile(file)}
+                      className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
+                      title="Download"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* File Upload Section */}
         <div className="rounded-lg border-2 border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800 mb-6">
@@ -420,66 +509,109 @@ const ViewTask: React.FC<ViewTaskProps> = ({
   );
 };
 
-// Mock data
-const mockTask: TaskData = {
-  id: "1",
-  title: "Submit Client Affidavit",
-  description:
-    "Prepare and submit the sworn statement from the client regarding the incident. Ensure all facts are accurately represented and the document is properly notarized.",
-  stage_name: "Case Requirements",
-  assigned_by: "Atty. Maria Santos",
-  assigned_to: "user123",
-  due_date: "2025-11-30T00:00:00Z",
-  assigned_at: "2025-11-20T10:30:00Z",
-  comments_count: 3,
-  status: "pending",
-};
+// Demo wrapper with mock data
+const Demo: React.FC = () => {
+  const mockTask: Task = {
+    id: "task-001",
+    title: "Q4 Financial Report Review",
+    description:
+      "Please review the Q4 financial statements and provide feedback on the revenue projections, expense allocations, and cash flow analysis. Pay special attention to the discrepancies noted in the Southeast region. Your approval is required before we can proceed with the board presentation.",
+    due_date: "2024-12-15T23:59:59Z",
+    status: "pending",
+    comments_count: 3,
+    stage_name: "Financial Review",
+    assigner_name: "Sarah Johnson",
+    created_at: "2024-11-20T10:30:00Z",
+    reference_files: [
+      {
+        id: "file-001",
+        name: "Q4_Financial_Statements.pdf",
+        size: "2.4 MB",
+        uploaded: "2 days ago",
+        url: "https://example.com/file1.pdf",
+      },
+      {
+        id: "file-002",
+        name: "Revenue_Analysis_2024.pdf",
+        size: "1.8 MB",
+        uploaded: "2 days ago",
+        url: "https://example.com/file2.pdf",
+      },
+      {
+        id: "file-003",
+        name: "Budget_Variance_Report.pdf",
+        size: "896 KB",
+        uploaded: "3 days ago",
+        url: "https://example.com/file3.pdf",
+      },
+    ],
+  };
 
-const mockComments: Comment[] = [
-  {
-    id: "c1",
-    taskId: "1",
-    reviewer_id: "r1",
-    reviewer_name: "Atty. Maria Santos",
-    reviewer_role: "Senior Attorney",
-    content:
-      "Please make sure the affidavit includes all relevant dates and witnesses. We need this to be as detailed as possible for the hearing.",
-    reviewed_at: "2025-11-21T14:20:00Z",
-  },
-  {
-    id: "c2",
-    taskId: "1",
-    reviewer_id: "r2",
-    reviewer_name: "John Paralegal",
-    reviewer_role: "Legal Assistant",
-    content:
-      "I've reviewed the draft. Looks good but needs notarization before final submission.",
-    reviewed_at: "2025-11-22T09:15:00Z",
-  },
-];
+  const mockComments: Comment[] = [
+    {
+      id: "comment-001",
+      reviewer_name: "Michael Chen",
+      reviewer_role: "Senior Financial Analyst",
+      reviewed_at: "2024-11-25T14:20:00Z",
+      content:
+        "I've reviewed the initial drafts. The revenue projections look solid, but we need more detail on the marketing expenses breakdown. Could you provide additional documentation?",
+    },
+    {
+      id: "comment-002",
+      reviewer_name: "Sarah Johnson",
+      reviewer_role: "Finance Director",
+      reviewed_at: "2024-11-26T09:15:00Z",
+      content:
+        "Thanks Michael. I'll upload the marketing expense breakdown by EOD. Also noting that we should schedule a meeting to discuss the Southeast region discrepancies.",
+    },
+    {
+      id: "comment-003",
+      reviewer_name: "Emily Rodriguez",
+      reviewer_role: "CFO",
+      reviewed_at: "2024-11-27T11:30:00Z",
+      content:
+        "Good progress team. Once the marketing breakdown is added and Michael approves, we can move forward with the board presentation prep.",
+    },
+  ];
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-// Main component with mock data
-const ExampleViewTask = () => {
+  const handleBack = () => {
+    console.log("Navigate back to tasks list");
+  };
+
+  const handleSubmit = (files: File[]) => {
+    console.log("Submitting task with files:", files);
+    alert(`Task submitted with ${files.length} file(s)!`);
+  };
+
+  const handleAddComment = (comment: string) => {
+    console.log("Adding comment:", comment);
+    alert("Comment posted successfully!");
+  };
+
+  const handleFileUpload = (files: File[]) => {
+    console.log("Files uploaded:", files);
+  };
+
   return (
     <ViewTask
       task={mockTask}
       comments={mockComments}
       formatDate={formatDate}
-      onBack={() => console.log("Back clicked")}
-      onSubmit={(files) => console.log("Submit with files:", files)}
-      onAddComment={(content) => console.log("New comment:", content)}
-      onFileUpload={(files) => console.log("Files uploaded:", files)}
+      onBack={handleBack}
+      onSubmit={handleSubmit}
+      onAddComment={handleAddComment}
+      onFileUpload={handleFileUpload}
     />
   );
 };
 
-export default ExampleViewTask;
+export default Demo;

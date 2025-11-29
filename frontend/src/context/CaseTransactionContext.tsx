@@ -19,6 +19,8 @@ import { TaskApi } from "../util/api/task.api";
 import { ClientType } from "../store/Slice/client.slice";
 import { ClientApi } from "../util/api/client.api";
 import { TaskFormType } from "../hooks/case/ongoing/useTaskForm";
+import { useToast } from "../hooks/useToast";
+import { useNavigate } from "react-router";
 
 export type CaseTransactionContextType = {
   loading: boolean;
@@ -54,11 +56,18 @@ export type CaseTransactionContextType = {
 
   updateTask: (payload: {
     taskId: string;
-    input: TaskFormType;
+    updatedTask: CaseTransactionTask;
     stage: Stages;
   }) => void;
 
   deleteTask: (payload: { taskId: string; stage: Stages }) => void;
+
+  calculateCompleteStages: () =>
+    | {
+        progress: number;
+        stageComplete: number;
+      }
+    | undefined;
 };
 
 export type TabTypes = "details" | "requirements" | "documents" | "hearings";
@@ -71,6 +80,9 @@ export const CaseTransactionProvider: React.FC<{
   children: React.ReactNode;
   caseId?: string;
 }> = ({ children, caseId }) => {
+  const { promiseToast, errorToast } = useToast();
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState<TabTypes>("details");
 
   // case detials
@@ -125,12 +137,16 @@ export const CaseTransactionProvider: React.FC<{
         setdocumentsStage(stages.documentsStage);
         setHearingStage(stages.hearingStage);
       } catch (error) {
+        errorToast(error as string);
+
+        navigate("/", { replace: true });
+
         console.error(error);
       } finally {
         // ResponseTimeout
         setTimeout(() => {
           setLoading(false);
-        }, 1500);
+        }, 500);
       }
     }
 
@@ -191,8 +207,12 @@ export const CaseTransactionProvider: React.FC<{
   );
 
   const updateTask = useCallback(
-    (payload: { taskId: string; input: TaskFormType; stage: Stages }) => {
-      const { taskId, input, stage } = payload;
+    (payload: {
+      taskId: string;
+      updatedTask: CaseTransactionTask;
+      stage: Stages;
+    }) => {
+      const { taskId, updatedTask, stage } = payload;
 
       const setterMap = {
         MANAGE_REQUIREMENTS: setRequirementsTask,
@@ -206,7 +226,7 @@ export const CaseTransactionProvider: React.FC<{
       setter((prev) =>
         prev?.map((task) =>
           task.id?.toString() === taskId.toString()
-            ? { ...task, ...input }
+            ? { ...task, ...updatedTask }
             : task
         )
       );
@@ -233,14 +253,36 @@ export const CaseTransactionProvider: React.FC<{
     [setRequirementsTask, setDocumentsTask, setHearingTask]
   );
 
-  // stages functionss
+  // stages function
   const updateStageStatus = useCallback(
-    (payload: {
+    async (payload: {
       stageId: string;
       stageName: Stages;
       status: CaseStageStatus;
     }) => {
       const { stageId, stageName, status } = payload;
+
+      await promiseToast(
+        async () => {
+          await CaseStagesApi.updateStatus({ stageId, status });
+        },
+        {
+          loading: "Updating status",
+          success(_: void) {
+            updateStageStateStatus({ status, stageName });
+
+            return `Stage successfully marked as ${status}`;
+          },
+          error: (err) => `Failed to update status: ${err || "Unknown error"}`,
+        }
+      );
+    },
+    []
+  );
+
+  const updateStageStateStatus = useCallback(
+    async (payload: { stageName: Stages; status: CaseStageStatus }) => {
+      const { status, stageName } = payload;
 
       switch (stageName) {
         case "MANAGE_REQUIREMENTS":
@@ -257,8 +299,35 @@ export const CaseTransactionProvider: React.FC<{
           throw new Error("Invalid stage name");
       }
     },
-    []
+    [updateStageStatus]
   );
+
+  /**
+   * Calculates to progress of thie case
+   */
+  const calculateCompleteStages = useCallback(() => {
+    if (loading) return;
+
+    const statuses = [
+      requirementsStage?.stage_status,
+      documentsStage?.stage_status,
+      hearingStage?.stage_status,
+    ];
+
+    const completed = statuses.filter((s) => s === "complete").length;
+
+    const progress = (completed / 3) * 100;
+
+    return {
+      progress,
+      stageComplete: completed,
+    };
+  }, [
+    loading,
+    requirementsStage?.stage_status,
+    documentsStage?.stage_status,
+    hearingStage?.stage_status,
+  ]);
 
   const statusHandler = useCallback((stageId: string, stageName: Stages) => {
     return (status: CaseStageStatus) => {
@@ -311,6 +380,9 @@ export const CaseTransactionProvider: React.FC<{
           addTask,
           updateTask,
           deleteTask,
+
+          // progress bar
+          calculateCompleteStages,
         } satisfies CaseTransactionContextType
       }
     >

@@ -74,18 +74,22 @@ const useFormInput = () => {
 // handles user selection for this task
 const useUsersByRole = (payload: {
   setAssignedUser: (id: string) => void;
-  curUserRole?: Roles;
+  currentUser: UserType;
   isUpdating: boolean;
   assignedUserIdForUpdate?: string; // this param will be filled if the isUpdating is true
 }) => {
-  const { setAssignedUser, curUserRole, isUpdating, assignedUserIdForUpdate } =
+  const { setAssignedUser, currentUser, isUpdating, assignedUserIdForUpdate } =
     payload;
+
+  const [assignmentType, setAssignmentType] = useState<"user" | "myself">(
+    "user"
+  );
 
   // currUser role validation for role selection
   const isUserRoleValidForSelection =
-    (curUserRole &&
-      curUserRole !== Roles.paralegal &&
-      curUserRole !== Roles.processServer) ||
+    (currentUser.role &&
+      currentUser.role !== Roles.paralegal &&
+      currentUser.role !== Roles.processServer) ||
     false;
 
   const [nameInput, setNameInput] = useState("");
@@ -125,12 +129,17 @@ const useUsersByRole = (payload: {
     debouncedFetchSelectedRole(selectedRole!, isUserRoleValidForSelection!);
   }, [selectedRole, isUserRoleValidForSelection]);
 
-  // handles selected user by id for update
+  // update effect
   useEffect(() => {
     async function fetchSelectedUser() {
       if (!assignedUserIdForUpdate || !isUpdating) return;
 
       try {
+        if (assignedUserIdForUpdate.toString() === currentUser.id!.toString()) {
+          setAssignmentType("myself");
+          return;
+        }
+
         const userData = await UserApi.fetchById(assignedUserIdForUpdate);
 
         setSelectedRole(userData.role as Exclude<Roles, Roles.foundingManager>);
@@ -169,10 +178,21 @@ const useUsersByRole = (payload: {
     setNameInput("");
   };
 
+  const selectAssignType = useCallback((selectection: "user" | "myself") => {
+    if (selectection === "myself") {
+      setAssignedUser(currentUser.id!.toString());
+    }
+
+    setAssignmentType(selectection);
+  }, []);
+
   // manage roles selection
   const rolesOption = isUserRoleValidForSelection
     ? RoleBasedChoices[
-        curUserRole as Exclude<Roles, Roles.processServer | Roles.paralegal>
+        currentUser.role as Exclude<
+          Roles,
+          Roles.processServer | Roles.paralegal
+        >
       ]
     : undefined;
 
@@ -187,6 +207,12 @@ const useUsersByRole = (payload: {
     rolesOption,
     selectedRole,
     handleRoleSelection,
+
+    // assigntype selection
+    selectAssignType,
+    assignmentType,
+
+    isUserRoleValidForSelection,
   };
 };
 
@@ -204,10 +230,6 @@ const useFormUploads = (payload: { isUpdating: boolean; taskId?: string }) => {
 
   // this ref is used for update only
   const isUploadsInitialized = useRef(false);
-
-  useEffect(() => {
-    console.log("file upload update: ", uploadedFiles);
-  }, [uploadedFiles]);
 
   // handle fetch uploaded files
   useEffect(() => {
@@ -288,8 +310,6 @@ const useFormUploads = (payload: { isUpdating: boolean; taskId?: string }) => {
     const formData = new FormData();
 
     uploadedFiles.forEach((f) => {
-      console.log("updaloading file: ", f.file);
-
       formData.append("uploadedPdfFiles", f.file);
     });
     return formData;
@@ -327,9 +347,36 @@ const useAddtask = (payload: {
 
   const pdfFileState = useFormUploads({ isUpdating: false });
 
-  const { promiseToast } = useToast();
+  const { promiseToast, errorToast } = useToast();
+
+  const inputValitation = useCallback((): {
+    valid: boolean;
+    message?: string;
+  } => {
+    if (
+      !input.assign_to.trim() ||
+      !input.title.trim() ||
+      !input.description.trim()
+    ) {
+      return { valid: false, message: "please complete the form input" };
+    }
+
+    if (!input.due_date || !input.due_date.trim()) {
+      return {
+        valid: false,
+        message: "please select a due date for this task",
+      };
+    }
+
+    return { valid: true };
+  }, [input]);
 
   const handleSubmit = useCallback(async () => {
+    const inputValidation = inputValitation();
+
+    if (!inputValidation.valid)
+      return errorToast(inputValidation.message ?? "Input error");
+
     let newTask: CaseTransactionTask;
     await promiseToast(
       async () => {
@@ -348,7 +395,7 @@ const useAddtask = (payload: {
         loading: "Adding new task....",
         success: () => {
           context.addTask({ stage, newTask });
-          navigate(-1);
+          navigate(`/case/transaction/${caseId}`, { replace: true });
           return "New Task has been added";
         },
         error: (err) => `Failed to add new task: ${err || "Unknown error"}`,
@@ -453,7 +500,6 @@ const useUpdateTask = (payload: {
     // add the formData from the pdf file hook
     if (uploadedFiles) {
       for (var [key, value] of uploadedFiles.entries()) {
-        console.log("storing file value: ", value);
         formData.append(key, value);
       }
     }
@@ -472,11 +518,13 @@ const useUpdateTask = (payload: {
     const updatedDataForm = enCodeUpdateData();
 
     setSubmitLoading(true);
+
+    let updateTask: CaseTransactionTask;
     await promiseToast(
       async () => {
         if (!updatedDataForm) return;
 
-        await TaskApi.update({
+        updateTask = await TaskApi.update({
           case_id: caseId!,
           stage_name: stage,
           updateForm: updatedDataForm!,
@@ -486,7 +534,7 @@ const useUpdateTask = (payload: {
       {
         loading: "Updating task....",
         success: () => {
-          updateTaskContextState();
+          updateTaskContextState(updateTask);
           navigate(`/case/transaction/${caseId}`, { replace: true });
           return "Task has been updated";
         },
@@ -497,10 +545,13 @@ const useUpdateTask = (payload: {
     setSubmitLoading(true);
   }, [enCodeUpdateData, context.updateTask]);
 
-  const updateTaskContextState = useCallback(() => {
-    context.updateTask({ taskId: taskId!, input, stage });
-    navigate(-1);
-  }, [handleSubmit, taskId, input, stage]);
+  const updateTaskContextState = useCallback(
+    (updatedTask: CaseTransactionTask) => {
+      context.updateTask({ taskId: taskId!, updatedTask, stage });
+      navigate(-1);
+    },
+    [handleSubmit, taskId, input, stage]
+  );
 
   return {
     ...pdfFileState,
@@ -548,7 +599,7 @@ const useTaskForm = () => {
   // handle thee assign task assign selection
   const userSelectionState = useUsersByRole({
     setAssignedUser: taskFormState.handleSelectedUser,
-    curUserRole: curUser?.role,
+    currentUser: curUser!,
     isUpdating,
     assignedUserIdForUpdate: taskFormState.assignedUserIdForUpdate,
   });
@@ -584,8 +635,6 @@ const useTaskForm = () => {
   return {
     ...taskFormState,
     ...userSelectionState,
-
-    isSelectionRoleEnabled: true,
 
     taskLabel,
 
