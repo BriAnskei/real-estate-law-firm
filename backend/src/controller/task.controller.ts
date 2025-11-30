@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { TaskService } from "../service/task.service.js";
 import { AuthRequest } from "../types/express.types.js";
+import { FileType } from "../model/task_files.model.js";
 
 export class taskController {
   static async create(req: AuthRequest, res: Response): Promise<void> {
@@ -51,10 +52,17 @@ export class taskController {
       id: task_id,
       formData: updatedFields,
       files,
-      file_type,
+      file_type: file_type as FileType,
     });
 
     res.json({ success: true, data: response });
+  }
+
+  static async markComplete(req: Request, res: Response): Promise<void> {
+    const { task_id } = req.params;
+
+    await TaskService.markTaskAsComplete(task_id);
+    res.json({ success: true });
   }
 
   /**

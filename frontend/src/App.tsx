@@ -19,7 +19,7 @@ import AppInitializationLoader from "./components/ui/loading/AppInitializationLo
 import { Content } from "./pages/LegalCase/CaseTransaction";
 import TaskFormPage from "./pages/LegalCase/TaskFormPage";
 import TaskReviewPage from "./pages/LegalCase/TaskReviewPage";
-import ExampleViewTask from "./pages/LegalCase/TaskViewPage";
+import ViewTaskPage from "./pages/LegalCase/ViewTaskPage";
 
 function useCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
   return role !== Roles.processServer;
@@ -54,8 +54,8 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
             path="form/:stageId/:stage/:taskId?"
             element={<TaskFormPage />}
           />
-          <Route path="task/:taskId" element={<ExampleViewTask />} />
-          <Route path="review" element={<TaskReviewPage />} />
+          <Route path=":stage/task/:taskId" element={<ViewTaskPage />} />
+          <Route path="review/:taskId" element={<TaskReviewPage />} />
         </Route>
       )}
       {/* Catch all - must be last */}

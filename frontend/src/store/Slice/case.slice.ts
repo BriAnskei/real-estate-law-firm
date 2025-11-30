@@ -40,8 +40,8 @@ export type CaseTransactionTask = {
   assignee_name?: string;
   assigner_name?: string;
   due_date: string;
-  status: "pending" | "approved";
-  comments_count?: string;
+  status: "pending" | "complete";
+  comments_count?: number;
   created_at?: string;
 };
 

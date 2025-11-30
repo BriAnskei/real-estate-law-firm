@@ -16,7 +16,7 @@ export class TaskFileApi {
         fileForm
       );
 
-      if (!res.data.sucess)
+      if (!res.data.success)
         throw new Error(res.data.message || "Failed to upload files");
     } catch (error) {
       console.error(error);

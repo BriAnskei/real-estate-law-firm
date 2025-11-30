@@ -18,7 +18,6 @@ import { CaseStagesApi } from "../util/api/case_stages.api";
 import { TaskApi } from "../util/api/task.api";
 import { ClientType } from "../store/Slice/client.slice";
 import { ClientApi } from "../util/api/client.api";
-import { TaskFormType } from "../hooks/case/ongoing/useTaskForm";
 import { useToast } from "../hooks/useToast";
 import { useNavigate } from "react-router";
 
@@ -68,6 +67,8 @@ export type CaseTransactionContextType = {
         stageComplete: number;
       }
     | undefined;
+
+  addTaskCommentCount: (payload: { stage: Stages; taskId: string }) => void;
 };
 
 export type TabTypes = "details" | "requirements" | "documents" | "hearings";
@@ -234,6 +235,31 @@ export const CaseTransactionProvider: React.FC<{
     [setRequirementsTask, setDocumentsTask, setHearingTask]
   );
 
+  const addTaskCommentCount = useCallback(
+    (payload: { stage: Stages; taskId: string }) => {
+      const { stage, taskId } = payload;
+
+      const setterMap = {
+        MANAGE_REQUIREMENTS: setRequirementsTask,
+        FILING_DOCS: setDocumentsTask,
+        HEARING: setHearingTask,
+      } as const;
+
+      const setter = setterMap[stage];
+
+      if (!setter) throw new Error("Cannot find stage setter");
+
+      setter((prev) =>
+        prev?.map((t) =>
+          t.id?.toString() === taskId
+            ? { ...t, comments_count: (t.comments_count ?? 0) + 1 }
+            : t
+        )
+      );
+    },
+    [setRequirementsTask, setDocumentsTask, setHearingTask]
+  );
+
   const deleteTask = useCallback(
     (payload: { taskId: string; stage: Stages }) => {
       const { taskId, stage } = payload;
@@ -383,6 +409,8 @@ export const CaseTransactionProvider: React.FC<{
 
           // progress bar
           calculateCompleteStages,
+
+          addTaskCommentCount,
         } satisfies CaseTransactionContextType
       }
     >

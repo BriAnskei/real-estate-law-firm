@@ -4,6 +4,8 @@ export type TaskFileModel = {
   file_name: string;
   original_name: string;
   file_path: string;
-  file_type: "SUBMISSION" | "ASSIGNER_UPLOAD";
+  file_type: FileType;
   created_at?: string;
 };
+
+export type FileType = "SUBMISSION" | "ASSIGNER_UPLOAD";

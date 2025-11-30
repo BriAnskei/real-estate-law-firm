@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CaseStageStatus,
   CaseStagesType,
@@ -13,6 +13,8 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../useToast";
 import { TaskApi } from "../../../util/api/task.api";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "../../../store/selector/user/userSelector";
 
 const useDeleteTaskModal = (
   stage: Stages,
@@ -84,6 +86,7 @@ const useCaseStage = (payload: {
   ) => (status: CaseStageStatus) => void;
   taskLoading: boolean;
 }) => {
+  const currUser = useSelector(selectCurrentUser);
   const caseTransactionContext = useCaseTransaction();
 
   const navigate = useNavigate();
@@ -142,9 +145,21 @@ const useCaseStage = (payload: {
     navigate(`form/${stageData.id!}/${stageData.stage_name}`);
   };
 
-  const viewTask = (taskId: string) => {
-    navigate(`task/${taskId}`);
-  };
+  const viewTask = useCallback(
+    (payload: { assignTo: string; taskId: string }) => {
+      const { assignTo, taskId } = payload;
+      // wait for the curUserData before navigating
+      if (!currUser) return;
+
+      if (assignTo.toString() === currUser.id!.toString()) {
+        // go to task by as assigned user
+        navigate(`${stageData.stage_name}/task/${taskId}`);
+      } else {
+        navigate(`review/${taskId}`);
+      }
+    },
+    [currUser]
+  );
 
   return {
     handleStatusOnChange,
@@ -155,6 +170,8 @@ const useCaseStage = (payload: {
     viewTask,
 
     taskDeleteState,
+
+    currUser,
   };
 };
 

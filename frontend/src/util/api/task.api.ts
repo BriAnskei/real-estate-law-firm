@@ -1,4 +1,3 @@
-import { AxiosResponse } from "axios";
 import { TaskFormType } from "../../hooks/case/ongoing/useTaskForm";
 import {
   CaseTransactionTask,
@@ -97,6 +96,17 @@ export class TaskApi {
       if (!res.data.success) throw new Error(res.data.message);
 
       return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async markComplete(task_id: string): Promise<void> {
+    try {
+      const res = await api.patch(`/api/task/complete/${task_id}`);
+
+      if (!res.data.success) throw new Error(res.data.message);
     } catch (error) {
       console.error(error);
       throw error;

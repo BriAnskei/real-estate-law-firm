@@ -91,15 +91,23 @@ export default function TaskReviewPage() {
     }
   };
 
-  const handleDownloadAll = (type) => {
+  const handleDownloadAll = (type: string) => {
     console.log(`Download all ${type} files`);
   };
 
-  const handleViewFile = (file) => {
+  const handleViewFile = (file: {
+    name: any;
+    size?: string;
+    uploaded?: string;
+  }) => {
     console.log("View file in new tab:", file.name);
   };
 
-  const handleDownloadFile = (file) => {
+  const handleDownloadFile = (file: {
+    name: any;
+    size?: string;
+    uploaded?: string;
+  }) => {
     console.log("Download file:", file.name);
   };
 

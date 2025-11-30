@@ -4,6 +4,7 @@ import { taskModel, TaskType } from "../model/taskModel.js";
 import { ResponseType } from "../types/auth.types.js";
 import { TaskFileService } from "./task_file.service.js";
 import { PoolConnection } from "mysql2/promise";
+import { FileType } from "../model/task_files.model.js";
 
 const TASK_SELECT_BASE = `
     SELECT 
@@ -95,7 +96,7 @@ export class TaskService {
   static async processUpdateTask(payload: {
     id: string;
     formData: FormData;
-    file_type: string;
+    file_type: FileType;
     files?: Express.Multer.File[];
   }): Promise<TaskType> {
     const { id, formData, file_type, files } = payload;
@@ -160,11 +161,46 @@ export class TaskService {
     }
   }
 
+  static async markTaskAsComplete(taskId: string): Promise<void> {
+    try {
+      await pool.execute(
+        `
+  UPDATE tasks
+SET status = 'complete'
+WHERE id = ?;
+  `,
+        [taskId]
+      );
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async addCommentCount(
+    taskId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      await connection.execute(
+        `
+      UPDATE tasks
+SET comments_count = comments_count + 1
+WHERE id = ?;
+      `,
+        [taskId]
+      );
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async processTaskDeletion(id: string): Promise<void> {
     const connection = await pool.getConnection();
     try {
       await this.deleteById(id, connection);
-      await TaskFileService.delete(id, connection);
+      await TaskFileService.delete({ taskId: id }, connection);
 
       await connection.commit();
     } catch (err) {

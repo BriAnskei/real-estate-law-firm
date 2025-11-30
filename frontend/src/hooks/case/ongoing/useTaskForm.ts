@@ -8,18 +8,13 @@ import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../../store/selector/user/userSelector";
 import { RootState } from "../../../store/store";
 import { useToast } from "../../useToast";
-import {
-  CaseTransactionTask,
-  file_type,
-  Stages,
-  taskFileType,
-} from "../../../store/Slice/case.slice";
+import { CaseTransactionTask, Stages } from "../../../store/Slice/case.slice";
 import { TaskApi } from "../../../util/api/task.api";
 import {
   CaseTransactionContextType,
   useCaseTransaction,
 } from "../../../context/CaseTransactionContext";
-import { TaskFileApi } from "../../../util/api/task_file.api";
+import useFormUploads from "./useFormUploads";
 
 export type TaskFormType = {
   title: string;
@@ -216,115 +211,6 @@ const useUsersByRole = (payload: {
   };
 };
 
-interface UploadedFile {
-  id: string;
-  file: File;
-}
-/**
- * Task form pdf uploads handler
- */
-const useFormUploads = (payload: { isUpdating: boolean; taskId?: string }) => {
-  const { isUpdating, taskId } = payload;
-
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-
-  // this ref is used for update only
-  const isUploadsInitialized = useRef(false);
-
-  // handle fetch uploaded files
-  useEffect(() => {
-    async function fetchUploadedFiles() {
-      if (!isUpdating || isUploadsInitialized.current) return;
-
-      if (!taskId) return;
-      try {
-        const res =
-          (await TaskFileApi.fetchFiles({
-            taskId,
-            file_type: file_type.uploader,
-          })) ?? [];
-
-        if (res.length === 0) return;
-
-        const enCodedData = await enCodeFetchFile(res);
-
-        setUploadedFiles(enCodedData);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        isUploadsInitialized.current = true;
-      }
-    }
-
-    fetchUploadedFiles();
-  }, [isUpdating, taskId]);
-
-  const enCodeFetchFile = useCallback(
-    async (fetchedData: taskFileType[]): Promise<UploadedFile[]> => {
-      return await Promise.all(
-        fetchedData.map(async (file: any) => {
-          const fileUrl = `http://localhost:4000/${file.file_path.replace(
-            /\\/g,
-            "/"
-          )}`;
-
-          const blob = await fetch(fileUrl).then((r) => r.blob());
-
-          const fileObj = new File([blob], file.original_name, {
-            type: blob.type,
-          });
-
-          return {
-            id: file.id.toString(),
-            file: fileObj,
-          };
-        })
-      );
-    },
-    []
-  );
-
-  const addFiles = useCallback((files: File[]) => {
-    const newFiles: UploadedFile[] = files.map((file) => ({
-      id: Math.random().toString(36).slice(2, 11),
-      file,
-    }));
-
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-  }, []);
-
-  const removeFile = useCallback((fileId: string) => {
-    setUploadedFiles((prev) => prev.filter((file) => file.id !== fileId));
-  }, []);
-
-  const formatFileSize = useCallback((bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-  }, []);
-
-  const getFormData = useCallback((): FormData | undefined => {
-    if (uploadedFiles.length === 0) return undefined;
-    const formData = new FormData();
-
-    uploadedFiles.forEach((f) => {
-      formData.append("uploadedPdfFiles", f.file);
-    });
-    return formData;
-  }, [uploadedFiles]);
-
-  return {
-    getFormData,
-    uploadedFiles,
-    addFiles,
-    removeFile,
-    formatFileSize,
-    setUploadedFiles,
-  };
-};
-
 /**
  * hanlde new task
  */
@@ -431,7 +317,7 @@ const useUpdateTask = (payload: {
   stageId: string;
 }) => {
   const navigate = useNavigate();
-  const { taskId, context, stage, stageId, caseId } = payload;
+  const { taskId, context, stage, caseId } = payload;
 
   const {
     input,
@@ -441,6 +327,8 @@ const useUpdateTask = (payload: {
     setSubmitLoading,
     submitLoading,
   } = useFormInput();
+
+  // file state hook
   const pdfFileState = useFormUploads({ isUpdating: true, taskId });
 
   const [originalData, setOriginalData] = useState<TaskFormType | undefined>(
@@ -522,7 +410,7 @@ const useUpdateTask = (payload: {
     let updateTask: CaseTransactionTask;
     await promiseToast(
       async () => {
-        if (!updatedDataForm) return;
+        if (!updatedDataForm && !pdfFileState.isThereFilesUploaded) return;
 
         updateTask = await TaskApi.update({
           case_id: caseId!,

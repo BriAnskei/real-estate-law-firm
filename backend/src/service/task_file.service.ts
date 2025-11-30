@@ -1,6 +1,6 @@
 import { RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
-import { TaskFileModel } from "../model/task_files.model.js";
+import { FileType, TaskFileModel } from "../model/task_files.model.js";
 import { PoolConnection } from "mysql2/promise";
 
 export class TaskFileService {
@@ -8,7 +8,7 @@ export class TaskFileService {
     payload: {
       files: Express.Multer.File[];
       task_id: string;
-      file_type: string;
+      file_type: FileType;
     },
     connection?: PoolConnection
   ) {
@@ -29,6 +29,45 @@ export class TaskFileService {
     } catch (error) {
       console.error(error);
       throw error;
+    }
+  }
+
+  /**
+   * Process file uploads depending on the upload type.
+   *
+   * This function provides a unified interface for handling two cases:
+   *
+   *  ASSIGNER_UPLOAD:
+   *    - Creates new file records
+   *    - Saves metadata to the database
+   *
+   *  SUBMISSION:
+   *    - Deletes all existing file records for the task
+   *    - Saves all newly uploaded files to the database
+   */
+  static async processFileUpload(payload: {
+    task_id: string;
+    file_type: FileType;
+    files: Express.Multer.File[];
+  }): Promise<void> {
+    const { file_type, files } = payload;
+
+    const connection = await pool.getConnection();
+    try {
+      if (file_type === "ASSIGNER_UPLOAD" && files.length > 0) {
+        await this.createFiles(payload, connection);
+      } else if (file_type === "SUBMISSION") {
+        await this.proccessUpdateSavedFiles(payload, connection);
+      }
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+
+      console.error(error);
+      throw error;
+    } finally {
+      connection.release();
     }
   }
 
@@ -59,7 +98,7 @@ export class TaskFileService {
   static async proccessUpdateSavedFiles(
     payload: {
       task_id: string;
-      file_type: string;
+      file_type: FileType;
       files?: Express.Multer.File[];
     },
     connection: PoolConnection
@@ -67,24 +106,38 @@ export class TaskFileService {
     const { task_id, file_type, files } = payload;
 
     try {
-      await this.delete(task_id, connection);
+      await this.delete({ taskId: task_id, file_type }, connection);
 
-      if (!files) return; // no need to update or add if there is not file
+      if (!files || files.length === 0) return; // no need to update or add if there is not file
 
-      await this.createFiles({ files, task_id, file_type });
+      await this.createFiles({ files, task_id, file_type }, connection);
     } catch (error) {
       console.error(error);
       throw error;
     }
   }
 
-  static async delete(taskId: string, connection: PoolConnection) {
+  static async delete(
+    payload: { taskId: string; file_type?: FileType },
+    connection: PoolConnection
+  ) {
+    const { taskId, file_type } = payload;
     try {
+      const vals = [];
+
+      let condition = "task_id = ?";
+      vals.push(taskId);
+
+      if (file_type) {
+        condition += " AND  file_type = ?";
+        vals.push(file_type);
+      }
+
       await connection.execute(
         `
-  DELETE FROM task_files WHERE task_id = ?
+  DELETE FROM task_files WHERE ${condition}
   `,
-        [taskId]
+        [...vals]
       );
     } catch (error) {
       console.error(error);

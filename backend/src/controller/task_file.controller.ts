@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { TaskFileService } from "../service/task_file.service.js";
+import { FileType } from "../model/task_files.model.js";
 
 export class TaskFileController {
   static async uploadFiles(req: Request, res: Response) {
@@ -7,11 +8,11 @@ export class TaskFileController {
 
     const files = req.files as Express.Multer.File[];
 
-    if (!files || files.length === 0) {
-      res.json({ success: true });
-    }
-
-    await TaskFileService.createFiles({ task_id, file_type, files });
+    await TaskFileService.processFileUpload({
+      task_id,
+      file_type: file_type as FileType,
+      files,
+    });
 
     res.json({ success: true });
   }

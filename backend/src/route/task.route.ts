@@ -24,6 +24,12 @@ taskRoute.patch(
   asyncHandler(taskController.updateTask)
 );
 
+taskRoute.patch(
+  "/complete/:task_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(taskController.markComplete)
+);
+
 taskRoute.get(
   "/get/:stage_name/:case_stage_id",
   asyncHandler(authMiddleware),
@@ -44,7 +50,7 @@ taskRoute.delete(
 
 taskRoute.delete(
   "/delete/:case_id/:stage_name/:task_id/:file_type",
-
+  asyncHandler(authMiddleware),
   asyncHandler(deleteTaskFolderMiddleware),
   asyncHandler(taskController.delete)
 );

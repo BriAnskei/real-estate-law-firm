@@ -11,6 +11,7 @@ import caseStageRoute from "./route/case_stages.route.js";
 import taskRoute from "./route/task.route.js";
 import taskFileRoute from "./route/task_file.route.js";
 import path from "path";
+import taskReviewRoute from "./route/task_review.route.js";
 
 const app = express();
 const PORT = 4000;
@@ -28,6 +29,7 @@ app.use("/api/case/stages", caseStageRoute);
 
 app.use("/api/task", taskRoute);
 app.use("/api/file", taskFileRoute);
+app.use("/api/task/review", taskReviewRoute);
 
 app.use("/api/client", clientRoute);
 

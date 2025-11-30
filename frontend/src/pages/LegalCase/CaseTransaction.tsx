@@ -37,6 +37,7 @@ import { RootState } from "../../store/store";
 import { DeleteTaskModal } from "../../components/modal/caseModal/DeleteTaskModal";
 import { ApexOptions } from "apexcharts";
 import { ScrollToTop } from "../../components/common/ScrollToTop";
+import { selectCurrentUser } from "../../store/selector/user/userSelector";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -374,6 +375,8 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
     viewTask,
 
     taskDeleteState,
+
+    currUser,
   } = useCaseStage({
     stageData: stage,
     stageTask: task,
@@ -396,6 +399,7 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
         />
 
         <AllTasks
+          curUserId={currUser?.id}
           deleteTask={taskDeleteState.openModal}
           onEditTask={updateTask}
           tasks={task!}
@@ -468,42 +472,46 @@ const AllTasks = React.memo(function AllTasks({
   loading = true,
   onEditTask,
   onViewTask,
-
   deleteTask,
+
+  curUserId,
 }: {
   tasks: CaseTransactionTask[] | undefined;
   formatDate: (dateString: string) => string;
   loading?: boolean;
   onEditTask: (taskId: string) => void;
-  onViewTask: (taskId: string) => void;
+  onViewTask: (payload: { assignTo: string; taskId: string }) => void;
 
   deleteTask: (taskId: string) => void;
+  curUserId?: string;
 }) {
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
-      case "approved":
+      case "complete":
         return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case "rejected":
-        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+
       case "pending":
         return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      default:
-        return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
     }
   }, []);
 
   const getStatusIcon = useCallback((status: string) => {
     switch (status) {
-      case "approved":
+      case "complete":
         return <CheckCircle className="h-4 w-4" />;
-      case "rejected":
-        return <XCircle className="h-4 w-4" />;
       case "pending":
         return <AlertCircle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
   }, []);
+
+  const isCurUserId = useCallback(
+    (userId: string) => {
+      return curUserId && curUserId === userId;
+    },
+    [curUserId]
+  );
 
   if (loading || tasks === undefined) {
     return (
@@ -586,7 +594,7 @@ const AllTasks = React.memo(function AllTasks({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onViewTask(task.id!);
+                  onViewTask({ taskId: task.id!, assignTo: task.assign_to });
                 }}
                 className="rounded-md bg-gray-100 dark:bg-inherit
         p-1.5 text-gray-600 dark:text-gray-400 
@@ -644,14 +652,18 @@ const AllTasks = React.memo(function AllTasks({
                   <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                   <span>
                     Assigned by:{" "}
-                    <span className="font-medium">{task.assigner_name}</span>
+                    <span className="font-medium">
+                      {isCurUserId(task.assign_by) ? "You" : task.assigner_name}
+                    </span>
                   </span>
                 </div>
                 <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                   <User className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                   <span>
                     Assigned to:{" "}
-                    <span className="font-medium">{task.assignee_name}</span>
+                    <span className="font-medium">
+                      {isCurUserId(task.assign_to) ? "You" : task.assignee_name}
+                    </span>
                   </span>
                 </div>
               </div>

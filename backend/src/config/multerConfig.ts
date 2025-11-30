@@ -7,6 +7,7 @@ export const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const { task_id, file_type, case_id, stage_name } = req.params;
+
       const uploadPath = path.join(
         "uploads",
         `case-${case_id}`,

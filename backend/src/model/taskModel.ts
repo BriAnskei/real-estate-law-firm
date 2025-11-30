@@ -7,7 +7,7 @@ export type taskModel = {
   assign_by: string;
   assign_to: string;
   due_date: string;
-  status?: "pending" | "approved";
+  status?: "pending" | "complete";
   comments_count?: string;
   created_at?: string;
 };

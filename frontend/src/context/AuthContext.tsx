@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AppDispatch, RootState } from "../store/store";
 import { refreshTokens } from "../store/Slice/authSlice";
 import { fetchCurrentUser } from "../store/Slice/userSlice";
