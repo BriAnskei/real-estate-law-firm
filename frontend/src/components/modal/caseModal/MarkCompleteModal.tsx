@@ -3,7 +3,7 @@ import { CheckCircle, X } from "lucide-react";
 type MarkCompleteModalProp = {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm?: () => void;
   taskTitle?: string;
   isMarking: boolean;
 };

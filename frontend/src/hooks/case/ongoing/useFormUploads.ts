@@ -96,6 +96,7 @@ const useFormUploads = (payload: {
 
     isThereFilesUploaded: Boolean(originalFiles?.length),
     originalFiles,
+    setOriginalFiles,
   };
 };
 

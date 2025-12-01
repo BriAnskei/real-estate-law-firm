@@ -93,6 +93,26 @@ export class TaskService {
     }
   }
 
+  static async isAllStageTaskComplete(stageId: string): Promise<boolean> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT EXISTS(
+      SELECT 1 FROM tasks
+      WHERE case_stage_id = ?
+        AND status = 'pending'
+    ) AS hasPending`,
+        [stageId]
+      );
+
+      const hasPending: boolean = rows[0].hasPending === 0;
+
+      return hasPending;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async processUpdateTask(payload: {
     id: string;
     formData: FormData;

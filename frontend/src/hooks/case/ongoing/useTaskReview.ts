@@ -3,6 +3,8 @@ import { TaskReviewType } from "../../../types/TaskReviewType";
 import { TaskReviewApi } from "../../../util/api/task_review.api";
 import { useCaseTransaction } from "../../../context/CaseTransactionContext";
 import { Stages } from "../../../store/Slice/case.slice";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "../../../store/selector/user/userSelector";
 
 const useTaskReviewInput = () => {
   const [commentInput, setCommentInput] = useState("");
@@ -22,11 +24,11 @@ const useTaskReviewInput = () => {
 
 const useTaskReview = (payload: { taskId?: string; stage: Stages }) => {
   const { taskId, stage } = payload;
-
+  const curUser = useSelector(selectCurrentUser);
   const context = useCaseTransaction();
 
   // ref for reviews scroll
-  const commentsEndRef = useRef<HTMLDivElement>(null);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
   const [taskReviews, setTaskReviews] = useState<TaskReviewType[] | undefined>(
     undefined
   );
@@ -41,6 +43,7 @@ const useTaskReview = (payload: { taskId?: string; stage: Stages }) => {
         const response = await TaskReviewApi.getAllByTaskId(taskId);
 
         setTaskReviews(response);
+        scrollToBottom();
       } catch (error) {
         console.error(error);
       } finally {
@@ -70,11 +73,13 @@ const useTaskReview = (payload: { taskId?: string; stage: Stages }) => {
 
   const scrollToBottom = () => {
     setTimeout(() => {
-      commentsEndRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 300);
+      if (commentsContainerRef.current) {
+        commentsContainerRef.current.scrollTo({
+          top: commentsContainerRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }, 100);
   };
 
   return {
@@ -83,7 +88,9 @@ const useTaskReview = (payload: { taskId?: string; stage: Stages }) => {
     addNewReview,
 
     ...commentInputState,
-    commentsEndRef,
+
+    commentsContainerRef,
+    curUser,
   };
 };
 

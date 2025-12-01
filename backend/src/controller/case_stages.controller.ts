@@ -13,8 +13,8 @@ export class CaseStagesController {
   static async updateStatus(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const { status } = req.body;
-    await CaseStageService.updateStatus({ id, status });
+    const response = await CaseStageService.updateStatus({ id, status });
 
-    res.json({ success: true, message: "Stage status updated successfully" });
+    res.json({ ...response });
   }
 }

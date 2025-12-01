@@ -299,7 +299,7 @@ export const CaseTransactionProvider: React.FC<{
 
             return `Stage successfully marked as ${status}`;
           },
-          error: (err) => `Failed to update status: ${err || "Unknown error"}`,
+          error: (err) => `${err || "Unknown error"}`,
         }
       );
     },

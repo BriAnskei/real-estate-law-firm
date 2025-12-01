@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router";
 import useTaskReview from "./useTaskReview";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CaseTransactionTask,
   file_type,
@@ -23,9 +23,30 @@ const usePdfFileTask = (payload: {
   stage?: Stages;
   caseId: string;
   originalUploadedFiles?: UploadedFile[];
+  uploadedFiles: UploadedFile[];
   getUploadedFiles: () => FormData | undefined;
+
+  /**
+   *
+   *  so this function paramater is used for updating the original for
+   * when user uploaded a new files, this is important because we need
+   * to use the original files to campre the changes of the uploaded files
+   * that will disable the compontent button
+   */
+  setOriginalFiles: React.Dispatch<
+    React.SetStateAction<UploadedFile[] | undefined>
+  >;
 }) => {
-  const { taskId, getUploadedFiles, caseId, stage } = payload;
+  const {
+    taskId,
+    getUploadedFiles,
+    uploadedFiles,
+    originalUploadedFiles,
+    caseId,
+    stage,
+
+    setOriginalFiles,
+  } = payload;
 
   const { promiseToast } = useToast();
 
@@ -59,11 +80,46 @@ const usePdfFileTask = (payload: {
     fetchReferenceFiles();
   }, [taskId]);
 
+  // check if there are changes in the uploaded files, this will handle the 'isThereChangesInUploads'
+  // that will desable the submit button in the componentr
+  const hasFilesChanges = useCallback(() => {
+    // If there were no original files and now there are uploaded files
+    if (
+      (!originalUploadedFiles || originalUploadedFiles.length === 0) &&
+      uploadedFiles.length > 0
+    ) {
+      return true;
+    }
+
+    // If files count is different
+    if (uploadedFiles.length !== originalUploadedFiles?.length) {
+      return true;
+    }
+
+    // Check if file IDs match (comparing sets of IDs)
+    const originalIds = new Set(originalUploadedFiles?.map((f) => f.id) || []);
+    const currentIds = new Set(uploadedFiles.map((f) => f.id));
+
+    if (originalIds.size !== currentIds.size) {
+      return true;
+    }
+
+    // Check if all current IDs exist in original IDs
+    for (const id of currentIds) {
+      if (!originalIds.has(id)) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [uploadedFiles, originalUploadedFiles]);
+
   const submitFiles = useCallback(async () => {
     try {
-      const uploadedFiles = getUploadedFiles();
+      // get the encoded formData files
+      const encodedFileForm = getUploadedFiles();
 
-      if (!uploadedFiles) return;
+      if (!encodedFileForm) return;
 
       await promiseToast(
         async () => {
@@ -72,19 +128,23 @@ const usePdfFileTask = (payload: {
             stage_name: stage!,
             taskId: taskId!,
             file_type: file_type.submitter,
-            fileForm: uploadedFiles,
+            fileForm: encodedFileForm,
           });
         },
         {
           loading: "Submitting documents....",
-          success: "documents successfully submitted",
+          success: (_: void) => {
+            setOriginalFiles(uploadedFiles);
+
+            return "documents successfully submitted";
+          },
           error: (err) => `Failed to update task: ${err || "Unknown error"}`,
         }
       );
     } catch (error) {
       console.error(error);
     }
-  }, [getUploadedFiles]);
+  }, [getUploadedFiles, uploadedFiles]);
 
   //component functions
   const handleDownloadAll = () => {
@@ -130,6 +190,7 @@ const usePdfFileTask = (payload: {
     handleDownloadFile,
     handleViewFile,
     submitFiles,
+    hasFilesChanges,
   };
 };
 
@@ -148,9 +209,12 @@ const useViewTask = () => {
 
   const navigate = useNavigate();
 
+  // task is assign to one person and it is the current user
   const isAssignersUser =
-    curUser?.id === taskData?.assign_to &&
-    taskData?.assign_by === taskData?.assign_to;
+    curUser &&
+    taskData &&
+    curUser.id === taskData.assign_to &&
+    taskData.assign_by === taskData.assign_to;
 
   // reference files and functionalities state
   const pdfState = useFormUploads({
@@ -163,8 +227,11 @@ const useViewTask = () => {
   const filesState = usePdfFileTask({
     taskId,
     getUploadedFiles: pdfState.getFormData,
+    originalUploadedFiles: pdfState.originalFiles,
+    uploadedFiles: pdfState.uploadedFiles,
     caseId: id as string,
     stage: stage as Stages,
+    setOriginalFiles: pdfState.setOriginalFiles,
   });
 
   // task review state
@@ -179,6 +246,13 @@ const useViewTask = () => {
       setFetchTaskLoading(true);
       try {
         const response = await TaskApi.getById(taskId);
+
+        // if the task is complete navigate to review(mock function)
+        if (response && response.status === "complete") {
+          navigate(`/case/transaction/${id}/stage/task/review/${taskId}`, {
+            replace: true,
+          });
+        }
 
         setTaskData(response);
       } catch (error) {
@@ -222,7 +296,7 @@ const useViewTask = () => {
   }, [taskId, isAssignersUser]);
 
   const goBack = () => {
-    navigate(`/case/transaction/${id}`);
+    navigate(`/case/transaction/${id}`, { replace: true });
   };
 
   const formatDate = (dateString: string): string => {
@@ -247,7 +321,9 @@ const useViewTask = () => {
     formatDate,
 
     isAssignersUser,
-    markTaskAsComplete,
+
+    // only return the function if the user is  the assginer
+    ...(isAssignersUser && { markTaskAsComplete }),
 
     // file state
     ...filesState,

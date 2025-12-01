@@ -5,7 +5,6 @@ import {
   MessageSquare,
   Clock,
   CheckCircle,
-  XCircle,
   AlertCircle,
   Plus,
   User,
@@ -37,7 +36,6 @@ import { RootState } from "../../store/store";
 import { DeleteTaskModal } from "../../components/modal/caseModal/DeleteTaskModal";
 import { ApexOptions } from "apexcharts";
 import { ScrollToTop } from "../../components/common/ScrollToTop";
-import { selectCurrentUser } from "../../store/selector/user/userSelector";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -399,6 +397,8 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
         />
 
         <AllTasks
+          // if stage is complete, action is not allowed in task
+          isActionAllowed={stage.stage_status === "ongoing"}
           curUserId={currUser?.id}
           deleteTask={taskDeleteState.openModal}
           onEditTask={updateTask}
@@ -455,7 +455,8 @@ function StageHeader({
         />
         <button
           onClick={onAddTask}
-          className="inline-flex items-center gap-2 rounded-md bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 shadow-sm whitespace-nowrap"
+          disabled={status === "complete"}
+          className="inline-flex items-center gap-2 rounded-md bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#D4AF37]"
         >
           <Plus className="h-4 w-4 flex-shrink-0" />
           Add Task
@@ -473,15 +474,19 @@ const AllTasks = React.memo(function AllTasks({
   onEditTask,
   onViewTask,
   deleteTask,
-
+  isActionAllowed,
   curUserId,
 }: {
   tasks: CaseTransactionTask[] | undefined;
   formatDate: (dateString: string) => string;
   loading?: boolean;
   onEditTask: (taskId: string) => void;
-  onViewTask: (payload: { assignTo: string; taskId: string }) => void;
-
+  onViewTask: (payload: {
+    assignTo: string;
+    taskId: string;
+    isTaskComplete: boolean;
+  }) => void;
+  isActionAllowed: boolean;
   deleteTask: (taskId: string) => void;
   curUserId?: string;
 }) {
@@ -574,119 +579,138 @@ const AllTasks = React.memo(function AllTasks({
   return (
     <div className="h-[600px] overflow-y-auto">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {tasks.map((task, index) => (
-          <div
-            key={task.id}
-            className="group relative flex h-full flex-col rounded-lg border-2 
+        {tasks.map((task, index) => {
+          // enable edit/update if the curUser is assigner for this task
+          // and
+          const isCurUserAssignee = isCurUserId(task.assign_by);
+          const isPending = task.status === "pending";
+
+          return (
+            <div
+              key={task.id}
+              className="group relative flex h-full flex-col rounded-lg border-2 
       border-gray-200 bg-white p-6 transition-all duration-300 
       hover:border-[#D4AF37] hover:shadow-lg dark:border-gray-700 
       dark:bg-gray-800 dark:hover:border-[#D4AF37] cursor-pointer"
-            style={{
-              animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
-            }}
-          >
-            {/* Action buttons - available on hover */}
-            <div
-              className="absolute top-3 right-3 flex gap-1 
+              style={{
+                animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
+              }}
+            >
+              {/* Action buttons - available on hover */}
+              <div
+                className="absolute top-3 right-3 flex gap-1 
       opacity-0 group-hover:opacity-100 transition-opacity
       duration-200"
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewTask({ taskId: task.id!, assignTo: task.assign_to });
-                }}
-                className="rounded-md bg-gray-100 dark:bg-inherit
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewTask({
+                      taskId: task.id!,
+                      assignTo: task.assign_to,
+                      isTaskComplete: task.status === "complete",
+                    });
+                  }}
+                  className="rounded-md bg-gray-100 dark:bg-inherit
         p-1.5 text-gray-600 dark:text-gray-400 
         transition-all hover:text-[#D4AF37] 
         dark:hover:text-[#D4AF37] active:scale-95"
-                title="View task"
-              >
-                <Eye className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditTask(task.id!);
-                }}
-                className="rounded-md bg-gray-100 dark:bg-inherit
+                  title="View task"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </button>
+                {isCurUserAssignee && isPending && isActionAllowed && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditTask(task.id!);
+                      }}
+                      className="rounded-md bg-gray-100 dark:bg-inherit
         p-1.5 text-gray-600 dark:text-gray-400 
         transition-all hover:text-blue-500 
         dark:hover:text-blue-400 active:scale-95"
-                title="Edit task"
-              >
-                <Edit2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Add your delete handler here
-                  deleteTask(task.id!);
-                }}
-                className="rounded-md bg-gray-100 dark:bg-inherit
+                      title="Edit task"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Add your delete handler here
+                        deleteTask(task.id!);
+                      }}
+                      className="rounded-md bg-gray-100 dark:bg-inherit
         p-1.5 text-gray-600 dark:text-gray-400
         transition-all hover:text-red-500 
         dark:hover:text-red-400 active:scale-95"
-                title="Delete task"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
+                      title="Delete task"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
 
-            <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-white">
-              {task.title}
-            </h3>
-            <div className="h-px w-12 bg-[#D4AF37] mb-4"></div>
-            <p className="mb-5 flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-              {task.description}
-            </p>
-            <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <Calendar className="h-4 w-4" />
-              <span>{formatDate(task.due_date)}</span>
-            </div>
+              <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-white">
+                {task.title}
+              </h3>
+              <div className="h-px w-12 bg-[#D4AF37] mb-4"></div>
+              <p className="mb-5 flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                {task.description}
+              </p>
+              <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <Calendar className="h-4 w-4" />
+                <span>{formatDate(task.due_date)}</span>
+              </div>
 
-            {/* Assignment Information */}
-            <div className="mb-4 flex items-start justify-start gap-3">
-              <div className="space-y-1.5 text-left">
-                <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                  <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>
-                    Assigned by:{" "}
-                    <span className="font-medium">
-                      {isCurUserId(task.assign_by) ? "You" : task.assigner_name}
+              {/* Assignment Information */}
+              <div className="mb-4 flex items-start justify-start gap-3">
+                <div className="space-y-1.5 text-left">
+                  <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                    <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>
+                      Assigned by:{" "}
+                      <span className="font-medium">
+                        {isCurUserId(task.assign_by)
+                          ? "You"
+                          : task.assigner_name}
+                      </span>
                     </span>
+                  </div>
+                  <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                    <User className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    <span>
+                      Assigned to:{" "}
+                      <span className="font-medium">
+                        {isCurUserId(task.assign_to)
+                          ? "You"
+                          : task.assignee_name}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(
+                    task.status
+                  )}`}
+                >
+                  {getStatusIcon(task.status)}
+                  <span className="capitalize">{task.status}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-xs font-medium">
+                    {task.comments_count}
                   </span>
                 </div>
-                <div className="flex items-center justify-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                  <User className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                  <span>
-                    Assigned to:{" "}
-                    <span className="font-medium">
-                      {isCurUserId(task.assign_to) ? "You" : task.assignee_name}
-                    </span>
-                  </span>
-                </div>
               </div>
             </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(
-                  task.status
-                )}`}
-              >
-                {getStatusIcon(task.status)}
-                <span className="capitalize">{task.status}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                <MessageSquare className="h-4 w-4" />
-                <span className="text-xs font-medium">
-                  {task.comments_count}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

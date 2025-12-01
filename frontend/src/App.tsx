@@ -55,7 +55,10 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
             element={<TaskFormPage />}
           />
           <Route path=":stage/task/:taskId" element={<ViewTaskPage />} />
-          <Route path="review/:taskId" element={<TaskReviewPage />} />
+          <Route
+            path=":stage/task/review/:taskId"
+            element={<TaskReviewPage />}
+          />
         </Route>
       )}
       {/* Catch all - must be last */}

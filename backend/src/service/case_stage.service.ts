@@ -2,6 +2,8 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { CaseStageModel } from "../model/cases.model.js";
 import { PoolConnection } from "mysql2/promise";
+import { ResponseType } from "../types/auth.types.js";
+import { TaskService } from "./task.service.js";
 
 export class CaseStageService {
   static async create(id: string, connection: PoolConnection) {
@@ -65,10 +67,21 @@ export class CaseStageService {
   static async updateStatus(payload: {
     id: string;
     status: string;
-  }): Promise<void> {
+  }): Promise<ResponseType<undefined>> {
     const { id, status } = payload;
 
     try {
+      if (
+        status === "complete" &&
+        !(await TaskService.isAllStageTaskComplete(id))
+      ) {
+        return {
+          success: false,
+          message:
+            "Completion of all tasks is required before marking the stage as complete.",
+        };
+      }
+
       const [res] = await pool.execute<ResultSetHeader>(
         `
           UPDATE case_stages SET stage_status = ? WHERE  id = ?
@@ -77,6 +90,8 @@ export class CaseStageService {
       );
 
       if (res.affectedRows === 0) throw new Error("No Status where updated");
+
+      return { success: true };
     } catch (error) {
       console.error(error);
       throw error;

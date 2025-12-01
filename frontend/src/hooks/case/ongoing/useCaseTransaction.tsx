@@ -146,19 +146,24 @@ const useCaseStage = (payload: {
   };
 
   const viewTask = useCallback(
-    (payload: { assignTo: string; taskId: string }) => {
-      const { assignTo, taskId } = payload;
+    (payload: {
+      assignTo: string;
+      taskId: string;
+      isTaskComplete: boolean;
+    }) => {
+      const { assignTo, taskId, isTaskComplete } = payload;
       // wait for the curUserData before navigating
       if (!currUser) return;
 
-      if (assignTo.toString() === currUser.id!.toString()) {
-        // go to task by as assigned user
+      if (assignTo.toString() === currUser.id!.toString() && !isTaskComplete) {
+        // if user asigneee and task is pending go to task view
         navigate(`${stageData.stage_name}/task/${taskId}`);
       } else {
-        navigate(`review/${taskId}`);
+        // if user is not the asignnee or task is complete, process to review page,
+        navigate(`${stageData.stage_name}/task/review/${taskId}`);
       }
     },
-    [currUser]
+    [currUser, stageData]
   );
 
   return {

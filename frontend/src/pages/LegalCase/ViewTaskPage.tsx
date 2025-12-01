@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -37,6 +37,7 @@ export default function ViewTaskPage() {
     removeFile,
     formatFileSize,
     isThereFilesUploaded,
+    hasFilesChanges,
 
     // file submission
     submitFiles,
@@ -46,7 +47,7 @@ export default function ViewTaskPage() {
     addNewReview,
     reviewCommentInputOnChange,
     commentInput,
-    commentsEndRef,
+    commentsContainerRef,
 
     //modal
     open,
@@ -407,12 +408,12 @@ export default function ViewTaskPage() {
             {/* Submit Button */}
             <div className="mt-6 flex justify-end">
               <button
-                disabled={!isThereFilesUploaded && uploadedFiles.length === 0}
+                disabled={!hasFilesChanges()}
                 className="flex items-center gap-2 rounded-lg bg-[#D4AF37] px-6 py-3 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#D4AF37]"
                 onClick={submitFiles}
               >
                 <Upload className="h-4 w-4" />
-                Submit Files
+                {isThereFilesUploaded ? "Save Changes" : "Submit Files"}
               </button>
             </div>
           </div>
@@ -425,6 +426,7 @@ export default function ViewTaskPage() {
 
             {/* Comments List - Scrollable */}
             <div
+              ref={commentsContainerRef}
               className={`mb-6 ${
                 taskReviews && taskReviews.length > 4
                   ? "max-h-[483px] overflow-y-auto custom-scrollbar pr-2"
@@ -469,7 +471,6 @@ export default function ViewTaskPage() {
                         </p>
                       </div>
                     ))}
-                    <div ref={commentsEndRef} />
                   </>
                 )}
               </div>

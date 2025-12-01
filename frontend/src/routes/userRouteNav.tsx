@@ -105,8 +105,27 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
       ],
     },
     [Roles.paralegal]: {
-      menu: [],
-      others: [],
+      menu: [
+        {
+          icon: <GridIcon />,
+          name: "Dashboard",
+          path: "/",
+        },
+
+        cases,
+        {
+          icon: <CalenderIcon />,
+          name: "Calendar",
+          path: "/calendar",
+        },
+      ],
+      others: [
+        {
+          icon: <Notification />,
+          name: "Notifications",
+          path: "/notifications",
+        },
+      ],
     },
     [Roles.processServer]: {
       menu: [
@@ -151,11 +170,15 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/consultation", element: <ConsultationPage /> },
     { path: "/case", element: <CasesPage /> },
     { path: "/client", element: <ClientPage /> },
-
-    { path: "/request", element: <AccountRequest /> },
-    { path: "/accounts", element: <AllAccountPage /> },
   ],
-  [Roles.paralegal]: [],
+  [Roles.paralegal]: [
+    { path: "/", element: <Home /> },
+
+    // cases
+    { path: "/consultation", element: <ConsultationPage /> },
+    { path: "/case", element: <CasesPage /> },
+    { path: "/client", element: <ClientPage /> },
+  ],
   [Roles.processServer]: [
     { path: "/", element: <Home /> },
     { path: "/consultation", element: <ConsultationPage /> },
