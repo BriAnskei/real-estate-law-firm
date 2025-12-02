@@ -1,8 +1,10 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
-import OngoingCasesTable from "../../components/tables/LegalCaseTable/CasesTable";
+
 import useCase from "../../hooks/case/ongoing/useCase";
+import CasesTable from "../../components/tables/LegalCaseTable/CasesTable";
+import { DeleteCaseModal } from "../../components/modal/caseModal/deleteCaseModal";
 
 export default function CasesPage() {
   const {
@@ -12,9 +14,16 @@ export default function CasesPage() {
     setSearch,
     filter,
     setFilter,
-    openCaseTransaction,
-    clearFilter,
-    deleteCase,
+
+    clearFilterInput,
+
+    // delete state
+    openDeleteCase,
+    onConfirm,
+    caseDetials,
+    closeDeleteCase,
+    isCaseDeleteOpen,
+    isDeleting,
   } = useCase();
 
   return (
@@ -26,20 +35,26 @@ export default function CasesPage() {
       <PageBreadcrumb pageTitle="Cases" />
       <div className="space-y-6">
         <ComponentCard title="All Cases">
-          <OngoingCasesTable
+          <CasesTable
             byId={displayData.byId}
             allIds={displayData.allIds}
             search={search}
             setSearch={setSearch}
             loading={loading}
-            openCaseProgress={openCaseTransaction}
-            clearFilter={clearFilter}
+            clearFilter={clearFilterInput}
             statusFilter={filter}
             setStatusFilter={setFilter}
-            deleteCase={deleteCase}
+            deleteCase={openDeleteCase}
           />
         </ComponentCard>
       </div>
+      <DeleteCaseModal
+        isOpen={isCaseDeleteOpen}
+        onClose={closeDeleteCase}
+        onConfirm={onConfirm}
+        isDeleting={isDeleting}
+        caseName={caseDetials ? caseDetials.concern : undefined}
+      />
     </>
   );
 }

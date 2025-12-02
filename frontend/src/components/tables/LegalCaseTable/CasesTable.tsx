@@ -9,16 +9,18 @@ import {
 import { CaseType } from "../../../store/Slice/case.slice";
 import { useNavigate } from "react-router";
 
+import { filterType } from "../../../hooks/case/ongoing/useCase";
+
 type CasesTableProp = {
   byId: Record<string, CaseType>;
   allIds: string[];
   search?: string;
   setSearch: React.Dispatch<React.SetStateAction<string | undefined>>;
-  statusFilter: string;
-  setStatusFilter: React.Dispatch<React.SetStateAction<string>>;
+  statusFilter: filterType;
+  setStatusFilter: React.Dispatch<React.SetStateAction<filterType>>;
   loading: boolean;
-  openCaseProgress: (caseId: string) => void;
-  deleteCase: (caseData: { id: string; name: string }) => void;
+
+  deleteCase: (caseData: { caseId: string; concern: string }) => void;
   clearFilter: () => void;
 };
 
@@ -30,7 +32,7 @@ export default function CasesTable({
   statusFilter,
   setStatusFilter,
   loading,
-  openCaseProgress,
+
   deleteCase,
   clearFilter,
 }: CasesTableProp) {
@@ -58,7 +60,7 @@ export default function CasesTable({
                 <LoadingRows />
               ) : allIds.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="px-5 py-12 text-center">
+                  <TableCell colSpan={5} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <svg
                         className="w-12 h-12 text-gray-400 dark:text-gray-600 mb-3"
@@ -77,7 +79,7 @@ export default function CasesTable({
                         No cases found
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {!!search?.length || statusFilter !== "all"
+                        {!!search?.length || statusFilter !== undefined
                           ? "Try adjusting your filters"
                           : "No cases have been filed yet"}
                       </p>
@@ -90,7 +92,6 @@ export default function CasesTable({
                   <TableRows
                     key={id}
                     caseItem={byId[id]}
-                    openCaseProgress={openCaseProgress}
                     deleteCase={deleteCase}
                   />
                 ))
@@ -112,8 +113,8 @@ function FilterInput({
 }: {
   search: string;
   setSearch: any;
-  statusFilter: string;
-  setStatusFilter: any;
+  statusFilter: filterType;
+  setStatusFilter: React.Dispatch<React.SetStateAction<filterType>>;
   clearFilter: () => void;
 }) {
   return (
@@ -123,7 +124,7 @@ function FilterInput({
         <div className="relative flex-1 max-w-sm">
           <Search
             className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2
-               text-gray-400"
+               text-gray-400 dark:text-gray-500"
           />
           <input
             type="text"
@@ -139,12 +140,12 @@ function FilterInput({
           {/* Status Filter Dropdown */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border-2 border-gray-200 bg-white py-2.5 px-4 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-white/[0.1] dark:bg-white/[0.05] dark:text-white cursor-pointer hover:border-gray-300 dark:hover:border-white/[0.2]"
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="rounded-lg border-2 border-gray-200 bg-white py-2.5 px-4 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-white/[0.1] dark:bg-white/[0.05] dark:text-white/90 cursor-pointer hover:border-gray-300 dark:hover:border-white/[0.2] [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
           >
             <option value="all">All Cases</option>
             <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
+            <option value="complete">Completed</option>
           </select>
 
           {/* Reset Button - Always Visible */}
@@ -198,6 +199,12 @@ function TableHeaders() {
         </TableCell>
         <TableCell
           isHeader
+          className="px-5 py-3 font-medium text-[#D4AF37] text-start text-xs dark:text-[#D4AF37]"
+        >
+          Status
+        </TableCell>
+        <TableCell
+          isHeader
           className="px-5 py-3 font-medium text-[#D4AF37] text-center text-xs dark:text-[#D4AF37]"
         >
           Actions
@@ -209,12 +216,12 @@ function TableHeaders() {
 
 function TableRows({
   caseItem,
-  openCaseProgress,
+
   deleteCase,
 }: {
   caseItem: CaseType;
-  openCaseProgress: (caseId: string) => void;
-  deleteCase: (caseData: { id: string; name: string }) => void;
+
+  deleteCase: (caseData: { caseId: string; concern: string }) => void;
 }) {
   const navigate = useNavigate();
 
@@ -226,6 +233,22 @@ function TableRows({
       day: "numeric",
     }).format(date);
   };
+
+  const getStatusBadge = (status: string) => {
+    const isOngoing = status.toLowerCase() === "ongoing";
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+          isOngoing
+            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+            : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+        }`}
+      >
+        {isOngoing ? "Ongoing" : "Completed"}
+      </span>
+    );
+  };
+
   return (
     <TableRow
       key={caseItem.id}
@@ -241,6 +264,9 @@ function TableRows({
       </TableCell>
       <TableCell className="px-5 py-4 text-gray-500 text-start text-sm dark:text-gray-400">
         {formatDate(caseItem.created_at!)}
+      </TableCell>
+      <TableCell className="px-5 py-4 text-start">
+        {getStatusBadge(caseItem.status || "ongoing")}
       </TableCell>
       <TableCell className="px-5 py-4 text-center">
         <div className="inline-flex items-center gap-2">
@@ -263,8 +289,8 @@ function TableRows({
           <button
             onClick={() =>
               deleteCase({
-                id: caseItem.id!,
-                name: caseItem.client_name,
+                caseId: caseItem.id!,
+                concern: caseItem.concern,
               })
             }
             className="inline-flex items-center justify-center w-8 h-8
@@ -295,6 +321,9 @@ function LoadingRows() {
           </TableCell>
           <TableCell className="px-5 py-4 text-start">
             <div className="h-4 w-24 bg-gray-200 dark:bg-white/[0.1] rounded animate-pulse"></div>
+          </TableCell>
+          <TableCell className="px-5 py-4 text-start">
+            <div className="h-6 w-20 bg-gray-200 dark:bg-white/[0.1] rounded-full animate-pulse"></div>
           </TableCell>
           <TableCell className="px-5 py-4 text-center">
             <div className="h-8 w-24 bg-gray-200 dark:bg-white/[0.1] rounded mx-auto animate-pulse"></div>

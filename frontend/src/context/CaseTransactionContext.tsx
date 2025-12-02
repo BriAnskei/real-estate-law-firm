@@ -12,6 +12,7 @@ import {
   CaseTransactionTask,
   CaseType,
   Stages,
+  updateCaseStatus,
 } from "../store/Slice/case.slice";
 import { caseApi } from "../util/api/case.api";
 import { CaseStagesApi } from "../util/api/case_stages.api";
@@ -20,6 +21,7 @@ import { ClientType } from "../store/Slice/client.slice";
 import { ClientApi } from "../util/api/client.api";
 import { useToast } from "../hooks/useToast";
 import { useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
 
 export type CaseTransactionContextType = {
   loading: boolean;
@@ -43,7 +45,8 @@ export type CaseTransactionContextType = {
 
   statusHandler: (
     stageId: string,
-    stageName: Stages
+    stageName: Stages,
+    caseId: string
   ) => (status: CaseStageStatus) => void;
 
   formatDate: (dateString: string) => string;
@@ -83,6 +86,7 @@ export const CaseTransactionProvider: React.FC<{
 }> = ({ children, caseId }) => {
   const { promiseToast, errorToast } = useToast();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [activeTab, setActiveTab] = useState<TabTypes>("details");
 
@@ -282,20 +286,29 @@ export const CaseTransactionProvider: React.FC<{
   // stages function
   const updateStageStatus = useCallback(
     async (payload: {
+      caseId: string;
       stageId: string;
       stageName: Stages;
       status: CaseStageStatus;
     }) => {
-      const { stageId, stageName, status } = payload;
+      const { stageId, stageName, status, caseId } = payload;
 
+      var isAllStagesComplete: boolean = false;
       await promiseToast(
         async () => {
-          await CaseStagesApi.updateStatus({ stageId, status });
+          isAllStagesComplete = isAllStagesComplete = (
+            await CaseStagesApi.updateStatus({
+              stageId,
+              status,
+              caseId: caseId,
+            })
+          ).isAllStageComplete;
         },
         {
           loading: "Updating status",
           success(_: void) {
             updateStageStateStatus({ status, stageName });
+            dispatch(updateCaseStatus({ caseId, isAllStagesComplete }));
 
             return `Stage successfully marked as ${status}`;
           },
@@ -355,11 +368,14 @@ export const CaseTransactionProvider: React.FC<{
     hearingStage?.stage_status,
   ]);
 
-  const statusHandler = useCallback((stageId: string, stageName: Stages) => {
-    return (status: CaseStageStatus) => {
-      updateStageStatus({ stageId, stageName, status });
-    };
-  }, []);
+  const statusHandler = useCallback(
+    (stageId: string, stageName: Stages, caseId: string) => {
+      return (status: CaseStageStatus) => {
+        updateStageStatus({ stageId, stageName, status, caseId });
+      };
+    },
+    []
+  );
 
   const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {

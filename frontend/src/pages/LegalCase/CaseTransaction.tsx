@@ -126,7 +126,7 @@ function Header({
   return (
     <div className="mb-8">
       <button
-        onClick={() => navigate("/", { replace: true })}
+        onClick={() => navigate("/case", { replace: true })}
         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 
             hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors mb-4"
       >

@@ -82,10 +82,12 @@ const useCaseStage = (payload: {
   }) => Promise<void>;
   statusHandler: (
     stageId: string,
-    stageName: Stages
+    stageName: Stages,
+    caseId: string
   ) => (status: CaseStageStatus) => void;
   taskLoading: boolean;
 }) => {
+  const { id } = useParams();
   const currUser = useSelector(selectCurrentUser);
   const caseTransactionContext = useCaseTransaction();
 
@@ -114,7 +116,8 @@ const useCaseStage = (payload: {
 
   const handleStatusOnChange = statusHandler(
     stageData.id!,
-    stageData.stage_name
+    stageData.stage_name,
+    id as string
   );
 
   const displayHeaderText: Record<

@@ -131,15 +131,19 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
       menu: [
         {
           icon: <GridIcon />,
-          name: "gegege",
+          name: "Dashboard",
           path: "/",
         },
 
-        cases,
         {
           icon: <CalenderIcon />,
-          name: "hahaha",
+          name: "Tasks",
           path: "/calendar",
+        },
+        {
+          icon: <Notification />,
+          name: "Notifications",
+          path: "/notifications",
         },
       ],
       others: [],
@@ -181,9 +185,8 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
   ],
   [Roles.processServer]: [
     { path: "/", element: <Home /> },
-    { path: "/consultation", element: <ConsultationPage /> },
-    { path: "/request", element: <AccountRequest /> },
-    { path: "/accounts", element: <AllAccountPage /> },
+    { path: "/tasks", element: <AccountRequest /> },
+    { path: "/notification", element: <AllAccountPage /> },
   ],
 };
 

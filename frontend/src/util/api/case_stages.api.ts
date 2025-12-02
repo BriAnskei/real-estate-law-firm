@@ -20,17 +20,23 @@ export class CaseStagesApi {
   }
 
   static async updateStatus(payload: {
+    caseId: string;
     stageId: string;
     status: CaseStageStatus;
-  }): Promise<void> {
-    const { stageId, status } = payload;
+  }): Promise<{ isAllStageComplete: boolean }> {
+    const { caseId, stageId, status } = payload;
     try {
-      const res = await api.patch(`/api/case/stages/update/${stageId}`, {
-        status,
-      });
+      const res = await api.patch(
+        `/api/case/stages/update/status/${caseId}/${stageId}`,
+        {
+          status,
+        }
+      );
 
       if (!res.data.success)
         throw new Error(res.data.message || "Unknown Error");
+
+      return res.data.data;
     } catch (error) {
       console.error(error);
       throw error;

@@ -11,9 +11,13 @@ export class CaseStagesController {
   }
 
   static async updateStatus(req: Request, res: Response): Promise<void> {
-    const { id } = req.params;
+    const { id, caseId } = req.params;
     const { status } = req.body;
-    const response = await CaseStageService.updateStatus({ id, status });
+    const response = await CaseStageService.processCaseStageUpdate({
+      stageId: id,
+      caseId,
+      status,
+    });
 
     res.json({ ...response });
   }

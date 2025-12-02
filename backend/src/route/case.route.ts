@@ -12,9 +12,15 @@ caseRoute.post(
 );
 
 caseRoute.get(
-  "/get",
+  "/get/active",
   asyncHandler(authMiddleware),
-  asyncHandler(CaseController.fetchAll)
+  asyncHandler(CaseController.getActive)
+);
+
+caseRoute.get(
+  "/filter/active",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.filterActive)
 );
 
 caseRoute.get(

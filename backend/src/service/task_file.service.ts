@@ -1,7 +1,7 @@
 import { RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { FileType, TaskFileModel } from "../model/task_files.model.js";
-import { PoolConnection } from "mysql2/promise";
+import { PoolConnection, ResultSetHeader } from "mysql2/promise";
 
 export class TaskFileService {
   static async createFiles(
@@ -138,6 +138,27 @@ export class TaskFileService {
   DELETE FROM task_files WHERE ${condition}
   `,
         [...vals]
+      );
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async deleteAllByCaseId(
+    caseId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      await connection.execute<ResultSetHeader>(
+        `
+        DELETE tf 
+        FROM task_files tf
+        JOIN tasks t ON tf.task_id = t.id
+        JOIN case_stages cs ON t.case_stage_id = cs.id
+        WHERE cs.case_id = ?;
+        `,
+        [caseId]
       );
     } catch (error) {
       console.error(error);

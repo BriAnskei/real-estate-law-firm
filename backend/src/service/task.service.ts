@@ -255,4 +255,22 @@ WHERE id = ?;
       throw error;
     }
   }
+
+  static async deleteAllByCaseId(
+    caseId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      await connection.execute<ResultSetHeader>(
+        `
+      DELETE t FROM tasks t JOIN case_stages cs 
+      ON t.case_stage_id = cs.id WHERE cs.case_id = ?
+        `,
+        [caseId]
+      );
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
 }

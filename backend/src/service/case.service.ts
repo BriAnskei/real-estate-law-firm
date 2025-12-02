@@ -5,6 +5,10 @@ import { ClientModel } from "../model/clientModel.js";
 import { ResponseType } from "../types/auth.types.js";
 import { ClientService } from "./client.service.js";
 import { CaseStageService } from "./case_stage.service.js";
+import { TaskService } from "./task.service.js";
+import { TaskFileService } from "./task_file.service.js";
+import { deleteCaseFolder } from "../util/deleteCaseFolderHandler.js";
+import { TaskReviewService } from "./task_review.service.js";
 
 export class CaseService {
   static async handleNewCase(payload: {
@@ -179,19 +183,6 @@ export class CaseService {
     }
   }
 
-  static async fetchAllOngoing(): Promise<CasesModel[]> {
-    try {
-      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(`
-       SELECT * FROM cases WHERE paid IN ('partial', 'paid')
-      `);
-
-      return rows;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-  }
-
   private static async countTotalCases(payload?: {
     searchQuery?: string;
     params?: any[];
@@ -218,6 +209,76 @@ export class CaseService {
 
       return (rows as any)[0].total;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  static async fetchActive(): Promise<CasesModel[]> {
+    try {
+      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(`
+      SELECT * 
+      FROM cases 
+      WHERE status IN ('ongoing', 'complete')
+      `);
+
+      return rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async filterActive(payload: {
+    query?: string;
+    status?: string;
+  }): Promise<CasesModel[]> {
+    const { query, status } = payload;
+    try {
+      // search all to status of pending or complete
+      var whereClause = "WHERE status IN ('ongoing', 'complete')";
+      const params = [];
+
+      if (query?.trim()) {
+        whereClause += " AND (client_name LIKE ? OR concern LIKE ?)";
+        params.push(`%${query}%`, `%${query}%`);
+      }
+
+      if (status) {
+        whereClause += " AND status = ?";
+        params.push(status);
+      }
+
+      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(
+        `
+        SELECT * FROM cases ${whereClause} 
+        `,
+        [...params]
+      );
+
+      return rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async fetchCaseStatus(
+    id: string,
+    connection?: PoolConnection
+  ): Promise<"pending" | "complete" | "ongoing"> {
+    try {
+      const sqlConnection = connection ?? pool;
+
+      const [rows] = await sqlConnection.execute<RowDataPacket[]>(
+        `
+        SELECT status FROM cases WHERE id = ? LIMIT 1
+        `,
+        [id]
+      );
+
+      return rows[0].status;
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }
@@ -288,6 +349,29 @@ export class CaseService {
     }
   }
 
+  static async updateCaseStatus(
+    payload: {
+      id: string;
+      status: "pending" | "ongoing" | "complete";
+    },
+    connection: PoolConnection
+  ): Promise<void> {
+    const { id, status } = payload;
+    try {
+      const [rows] = await connection.execute<ResultSetHeader>(
+        `
+        UPDATE cases SET status = ? WHERE id = ?
+        `,
+        [status, id]
+      );
+
+      if (rows.affectedRows === 0) throw new Error("Case not found");
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async setCaseAsOngiong(payload: {
     id: string;
     paymentMode: string;
@@ -296,7 +380,10 @@ export class CaseService {
     const connection = await pool.getConnection();
     try {
       await this.setPayment(payload, connection);
-      await this.markAsOngoing(payload.id, connection);
+      await this.updateCaseStatus(
+        { id: payload.id, status: "ongoing" },
+        connection
+      );
 
       // stages
       await CaseStageService.create(payload.id, connection);
@@ -349,38 +436,66 @@ export class CaseService {
     }
   }
 
-  private static async markAsOngoing(
-    id: string,
-    connection: PoolConnection
-  ): Promise<void> {
+  static async processCaseDeletion(id: string): Promise<void> {
     try {
-      const [rows] = await connection.execute<ResultSetHeader>(
-        `
-        UPDATE cases SET status = 'ongoing' WHERE id = ?
-        `,
-        [id]
-      );
+      const caseStatus = await this.fetchCaseStatus(id);
 
-      if (rows.affectedRows === 0) throw new Error("Case not found");
+      if (caseStatus === "pending") {
+        await this.deleteCaseById(id);
+      } else {
+        await this.deleteActiveCase(id);
+      }
     } catch (error) {
       console.error(error);
       throw error;
     }
   }
 
-  static async deleteCaseById(id: string): Promise<boolean> {
+  static async deleteCaseById(
+    id: string,
+    connection?: PoolConnection
+  ): Promise<void> {
     try {
-      const [res] = await pool.execute(
+      const sqlConnection = connection ?? pool;
+      const [res] = await sqlConnection.execute<ResultSetHeader>(
         `
         DELETE FROM cases WHERE id = ?
         `,
         [id]
       );
 
-      return (res as any).affectedRows > 0;
+      if (res.affectedRows === 0) throw new Error("Case not found");
     } catch (error) {
       console.error(error);
       throw error;
+    }
+  }
+
+  /**
+   * deletes all the related data for this case
+   */
+  static async deleteActiveCase(id: string): Promise<void> {
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      await TaskReviewService.deleteByCaseId(id, connection);
+      await TaskFileService.deleteAllByCaseId(id, connection);
+      await TaskService.deleteAllByCaseId(id, connection);
+      await CaseStageService.deleteAllByCaseId(id, connection);
+      await this.deleteCaseById(id, connection);
+
+      await deleteCaseFolder(id);
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+
+      console.error(error);
+      throw error;
+    } finally {
+      connection.release();
     }
   }
 }

@@ -1,7 +1,5 @@
 import express from "express";
 import asyncHandler from "../util/asyncHandler.js";
-import { AuthController } from "../controller/auth.controller.js";
-import { verifyProviderToken } from "../middleware/firebase.middleware.js";
 import { CaseStagesController } from "../controller/case_stages.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
@@ -14,7 +12,7 @@ caseStageRoute.get(
 );
 
 caseStageRoute.patch(
-  "/update/:id",
+  "/update/status/:caseId/:id",
   asyncHandler(authMiddleware),
   asyncHandler(CaseStagesController.updateStatus)
 );

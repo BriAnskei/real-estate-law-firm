@@ -13,8 +13,17 @@ export class CaseController {
     res.json({ success: true, data: newCaseData });
   }
 
-  static async fetchAll(_: Request, res: Response): Promise<void> {
-    const response = await CaseService.fetchAllOngoing();
+  static async getActive(_: Request, res: Response): Promise<void> {
+    const response = await CaseService.fetchActive();
+
+    res.json({ success: true, data: response });
+  }
+
+  static async filterActive(req: Request, res: Response): Promise<void> {
+    const response = await CaseService.filterActive({
+      query: req.query.query as string,
+      status: req.query.status as string,
+    });
 
     res.json({ success: true, data: response });
   }
@@ -70,7 +79,7 @@ export class CaseController {
   static async delete(req: Request, res: Response): Promise<void> {
     const id = req.params.id;
 
-    await CaseService.deleteCaseById(id);
+    await CaseService.processCaseDeletion(id);
 
     res.json({ success: true });
   }

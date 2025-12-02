@@ -20,15 +20,38 @@ export class caseApi {
     }
   }
 
-  static async getAll(): Promise<ApiResponseType<CaseType[]>> {
+  /**
+   * fetch active cases
+   */
+  static async fetchActiveCases(): Promise<ApiResponseType<CaseType[]>> {
     try {
-      const res = await api.get("/api/case/get");
+      const res = await api.get("/api/case/get/active");
 
       if (!res.data.success) {
         throw new Error(res.data.message || "Failed to fetch all cases");
       }
 
       return res.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async fetchFilteredActiveCases(payload: {
+    query?: string;
+    status: "ongoing" | "complete";
+  }): Promise<CaseType[]> {
+    const { query, status } = payload;
+    try {
+      const res = await api.get(`/api/case/filter/active`, {
+        params: { query, status },
+      });
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "Unknown error");
+
+      return res.data.data;
     } catch (error) {
       console.error(error);
       throw error;

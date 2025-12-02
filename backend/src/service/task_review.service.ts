@@ -3,6 +3,7 @@ import pool from "../config/db.js";
 import { TaskReviewModel } from "../model/task_reviews.model.js";
 import { ResponseType } from "../types/auth.types.js";
 import { TaskService } from "./task.service.js";
+import { PoolConnection } from "mysql2/promise";
 
 const REVIEW_SELECT_BASE = `SELECT 
     tr.id,
@@ -70,6 +71,27 @@ export class TaskReviewService {
         return { success: false, message: "Task review not found" };
 
       return { success: true, data: rows[0] };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async deleteByCaseId(
+    caseId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      await connection.execute(
+        `
+    DELETE tr
+    FROM task_reviews tr
+    JOIN tasks t ON tr.task_id = t.id
+    JOIN case_stages cs ON t.case_stage_id = cs.id
+    WHERE cs.case_id = ?
+    `,
+        [caseId]
+      );
     } catch (error) {
       console.error(error);
       throw error;

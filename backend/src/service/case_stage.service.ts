@@ -4,6 +4,7 @@ import { CaseStageModel } from "../model/cases.model.js";
 import { PoolConnection } from "mysql2/promise";
 import { ResponseType } from "../types/auth.types.js";
 import { TaskService } from "./task.service.js";
+import { CaseService } from "./case.service.js";
 
 export class CaseStageService {
   static async create(id: string, connection: PoolConnection) {
@@ -64,12 +65,84 @@ export class CaseStageService {
     }
   }
 
-  static async updateStatus(payload: {
-    id: string;
+  static async processCaseStageUpdate(payload: {
+    caseId: string;
+    stageId: string;
     status: string;
-  }): Promise<ResponseType<undefined>> {
-    const { id, status } = payload;
+  }): Promise<ResponseType<{ isAllStageComplete: boolean }>> {
+    const { caseId, stageId, status } = payload;
 
+    const connection = await pool.getConnection();
+    try {
+      const response = await this.updateStatus(
+        { id: stageId, status: status },
+        connection
+      );
+
+      if (!response.success) return { ...response };
+
+      const isAllStageComplete = await this.isAllStageComplete(
+        caseId,
+        connection
+      );
+
+      const caseCurrentStatus = await CaseService.fetchCaseStatus(
+        caseId,
+        connection
+      );
+
+      const newCaseStatus = isAllStageComplete ? "complete" : "ongoing";
+
+      if (isAllStageComplete || caseCurrentStatus !== newCaseStatus) {
+        await CaseService.updateCaseStatus(
+          { id: caseId, status: newCaseStatus },
+          connection
+        );
+      }
+
+      await connection.commit();
+
+      return { success: true, data: { isAllStageComplete } };
+    } catch (error) {
+      await connection.rollback();
+
+      console.error(error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  private static async isAllStageComplete(
+    caseId: string,
+    connection: PoolConnection
+  ): Promise<boolean> {
+    try {
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        `
+        SELECT NOT EXISTS (SELECT 1 FROM case_stages WHERE case_id = ? AND
+         stage_status != 'complete') as allStagesComplete
+        `,
+        [caseId]
+      );
+
+      const isAllComplete = rows[0].allStagesComplete === 1;
+
+      return isAllComplete;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async updateStatus(
+    payload: {
+      id: string;
+      status: string;
+    },
+    connection: PoolConnection
+  ): Promise<ResponseType<undefined>> {
+    const { id, status } = payload;
     try {
       if (
         status === "complete" &&
@@ -82,7 +155,7 @@ export class CaseStageService {
         };
       }
 
-      const [res] = await pool.execute<ResultSetHeader>(
+      const [res] = await connection.execute<ResultSetHeader>(
         `
           UPDATE case_stages SET stage_status = ? WHERE  id = ?
         `,
@@ -92,6 +165,26 @@ export class CaseStageService {
       if (res.affectedRows === 0) throw new Error("No Status where updated");
 
       return { success: true };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async deleteAllByCaseId(
+    caseId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      const [res] = await connection.execute<ResultSetHeader>(
+        `
+  DELETE FROM case_stages WHERE case_id = ?
+  `,
+        [caseId]
+      );
+
+      if (res.affectedRows === 0)
+        throw new Error("Failed to delete case_stages cannot found caseId");
     } catch (error) {
       console.error(error);
       throw error;
