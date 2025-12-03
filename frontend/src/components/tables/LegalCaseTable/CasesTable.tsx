@@ -79,7 +79,7 @@ export default function CasesTable({
                         No cases found
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {!!search?.length || statusFilter !== undefined
+                        {!!search?.length || statusFilter !== "all"
                           ? "Try adjusting your filters"
                           : "No cases have been filed yet"}
                       </p>

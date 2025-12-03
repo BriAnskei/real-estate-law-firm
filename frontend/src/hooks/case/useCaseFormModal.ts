@@ -14,7 +14,7 @@ const initialCaseInput: CaseType = {
   opposing_party: "",
   description: "",
   paid: "no",
-  status: "ongiong",
+  status: "ongoing",
   client_name: "",
   consultation_date: "",
 };

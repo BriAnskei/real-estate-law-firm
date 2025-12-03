@@ -36,6 +36,7 @@ import { RootState } from "../../store/store";
 import { DeleteTaskModal } from "../../components/modal/caseModal/DeleteTaskModal";
 import { ApexOptions } from "apexcharts";
 import { ScrollToTop } from "../../components/common/ScrollToTop";
+import HearingScheduleCard from "./Components/HearingScheduleCard";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -51,7 +52,13 @@ export default function CaseTransaction() {
   );
 }
 
-const SemicircleProgress = ({ percentage }: { percentage: number }) => {
+const SemicircleProgress = ({
+  percentage,
+  completedCount,
+}: {
+  percentage: number;
+  completedCount: number;
+}) => {
   const series = [percentage];
   const options: ApexOptions = {
     colors: ["#D4AF37"],
@@ -77,15 +84,15 @@ const SemicircleProgress = ({ percentage }: { percentage: number }) => {
         },
         dataLabels: {
           name: {
-            show: false,
+            show: false, // Hide the name label
           },
           value: {
             fontSize: "36px",
             fontWeight: "600",
-            offsetY: -40,
+            offsetY: -25,
             color: "#1F2937",
-            formatter: function (val) {
-              return Math.round(val) + "%";
+            formatter: function () {
+              return completedCount + " of 3";
             },
           },
         },
@@ -147,9 +154,12 @@ function Header({
 
         {/* Right side: Progress bar with info */}
         <div className="flex flex-col items-center justify-center flex-shrink-0">
-          <SemicircleProgress percentage={calculateProgress()} />
-          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center -mt-2">
-            {getCompletedStagesCount()} of 3 stages complete
+          <SemicircleProgress
+            percentage={calculateProgress()}
+            completedCount={getCompletedStagesCount()}
+          />
+          <p className="text-xs font-bold text-gray-600 dark:text-gray-400 text-center -mt-2">
+            Stages Complete
           </p>
         </div>
       </div>
@@ -299,7 +309,7 @@ function CaseDetailsTab() {
 
         <div>
           <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
-            OPPOS ING PARTY
+            OPPOSING PARTY
           </h3>
           <p className="text-base font-bold text-gray-900 dark:text-white">
             {caseData!.opposing_party}
@@ -388,6 +398,11 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
   return (
     <>
       <div>
+        {/* hearing detials */}
+        {tabName === "hearings" && (
+          <HearingScheduleCard formatDate={formatDate} />
+        )}
+
         <StageHeader
           title={title}
           description={description}
@@ -525,7 +540,7 @@ const AllTasks = React.memo(function AllTasks({
           {[...Array(6)].map((_, index) => (
             <div
               key={index}
-              className="flex h-full flex-col rounded-lg border-2 border-gray-200 
+              className="flex h-[280px] flex-col rounded-lg border-2 border-gray-200 
               bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
               style={{
                 animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
@@ -578,7 +593,8 @@ const AllTasks = React.memo(function AllTasks({
 
   return (
     <div className="h-[600px] overflow-y-auto">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Masonry layout using CSS columns */}
+      <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
         {tasks.map((task, index) => {
           // enable edit/update if the curUser is assigner for this task
           // and
@@ -588,10 +604,11 @@ const AllTasks = React.memo(function AllTasks({
           return (
             <div
               key={task.id}
-              className="group relative flex h-full flex-col rounded-lg border-2 
+              className="group relative flex flex-col rounded-lg border-2 
       border-gray-200 bg-white p-6 transition-all duration-300 
       hover:border-[#D4AF37] hover:shadow-lg dark:border-gray-700 
-      dark:bg-gray-800 dark:hover:border-[#D4AF37] cursor-pointer"
+      dark:bg-gray-800 dark:hover:border-[#D4AF37] cursor-pointer
+      break-inside-avoid mb-6"
               style={{
                 animation: `fadeIn 0.3s ease-out ${index * 0.1}s both`,
               }}
@@ -656,7 +673,7 @@ const AllTasks = React.memo(function AllTasks({
                 {task.title}
               </h3>
               <div className="h-px w-12 bg-[#D4AF37] mb-4"></div>
-              <p className="mb-5 flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+              <p className="mb-5 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
                 {task.description}
               </p>
               <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">

@@ -20,6 +20,7 @@ import { Content } from "./pages/LegalCase/CaseTransaction";
 import TaskFormPage from "./pages/LegalCase/TaskFormPage";
 import TaskReviewPage from "./pages/LegalCase/TaskReviewPage";
 import ViewTaskPage from "./pages/LegalCase/ViewTaskPage";
+import HearingsPage from "./pages/LegalCase/CaseHearingPage";
 
 function useCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
   return role !== Roles.processServer;
@@ -59,6 +60,9 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
             path=":stage/task/review/:taskId"
             element={<TaskReviewPage />}
           />
+
+          {/* Hearing table page */}
+          <Route path="hearing" element={<HearingsPage />} />
         </Route>
       )}
       {/* Catch all - must be last */}
