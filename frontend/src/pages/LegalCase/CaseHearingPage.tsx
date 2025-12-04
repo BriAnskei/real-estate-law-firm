@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -11,190 +11,58 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
-import HearingScheduleModal from "../../components/modal/caseModal/AddHearingScheduleModal";
+import HearingScheduleModal from "../../components/modal/caseModal/HearingScheduleModal";
+import {
+  TableRow,
+  TableCell,
+  TableHeader,
+  Table,
+  TableBody,
+} from "../../components/ui/table";
+
+import { HearingType } from "../../types/HearingTypes";
+import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
+import { HearingInputType } from "../../hooks/case/ongoing/useHearingScheduleModal";
+import { formatDateToDateInputString } from "../../util/DateDecoder";
+import useCaseHearingPage from "../../hooks/case/ongoing/useHearing";
+import { DeleteModal } from "../../components/modal/caseModal/DeleteModal";
 
 // Mock data types
 type HearingStatus = "scheduled" | "postponed" | "completed" | "cancelled";
-
-type PostponementRecord = {
-  id: string;
-  originalDate: string;
-  newDate: string;
-  reason: string;
-  postponedAt: string;
-  postponedBy: string;
-};
-
-type Hearing = {
-  id: string;
-  title: string;
-  schedule: string; // ISO date string
-  status: HearingStatus;
-  notes?: string;
-  postponementHistory: PostponementRecord[];
-};
-
-type CaseData = {
-  id: string;
-  concern: string;
-  client_name: string;
-  created_at: string;
-};
-
-// Mock case data
-const mockCaseData: CaseData = {
-  id: "case-123",
-  concern: "Civil Case - Property Dispute",
-  client_name: "Juan Dela Cruz",
-  created_at: "2024-01-15T08:00:00Z",
-};
-
-// Mock hearings data
-const mockHearings: Hearing[] = [
-  {
-    id: "h1",
-    title: "Initial Hearing",
-    schedule: "2024-12-15T10:00:00Z",
-    status: "scheduled",
-    notes: "First hearing for preliminary conference",
-    postponementHistory: [],
-  },
-  {
-    id: "h2",
-    title: "Pre-Trial Conference",
-    schedule: "2024-12-20T14:00:00Z",
-    status: "postponed",
-    notes: "Pre-trial to discuss settlement options",
-    postponementHistory: [
-      {
-        id: "p1",
-        originalDate: "2024-11-20T14:00:00Z",
-        newDate: "2024-12-20T14:00:00Z",
-        reason: "Opposing counsel requested more time to prepare documents",
-        postponedAt: "2024-11-15T09:30:00Z",
-        postponedBy: "Atty. Maria Santos",
-      },
-      {
-        id: "p2",
-        originalDate: "2024-11-05T14:00:00Z",
-        newDate: "2024-11-20T14:00:00Z",
-        reason: "Judge unavailable due to emergency hearing",
-        postponedAt: "2024-11-03T16:00:00Z",
-        postponedBy: "Court Clerk",
-      },
-    ],
-  },
-  {
-    id: "h3",
-    title: "Mediation Session",
-    schedule: "2024-11-10T09:00:00Z",
-    status: "completed",
-    notes: "Court-mandated mediation",
-    postponementHistory: [],
-  },
-  {
-    id: "h4",
-    title: "Evidence Presentation",
-    schedule: "2025-01-10T10:30:00Z",
-    status: "scheduled",
-    notes: "Presentation of documentary evidence",
-    postponementHistory: [],
-  },
-  {
-    id: "h5",
-    title: "Settlement Discussion",
-    schedule: "2024-10-05T13:00:00Z",
-    status: "cancelled",
-    notes: "Cancelled due to client's request",
-    postponementHistory: [],
-  },
-  {
-    id: "h6",
-    title: "Witness Testimony",
-    schedule: "2025-01-25T11:00:00Z",
-    status: "scheduled",
-    notes: "Key witness testimony",
-    postponementHistory: [],
-  },
-];
-
-// Table Components matching CasesTable style
-function TableHeader({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return <thead className={className}>{children}</thead>;
-}
-
-function TableRow({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return <tr className={className}>{children}</tr>;
-}
-
-function TableCell({
-  className,
-  children,
-  isHeader = false,
-  colSpan,
-}: {
-  className?: string;
-  children: React.ReactNode;
-  isHeader?: boolean;
-  colSpan?: number;
-}) {
-  const Tag = isHeader ? "th" : "td";
-  return (
-    <Tag className={className} colSpan={colSpan}>
-      {children}
-    </Tag>
-  );
-}
-
-function TableBody({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return <tbody className={className}>{children}</tbody>;
-}
-
-function Table({ children }: { children: React.ReactNode }) {
-  return <table className="w-full">{children}</table>;
-}
 
 export default function HearingsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [hearings] = useState<Hearing[]>(mockHearings);
-  const [caseData] = useState<CaseData>(mockCaseData);
+  const {
+    hearingDeleteModal,
+    hearingFormModal,
+
+    hearings,
+    caseConcern,
+    caseFiledAt,
+    clientName,
+
+    loading,
+  } = useCaseHearingPage();
+
   const [search, setSearch] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | HearingStatus>(
     "all"
   );
-  const [loading] = useState(false);
+  const [loadingTable] = useState(false);
 
-  // Filter hearings
-  const filteredHearings = useMemo(() => {
-    return hearings.filter((hearing) => {
-      const matchesSearch = hearing.title
-        .toLowerCase()
-        .includes(search.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all" || hearing.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [hearings, search, statusFilter]);
+  // // Filter hearings
+  // const filteredHearings = useMemo(() => {
+  //   return (hearings ?? []).filter((hearing) => {
+  //     const matchesSearch = hearing.type
+  //       .toLowerCase()
+  //       .includes(search.toLowerCase());
+  //     const matchesStatus =
+  //       statusFilter === "all" || hearing.status === statusFilter;
+  //     return matchesSearch && matchesStatus;
+  //   });
+  // }, [hearings, search, statusFilter]);
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -249,6 +117,15 @@ export default function HearingsPage() {
     // Will be implemented later
   };
 
+  if (loading) {
+    return (
+      <CaseTransactionLoader
+        isLoading={loading}
+        loadingText="Initializing Case Hearings"
+      />
+    );
+  }
+
   return (
     <>
       <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -272,16 +149,15 @@ export default function HearingsPage() {
                   Hearing Schedule
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  {caseData.concern}
+                  {caseConcern}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500">
-                  Client: {caseData.client_name} • Filed on{" "}
-                  {formatDate(caseData.created_at)}
+                  Client: {clientName} • Filed on {formatDate(caseFiledAt!)}
                 </p>
               </div>
 
               <button
-                onClick={handleAddHearing}
+                onClick={() => hearingFormModal.openNewSchedModal()}
                 className="inline-flex items-center gap-2 rounded-md bg-[#D4AF37] px-5 py-2.5 
                 text-sm font-medium text-white transition-all hover:bg-[#C4A037] 
                 active:scale-95 shadow-sm whitespace-nowrap"
@@ -294,16 +170,16 @@ export default function HearingsPage() {
 
           {/* Hearings Table */}
           <HearingsTable
-            hearings={filteredHearings}
+            hearings={hearings ?? []}
             search={search}
             setSearch={setSearch}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
-            loading={loading}
+            loading={loadingTable}
             clearFilter={clearFilter}
             formatDateTime={formatDateTime}
-            onEditHearing={handleEditHearing}
-            onDeleteHearing={handleDeleteHearing}
+            onEditHearing={hearingFormModal.openNewSchedModal}
+            onDeleteHearing={hearingDeleteModal.open}
             onStatusChange={handleStatusChange}
             onViewHistory={handleViewHistory}
           />
@@ -311,13 +187,24 @@ export default function HearingsPage() {
       </div>
 
       <HearingScheduleModal
-        isOpen={true}
-        onClose={function (): void {
-          throw new Error("Function not implemented.");
-        }}
-        onSubmit={function (data: HearingFormData): void {
-          throw new Error("Function not implemented.");
-        }}
+        submitting={hearingFormModal.isSubmitting}
+        isOpen={hearingFormModal.isOpen}
+        onClose={hearingFormModal.closeNewSchedModal}
+        onSubmit={hearingFormModal.handleSubmit}
+        onChangeHanlder={hearingFormModal.onChangeHanlder}
+        input={hearingFormModal.input}
+        mode={hearingFormModal.mode}
+      />
+
+      <DeleteModal
+        title="Delete Hearing Schedule"
+        itemLabel="Hearing Type"
+        description="Are you sure you want to delete this hearing?"
+        isDeleting={hearingDeleteModal.isDeleting}
+        itemName={hearingDeleteModal.hearingType}
+        isOpen={hearingDeleteModal.isOpen}
+        onClose={hearingDeleteModal.close}
+        onConfirm={hearingDeleteModal.confirm}
       />
     </>
   );
@@ -338,7 +225,7 @@ function HearingsTable({
   onStatusChange,
   onViewHistory,
 }: {
-  hearings: Hearing[];
+  hearings: HearingType[];
   search: string;
   setSearch: (value: string) => void;
   statusFilter: "all" | HearingStatus;
@@ -346,8 +233,8 @@ function HearingsTable({
   loading: boolean;
   clearFilter: () => void;
   formatDateTime: (date: string) => string;
-  onEditHearing: (id: string) => void;
-  onDeleteHearing: (id: string, title: string) => void;
+  onEditHearing: (payload: HearingInputType) => void;
+  onDeleteHearing: (payload: { id: string; hearingType: string }) => void;
   onStatusChange: (id: string, status: HearingStatus) => void;
   onViewHistory: (id: string) => void;
 }) {
@@ -553,10 +440,10 @@ function HearingRow({
   onStatusChange,
   onViewHistory,
 }: {
-  hearing: Hearing;
+  hearing: HearingType;
   formatDateTime: (date: string) => string;
-  onEdit: (id: string) => void;
-  onDelete: (id: string, title: string) => void;
+  onEdit: (payload: HearingInputType) => void;
+  onDelete: (payload: { id: string; hearingType: string }) => void;
   onStatusChange: (id: string, status: HearingStatus) => void;
   onViewHistory: (id: string) => void;
 }) {
@@ -605,7 +492,7 @@ function HearingRow({
                 <button
                   key={s}
                   onClick={() => {
-                    onStatusChange(hearing.id, s);
+                    onStatusChange(hearing.id!, s);
                     setShowStatusDropdown(false);
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 
@@ -621,26 +508,34 @@ function HearingRow({
     );
   };
 
-  const hasPostponementHistory = hearing.postponementHistory.length > 0;
-
   return (
     <TableRow className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
       <TableCell className="px-5 py-4 text-start">
         <span className="block font-medium text-gray-800 text-sm dark:text-white/90">
-          {hearing.title}
+          {hearing.type}
         </span>
       </TableCell>
       <TableCell className="px-5 py-4 text-gray-500 text-start text-sm dark:text-gray-400">
-        {formatDateTime(hearing.schedule)}
+        {formatDateTime(hearing.scheduled_date)}
       </TableCell>
       <TableCell className="px-5 py-4 text-start">
-        {getStatusBadge(hearing.status)}
+        {getStatusBadge(hearing.status!)}
       </TableCell>
       <TableCell className="px-5 py-4 text-center">
         <div className="inline-flex items-center gap-2">
           {/* Edit Button */}
           <button
-            onClick={() => onEdit(hearing.id)}
+            onClick={() => {
+              const { formattedDate, formattedTime } =
+                formatDateToDateInputString(hearing.scheduled_date);
+
+              onEdit({
+                id: hearing.id,
+                type: hearing.type,
+                date: formattedDate,
+                time: formattedTime,
+              });
+            }}
             className="inline-flex items-center justify-center w-8 h-8 
               text-[#D4AF37] hover:text-white hover:bg-[#D4AF37] 
               dark:text-[#D4AF37] dark:hover:text-white dark:hover:bg-[#D4AF37]
@@ -652,24 +547,25 @@ function HearingRow({
           </button>
 
           {/* View History Button - Only show if has postponement history */}
-          {hasPostponementHistory && (
-            <button
-              onClick={() => onViewHistory(hearing.id)}
-              className="inline-flex items-center justify-center w-8 h-8 
+
+          <button
+            onClick={() => onViewHistory(hearing.id!)}
+            className="inline-flex items-center justify-center w-8 h-8 
                 text-blue-600 hover:text-white hover:bg-blue-600 
                 dark:text-blue-400 dark:hover:text-white dark:hover:bg-blue-500
                 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2
                 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-              aria-label="View postponement history"
-              title="View postponement history"
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-          )}
+            aria-label="View postponement history"
+            title="View postponement history"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
 
           {/* Delete Button */}
           <button
-            onClick={() => onDelete(hearing.id, hearing.title)}
+            onClick={() =>
+              onDelete({ id: hearing.id!, hearingType: hearing.type })
+            }
             className="inline-flex items-center justify-center w-8 h-8
               text-red-600 hover:text-white hover:bg-red-600 
               dark:text-red-400 dark:hover:text-white dark:hover:bg-red-500

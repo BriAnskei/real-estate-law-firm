@@ -26,14 +26,14 @@ import {
   useCaseTransaction,
 } from "../../context/CaseTransactionContext";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
-import useCaseStage from "../../hooks/case/ongoing/useCaseTransaction";
+import useCaseStage from "../../hooks/case/ongoing/useCaseStages";
 import { useSelector } from "react-redux";
 import {
   selectAuthLoading,
   selectIsAuthenticated,
 } from "../../store/selector/authSelector";
 import { RootState } from "../../store/store";
-import { DeleteTaskModal } from "../../components/modal/caseModal/DeleteTaskModal";
+import { DeleteModal } from "../../components/modal/caseModal/DeleteModal";
 import { ApexOptions } from "apexcharts";
 import { ScrollToTop } from "../../components/common/ScrollToTop";
 import HearingScheduleCard from "./Components/HearingScheduleCard";
@@ -424,7 +424,9 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
         />
       </div>
 
-      <DeleteTaskModal
+      <DeleteModal
+        title="Delete Task"
+        description="Are you sure you want to delete this task?"
         isOpen={taskDeleteState.isOpen}
         onClose={taskDeleteState.closeModal}
         onConfirm={taskDeleteState.deleteTask}

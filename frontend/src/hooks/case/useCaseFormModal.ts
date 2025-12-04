@@ -8,6 +8,10 @@ import {
 } from "../../store/Slice/client.slice";
 import { useToast } from "../useToast";
 import { useSelector } from "react-redux";
+import {
+  decodeInputDateAndTimeToDate,
+  formatDateToDateInputString,
+} from "../../util/DateDecoder";
 
 const initialCaseInput: CaseType = {
   concern: "",
@@ -103,22 +107,9 @@ export const useCaseFormModal = (dispatch: AppDispatch) => {
 
       setSelectedClient(fetchedClient);
 
-      const date = new Date(selectedCase.consultation_date);
-
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
-      const seconds = date.getSeconds();
-
-      // Format as readable strings for the consultation input
-      const formattedDate = `${year}-${month.toString().padStart(2, "0")}-${day
-        .toString()
-        .padStart(2, "0")}`;
-      const formattedTime = `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      const { formattedDate, formattedTime } = formatDateToDateInputString(
+        selectedCase.consultation_date
+      );
 
       setDateForm((prev) => ({
         ...prev,
@@ -132,13 +123,6 @@ export const useCaseFormModal = (dispatch: AppDispatch) => {
     }
   };
 
-  const decodeDateTimeInput = useCallback(() => {
-    // Build a literal string, not a Date object
-    return `${dateForm.consultationDate} ${
-      dateForm.contultationTime || "00:00"
-    }:00`;
-  }, [dateForm]);
-
   const onNewCaseSubmit = async () => {
     try {
       const check = validateCaseForm();
@@ -150,7 +134,10 @@ export const useCaseFormModal = (dispatch: AppDispatch) => {
           clientData: newClientInput,
           caseData: {
             ...newCaseInput,
-            consultation_date: decodeDateTimeInput(),
+            consultation_date: decodeInputDateAndTimeToDate(
+              dateForm.consultationDate,
+              dateForm.contultationTime
+            ),
             client_name: newClientInput.client_name,
           },
         })
@@ -174,7 +161,10 @@ export const useCaseFormModal = (dispatch: AppDispatch) => {
           id: selectedCase?.id!,
           caseUpdate: {
             ...selectedCase!,
-            consultation_date: decodeDateTimeInput(),
+            consultation_date: decodeInputDateAndTimeToDate(
+              dateForm.consultationDate,
+              dateForm.contultationTime
+            ),
             client_name: selectedClient?.client_name,
           },
           clientUpdate: selectedClient!,

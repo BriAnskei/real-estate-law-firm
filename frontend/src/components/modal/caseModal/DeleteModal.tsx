@@ -1,20 +1,30 @@
 import { AlertTriangle, X } from "lucide-react";
 
-type DeleteTaskModalProps = {
+type DeleteModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  taskTitle?: string;
-  isDeleting: boolean;
+  title?: string;
+  itemName?: string;
+  itemLabel?: string;
+  description?: string;
+  isDeleting?: boolean;
+  confirmButtonText?: string;
+  cancelButtonText?: string;
 };
 
-export function DeleteTaskModal({
+export function DeleteModal({
   isOpen,
   onClose,
   onConfirm,
-  taskTitle,
-  isDeleting,
-}: DeleteTaskModalProps) {
+  title = "Delete Item",
+  itemName,
+  itemLabel = "Item Name",
+  description = "Are you sure you want to delete this item?",
+  isDeleting = false,
+  confirmButtonText = "Delete",
+  cancelButtonText = "Cancel",
+}: DeleteModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -22,7 +32,7 @@ export function DeleteTaskModal({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={isDeleting ? undefined : onClose}
       />
 
       {/* Modal */}
@@ -35,12 +45,13 @@ export function DeleteTaskModal({
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Delete Task
+                {title}
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              disabled={isDeleting}
+              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="h-5 w-5" />
             </button>
@@ -49,16 +60,16 @@ export function DeleteTaskModal({
           {/* Content */}
           <div className="p-6">
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Are you sure you want to delete this task?
+              {description}
             </p>
 
-            {taskTitle && (
+            {itemName && (
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4 border-l-4 border-red-500">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                  Task Title
+                  {itemLabel}
                 </p>
-                <p className="text-base font-bold text-gray-900 dark:text-white">
-                  {taskTitle}
+                <p className="text-base font-bold text-gray-900 dark:text-white break-words">
+                  {itemName}
                 </p>
               </div>
             )}
@@ -75,7 +86,7 @@ export function DeleteTaskModal({
               disabled={isDeleting}
               className="flex-1 rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:border-gray-600"
             >
-              Cancel
+              {cancelButtonText}
             </button>
             <button
               onClick={onConfirm}
@@ -103,7 +114,7 @@ export function DeleteTaskModal({
                   Deleting...
                 </span>
               ) : (
-                "Delete Task"
+                confirmButtonText
               )}
             </button>
           </div>

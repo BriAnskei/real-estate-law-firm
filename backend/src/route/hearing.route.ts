@@ -1,0 +1,44 @@
+import express from "express";
+import asyncHandler from "../util/asyncHandler.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { HearingController } from "../controller/hearing.contoller.js";
+
+const hearingRoute = express.Router();
+
+hearingRoute.post(
+  "/create/:case_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.create)
+);
+
+hearingRoute.get(
+  "/get/:case_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.getAll)
+);
+
+hearingRoute.get(
+  "/find/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.findById)
+);
+
+hearingRoute.patch(
+  "/update/:hearing_id",
+  // asyncHandler(authMiddleware),
+  asyncHandler(HearingController.update)
+);
+
+hearingRoute.delete(
+  "/delete/:hearing_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.delete)
+);
+
+hearingRoute.delete(
+  "/delete-all/:case_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.deleteAllByCase)
+);
+
+export default hearingRoute;

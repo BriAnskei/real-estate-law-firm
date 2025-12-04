@@ -149,9 +149,8 @@ export const CaseTransactionProvider: React.FC<{
         console.error(error);
       } finally {
         // ResponseTimeout
-        setTimeout(() => {
-          setLoading(false);
-        }, 500);
+
+        setLoading(false);
       }
     }
 

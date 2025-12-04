@@ -12,6 +12,7 @@ import taskRoute from "./route/task.route.js";
 import taskFileRoute from "./route/task_file.route.js";
 import path from "path";
 import taskReviewRoute from "./route/task_review.route.js";
+import hearingRoute from "./route/hearing.route.js";
 
 const app = express();
 const PORT = 4000;
@@ -27,6 +28,8 @@ app.use("/api/registration", registrationRouter);
 app.use("/api/case", caseRoute);
 app.use("/api/case/stages", caseStageRoute);
 
+app.use("/api/hearing", hearingRoute);
+
 app.use("/api/task", taskRoute);
 app.use("/api/file", taskFileRoute);
 app.use("/api/task/review", taskReviewRoute);
@@ -37,6 +40,7 @@ app.use("/api/client", clientRoute);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/", (req: Request, res: Response) => {
+  1;
   res.send("Brian Pogi");
 });
 
