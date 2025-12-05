@@ -1,30 +1,32 @@
 import React from "react";
-import { X, Calendar, Clock } from "lucide-react";
-import { HearingInputType } from "../../../hooks/case/ongoing/useHearingScheduleModal";
+import { X, Calendar, Clock, AlertCircle } from "lucide-react";
+import { PostponeInputType } from "../../../hooks/case/hearing/usePostponedHearingFormModal";
 
-interface HearingScheduleModalProps {
+interface HearingPostponementModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: () => void;
-  mode?: "new" | "edit";
   submitting?: boolean;
-  onChangeHanlder: (
+  onChangeHandler: (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => void;
-  input: HearingInputType;
+  input: PostponeInputType;
+  hearingType?: string;
+  currentSchedule?: string;
 }
 
-export default function HearingScheduleModal({
+export default function HearingPostponementModal({
   isOpen,
   onClose,
   onSubmit,
-  mode = "new",
   submitting = false,
   input,
-  onChangeHanlder,
-}: HearingScheduleModalProps) {
+  onChangeHandler,
+  hearingType = "Hearing",
+  currentSchedule,
+}: HearingPostponementModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -41,14 +43,10 @@ export default function HearingScheduleModal({
           <div className="sticky top-0 bg-white dark:bg-gray-800 flex items-center justify-between border-b-2 border-gray-200 dark:border-gray-700 px-6 py-4 z-10">
             <div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {mode === "edit"
-                  ? "Update Hearing Type"
-                  : "Add Hearing Schedule"}
+                Postpone Hearing
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {mode === "edit"
-                  ? "Update the hearing type below"
-                  : "Enter hearing schedule details"}
+                Reschedule {hearingType} to a new date and time
               </p>
             </div>
             <button
@@ -62,55 +60,74 @@ export default function HearingScheduleModal({
 
           {/* Modal Body */}
           <div className="px-6 py-6 space-y-5">
-            {/* Hearing Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Hearing Type <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="type"
-                value={input.type}
-                onChange={onChangeHanlder}
-                placeholder="e.g., Initial Hearing, Pre-Trial Conference"
-                disabled={submitting}
-                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            {/* Schedule Date and Time */}
-            {mode === "new" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    <Calendar className="inline h-4 w-4 mr-1.5 mb-0.5" />
-                    Schedule Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={input.date}
-                    onChange={onChangeHanlder}
-                    disabled={submitting}
-                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    <Clock className="inline h-4 w-4 mr-1.5 mb-0.5" />
-                    Schedule Time <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    name="time"
-                    value={input.time}
-                    onChange={onChangeHanlder}
-                    disabled={submitting}
-                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
+            {/* Current Schedule Info */}
+            {currentSchedule && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-900 dark:text-yellow-200">
+                      Current Schedule
+                    </p>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                      {currentSchedule}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* New Schedule Date and Time */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <Calendar className="inline h-4 w-4 mr-1.5 mb-0.5" />
+                  New Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="new_date"
+                  value={input.new_date}
+                  onChange={onChangeHandler}
+                  disabled={submitting}
+                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <Clock className="inline h-4 w-4 mr-1.5 mb-0.5" />
+                  New Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="time"
+                  name="new_time"
+                  value={input.new_time}
+                  onChange={onChangeHandler}
+                  disabled={submitting}
+                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {/* Reason for Postponement */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Reason for Postponement <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="reason"
+                value={input.reason}
+                onChange={onChangeHandler}
+                placeholder="Provide a detailed reason for postponing this hearing..."
+                rows={4}
+                disabled={submitting}
+                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#D4AF37] focus:outline-none resize-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                This reason will be recorded in the hearing's postponement
+                history.
+              </p>
+            </div>
           </div>
 
           {/* Modal Footer */}
@@ -125,7 +142,7 @@ export default function HearingScheduleModal({
             <button
               onClick={onSubmit}
               disabled={submitting}
-              className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#D4AF37]"
+              className="rounded-lg bg-yellow-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-yellow-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-yellow-600"
             >
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -145,12 +162,10 @@ export default function HearingScheduleModal({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  {mode === "edit" ? "Updating..." : "Adding..."}
+                  Postponing...
                 </span>
-              ) : mode === "edit" ? (
-                "Update Hearing"
               ) : (
-                "Add Hearing"
+                "Confirm Postponement"
               )}
             </button>
           </div>

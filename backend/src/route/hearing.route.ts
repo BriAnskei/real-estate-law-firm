@@ -25,8 +25,14 @@ hearingRoute.get(
 
 hearingRoute.patch(
   "/update/:hearing_id",
-  // asyncHandler(authMiddleware),
-  asyncHandler(HearingController.update)
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.updateType)
+);
+
+hearingRoute.patch(
+  "/postpone/:hearing_id",
+
+  asyncHandler(HearingController.postponeHearing)
 );
 
 hearingRoute.delete(

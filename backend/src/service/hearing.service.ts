@@ -2,6 +2,7 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { HearingModel, HearingStatusType } from "../model/hearing.model.js";
 import { PoolConnection } from "mysql2/promise";
+import { PostponementService } from "./postponed_hearing.service.js";
 
 const HEARING_SELECT_BASE = `
     SELECT 
@@ -67,7 +68,7 @@ export class HearingService {
     }
   }
 
-  static async update(
+  static async updateType(
     payload: { id: string; newType: string },
     connection?: PoolConnection
   ): Promise<void> {
@@ -86,6 +87,56 @@ export class HearingService {
       );
 
       if (res.affectedRows === 0) throw new Error("Hearing does not exist");
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async processHearingPostponement(payload: {
+    hearing_id: string;
+    old_date: string;
+    new_date: string;
+    reason: string;
+  }): Promise<void> {
+    const { hearing_id, new_date } = payload;
+
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      await this.postponeHearing({ hearing_id, new_date }, connection);
+
+      // add new history
+      await PostponementService.add(payload, connection);
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+
+      console.error(error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  private static async postponeHearing(
+    payload: { hearing_id: string; new_date: string },
+    connection: PoolConnection
+  ): Promise<void> {
+    const { hearing_id, new_date } = payload;
+
+    try {
+      const [row] = await connection.execute<ResultSetHeader>(
+        `
+        UPDATE hearings SET scheduled_date = ? WHERE id = ?
+        `,
+        [new_date, hearing_id]
+      );
+
+      if (row.affectedRows === 0) throw new Error("Hearing does not exist");
     } catch (error) {
       console.error(error);
       throw error;

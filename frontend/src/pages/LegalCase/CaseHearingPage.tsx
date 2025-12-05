@@ -1,8 +1,6 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
-  Calendar,
-  Clock,
   Eye,
   Edit2,
   Trash2,
@@ -11,7 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
-import HearingScheduleModal from "../../components/modal/caseModal/HearingScheduleModal";
+import HearingScheduleFormModal from "../../components/modal/hearingModal/HearingScheduleFormModal";
 import {
   TableRow,
   TableCell,
@@ -19,16 +17,21 @@ import {
   Table,
   TableBody,
 } from "../../components/ui/table";
-
 import { HearingType } from "../../types/HearingTypes";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
-import { HearingInputType } from "../../hooks/case/ongoing/useHearingScheduleModal";
-import { formatDateToDateInputString } from "../../util/DateDecoder";
-import useCaseHearingPage from "../../hooks/case/ongoing/useHearing";
+import { HearingInputType } from "../../hooks/case/hearing/useHearingScheduleFormModal";
+import {
+  formatDateTime,
+  formatDateToDateInputString,
+} from "../../util/DateDecoder";
+import useCaseHearingPage, {
+  HearingStatus,
+} from "../../hooks/case/hearing/useHearing";
 import { DeleteModal } from "../../components/modal/caseModal/DeleteModal";
+import HearingPostponementModal from "../../components/modal/hearingModal/HearingPostponementModal";
+import HearingPostponementHistoryModal from "../../components/modal/hearingModal/HearingPostponementHistoryModal";
 
 // Mock data types
-type HearingStatus = "scheduled" | "postponed" | "completed" | "cancelled";
 
 export default function HearingsPage() {
   const { id } = useParams();
@@ -37,6 +40,8 @@ export default function HearingsPage() {
   const {
     hearingDeleteModal,
     hearingFormModal,
+    hearingPostponedState,
+    hearingPostponedHistoryState,
 
     hearings,
     caseConcern,
@@ -44,6 +49,8 @@ export default function HearingsPage() {
     clientName,
 
     loading,
+
+    handleStatusOnChange,
   } = useCaseHearingPage();
 
   const [search, setSearch] = useState<string>("");
@@ -73,17 +80,6 @@ export default function HearingsPage() {
     }).format(date);
   };
 
-  const formatDateTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
   const clearFilter = () => {
     setSearch("");
     setStatusFilter("all");
@@ -102,14 +98,6 @@ export default function HearingsPage() {
   const handleDeleteHearing = (hearingId: string, title: string) => {
     console.log("Delete hearing:", hearingId, title);
     // Will be implemented later
-  };
-
-  const handleStatusChange = (hearingId: string, newStatus: HearingStatus) => {
-    console.log("Status change:", hearingId, newStatus);
-    if (newStatus === "postponed") {
-      console.log("Open postponement modal");
-      // Will open modal later
-    }
   };
 
   const handleViewHistory = (hearingId: string) => {
@@ -177,16 +165,15 @@ export default function HearingsPage() {
             setStatusFilter={setStatusFilter}
             loading={loadingTable}
             clearFilter={clearFilter}
-            formatDateTime={formatDateTime}
             onEditHearing={hearingFormModal.openNewSchedModal}
             onDeleteHearing={hearingDeleteModal.open}
-            onStatusChange={handleStatusChange}
-            onViewHistory={handleViewHistory}
+            onStatusChange={handleStatusOnChange}
+            onViewHistory={hearingPostponedHistoryState.open}
           />
         </div>
       </div>
 
-      <HearingScheduleModal
+      <HearingScheduleFormModal
         submitting={hearingFormModal.isSubmitting}
         isOpen={hearingFormModal.isOpen}
         onClose={hearingFormModal.closeNewSchedModal}
@@ -194,6 +181,22 @@ export default function HearingsPage() {
         onChangeHanlder={hearingFormModal.onChangeHanlder}
         input={hearingFormModal.input}
         mode={hearingFormModal.mode}
+      />
+
+      <HearingPostponementModal
+        isOpen={hearingPostponedState.isOpen}
+        onClose={hearingPostponedState.close}
+        onSubmit={hearingPostponedState.onSubmit}
+        onChangeHandler={hearingPostponedState.onchangeHanlder}
+        input={hearingPostponedState.input}
+      />
+
+      <HearingPostponementHistoryModal
+        postponements={hearingPostponedHistoryState.postponements ?? []}
+        hearingType={hearingPostponedHistoryState.hearingType}
+        isOpen={hearingPostponedHistoryState.isOpen}
+        isLoading={hearingPostponedHistoryState.loading}
+        onClose={hearingPostponedHistoryState.close}
       />
 
       <DeleteModal
@@ -219,7 +222,7 @@ function HearingsTable({
   setStatusFilter,
   loading,
   clearFilter,
-  formatDateTime,
+
   onEditHearing,
   onDeleteHearing,
   onStatusChange,
@@ -232,11 +235,17 @@ function HearingsTable({
   setStatusFilter: (value: "all" | HearingStatus) => void;
   loading: boolean;
   clearFilter: () => void;
-  formatDateTime: (date: string) => string;
+
   onEditHearing: (payload: HearingInputType) => void;
   onDeleteHearing: (payload: { id: string; hearingType: string }) => void;
-  onStatusChange: (id: string, status: HearingStatus) => void;
-  onViewHistory: (id: string) => void;
+  onStatusChange: (
+    payload: { hearing_id: string; old_date: string },
+    status: HearingStatus
+  ) => void;
+  onViewHistory: (payload: {
+    hearingId: string;
+    hearingDataType: string;
+  }) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
@@ -319,7 +328,6 @@ function HearingsTable({
                   <HearingRow
                     key={hearing.id}
                     hearing={hearing}
-                    formatDateTime={formatDateTime}
                     onEdit={onEditHearing}
                     onDelete={onDeleteHearing}
                     onStatusChange={onStatusChange}
@@ -434,18 +442,24 @@ function FilterSection({
 // Hearing Row Component
 function HearingRow({
   hearing,
-  formatDateTime,
+
   onEdit,
   onDelete,
   onStatusChange,
   onViewHistory,
 }: {
   hearing: HearingType;
-  formatDateTime: (date: string) => string;
+
   onEdit: (payload: HearingInputType) => void;
   onDelete: (payload: { id: string; hearingType: string }) => void;
-  onStatusChange: (id: string, status: HearingStatus) => void;
-  onViewHistory: (id: string) => void;
+  onStatusChange: (
+    payload: { hearing_id: string; old_date: string },
+    status: HearingStatus
+  ) => void;
+  onViewHistory: (payload: {
+    hearingId: string;
+    hearingDataType: string;
+  }) => void;
 }) {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
@@ -492,7 +506,13 @@ function HearingRow({
                 <button
                   key={s}
                   onClick={() => {
-                    onStatusChange(hearing.id!, s);
+                    onStatusChange(
+                      {
+                        hearing_id: hearing.id!,
+                        old_date: hearing.scheduled_date,
+                      },
+                      s
+                    );
                     setShowStatusDropdown(false);
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 
@@ -549,7 +569,12 @@ function HearingRow({
           {/* View History Button - Only show if has postponement history */}
 
           <button
-            onClick={() => onViewHistory(hearing.id!)}
+            onClick={() =>
+              onViewHistory({
+                hearingId: hearing.id!,
+                hearingDataType: hearing.type,
+              })
+            }
             className="inline-flex items-center justify-center w-8 h-8 
                 text-blue-600 hover:text-white hover:bg-blue-600 
                 dark:text-blue-400 dark:hover:text-white dark:hover:bg-blue-500

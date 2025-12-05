@@ -76,6 +76,28 @@ export class HearingApi {
     }
   }
 
+  static async postpone(payload: {
+    hearing_id: string;
+    old_date: string;
+    new_date: string;
+    reason: string;
+  }): Promise<void> {
+    const { hearing_id, old_date, new_date, reason } = payload;
+    try {
+      const res = await api.patch(`/api/hearing/postpone/${hearing_id}`, {
+        old_date,
+        new_date,
+        reason,
+      });
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "unknown error");
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   /**
    * Delete a single hearing
    */

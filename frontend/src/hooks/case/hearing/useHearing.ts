@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import useHearingScheduleModal from "./useHearingScheduleModal";
+
 import { HearingType } from "../../../types/HearingTypes";
 import { useCaseTransaction } from "../../../context/CaseTransactionContext";
 import { useParams } from "react-router";
 import { HearingApi } from "../../../util/api/hearing.api";
 import useHearingDeletionModal from "./useHearingDeletionModal";
+import useHearingScheduleFormModal from "./useHearingScheduleFormModal";
+import usePosponedHearingFormModal from "./usePostponedHearingFormModal";
+import useHearingPostponedHistoryModal from "./useHearingPostponedHistoryModal";
 
 const useCaseHearings = () => {
   const { id } = useParams();
@@ -42,6 +45,18 @@ const useCaseHearings = () => {
     );
   };
 
+  const postponeHearing = (payload: {
+    hearingId: string;
+    new_date: string;
+  }) => {
+    const { hearingId, new_date } = payload;
+    setHearings((prev) =>
+      prev?.map((h) =>
+        h.id === hearingId ? { ...h, scheduled_date: new_date } : h
+      )
+    );
+  };
+
   const deleteHearing = useCallback(
     (hearingId: string) => {
       setHearings((prev) => prev?.filter((h) => h.id !== hearingId));
@@ -54,9 +69,16 @@ const useCaseHearings = () => {
     addNewHearing,
     fetchingHearings,
     updateHearingType,
+    postponeHearing,
     deleteHearing,
   };
 };
+
+export type HearingStatus =
+  | "scheduled"
+  | "postponed"
+  | "completed"
+  | "cancelled";
 
 const useCaseHearingPage = () => {
   const {
@@ -68,7 +90,10 @@ const useCaseHearingPage = () => {
   // handles all the hearing schdule data state
   const hearingsState = useCaseHearings();
 
-  const hearingFormModal = useHearingScheduleModal({
+  /**
+   * Handles the adding/update(only the type of hearing) schdule
+   */
+  const hearingFormModal = useHearingScheduleFormModal({
     addNewHearing: hearingsState.addNewHearing,
     updateHearingType: hearingsState.updateHearingType,
   });
@@ -76,6 +101,32 @@ const useCaseHearingPage = () => {
   const hearingDeleteModal = useHearingDeletionModal({
     deleteHearing: hearingsState.deleteHearing,
   });
+
+  /**
+   * Handles the posponed form submition/type edit
+   */
+  const hearingPostponedState = usePosponedHearingFormModal({
+    postponeHearing: hearingsState.postponeHearing,
+  });
+
+  /**
+   * Hearing postponements history
+   */
+  const hearingPostponedHistoryState = useHearingPostponedHistoryModal();
+
+  const handleStatusOnChange = (
+    payload: { hearing_id: string; old_date: string },
+    status: HearingStatus
+  ) => {
+    switch (status) {
+      case "postponed":
+        hearingPostponedState.open(payload);
+        break;
+
+      default:
+        throw new Error("Unkown Status");
+    }
+  };
 
   /**
    * global loading flag
@@ -89,6 +140,8 @@ const useCaseHearingPage = () => {
   return {
     hearingFormModal,
     hearingDeleteModal,
+    hearingPostponedState,
+    hearingPostponedHistoryState,
 
     hearings: hearingsState.hearings,
     loading,
@@ -96,6 +149,9 @@ const useCaseHearingPage = () => {
     caseConcern: caseData?.concern,
     caseFiledAt: caseData?.created_at,
     clientName: clientData?.client_name,
+
+    // functions
+    handleStatusOnChange,
   };
 };
 

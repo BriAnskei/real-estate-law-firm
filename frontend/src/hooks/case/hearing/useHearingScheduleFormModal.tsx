@@ -20,7 +20,7 @@ const initialInput: HearingInputType = {
   time: "",
 };
 
-const useHearingScheduleModal = ({
+const useHearingScheduleFormModal = ({
   addNewHearing,
   updateHearingType,
 }: {
@@ -106,4 +106,4 @@ const useHearingScheduleModal = ({
   };
 };
 
-export default useHearingScheduleModal;
+export default useHearingScheduleFormModal;

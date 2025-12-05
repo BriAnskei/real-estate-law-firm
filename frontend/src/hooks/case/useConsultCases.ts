@@ -8,13 +8,11 @@ import { useSelector } from "react-redux";
 import {
   CaseType,
   clearCaseFilter,
-  deleteCase,
   fetchAllUnpaidCases,
   filterUnpaidCases,
 } from "../../store/Slice/case.slice";
 import { selectIsAuthenticated } from "../../store/selector/authSelector";
 import { useDeleteCase } from "./useDeleteCase";
-import { useFilterUser } from "../state/userAccounts/useFilterUser";
 import { useFilteredData } from "../useFilterData";
 import { debouncer } from "../../util/debouncer";
 

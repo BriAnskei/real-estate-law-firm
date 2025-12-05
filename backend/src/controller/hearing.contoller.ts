@@ -45,11 +45,11 @@ export class HearingController {
   /**
    * Update the hearing type
    */
-  static async update(req: Request, res: Response): Promise<void> {
+  static async updateType(req: Request, res: Response): Promise<void> {
     const { hearing_id } = req.params;
     const { newType } = req.body;
 
-    await HearingService.update({
+    await HearingService.updateType({
       id: hearing_id,
       newType,
     });
@@ -58,6 +58,23 @@ export class HearingController {
       success: true,
       message: "Hearing has been updated",
     });
+  }
+
+  /**
+   * Postponse the hearing schedule
+   */
+  static async postponeHearing(req: Request, res: Response): Promise<void> {
+    const { hearing_id } = req.params;
+    const { old_date, new_date, reason } = req.body;
+
+    await HearingService.processHearingPostponement({
+      hearing_id,
+      old_date,
+      new_date,
+      reason,
+    });
+
+    res.json({ success: true });
   }
 
   static async delete(req: Request, res: Response): Promise<void> {
