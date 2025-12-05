@@ -23,6 +23,12 @@ hearingRoute.get(
   asyncHandler(HearingController.findById)
 );
 
+hearingRoute.get(
+  "/filter",
+  // asyncHandler(authMiddleware),
+  asyncHandler(HearingController.filter)
+);
+
 hearingRoute.patch(
   "/update/:hearing_id",
   asyncHandler(authMiddleware),
@@ -31,8 +37,20 @@ hearingRoute.patch(
 
 hearingRoute.patch(
   "/postpone/:hearing_id",
-
+  asyncHandler(authMiddleware),
   asyncHandler(HearingController.postponeHearing)
+);
+
+hearingRoute.patch(
+  "/cancel/:hearing_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.cancelHearing)
+);
+
+hearingRoute.patch(
+  "/complete/:hearing_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(HearingController.completeHearing)
 );
 
 hearingRoute.delete(

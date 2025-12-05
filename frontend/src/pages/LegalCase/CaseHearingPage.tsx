@@ -17,7 +17,7 @@ import {
   Table,
   TableBody,
 } from "../../components/ui/table";
-import { HearingType } from "../../types/HearingTypes";
+import { HearingStatusType, HearingType } from "../../types/HearingTypes";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
 import { HearingInputType } from "../../hooks/case/hearing/useHearingScheduleFormModal";
 import {
@@ -30,6 +30,9 @@ import useCaseHearingPage, {
 import { DeleteModal } from "../../components/modal/caseModal/DeleteModal";
 import HearingPostponementModal from "../../components/modal/hearingModal/HearingPostponementModal";
 import HearingPostponementHistoryModal from "../../components/modal/hearingModal/HearingPostponementHistoryModal";
+import HearingCancellationFormModal from "../../components/modal/hearingModal/HearingCancellationFormModal";
+import HearingCancellationViewModal from "../../components/modal/hearingModal/HearingCancellationViewModal";
+import HearingCompletionModal from "../../components/modal/hearingModal/HearingCompletionModal";
 
 // Mock data types
 
@@ -42,6 +45,11 @@ export default function HearingsPage() {
     hearingFormModal,
     hearingPostponedState,
     hearingPostponedHistoryState,
+    hearingCancelationModal,
+    hearingCancelationState,
+    hearingCompletionModal,
+
+    hearingsState,
 
     hearings,
     caseConcern,
@@ -53,24 +61,6 @@ export default function HearingsPage() {
     handleStatusOnChange,
   } = useCaseHearingPage();
 
-  const [search, setSearch] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<"all" | HearingStatus>(
-    "all"
-  );
-  const [loadingTable] = useState(false);
-
-  // // Filter hearings
-  // const filteredHearings = useMemo(() => {
-  //   return (hearings ?? []).filter((hearing) => {
-  //     const matchesSearch = hearing.type
-  //       .toLowerCase()
-  //       .includes(search.toLowerCase());
-  //     const matchesStatus =
-  //       statusFilter === "all" || hearing.status === statusFilter;
-  //     return matchesSearch && matchesStatus;
-  //   });
-  // }, [hearings, search, statusFilter]);
-
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("en-US", {
@@ -78,31 +68,6 @@ export default function HearingsPage() {
       month: "short",
       day: "numeric",
     }).format(date);
-  };
-
-  const clearFilter = () => {
-    setSearch("");
-    setStatusFilter("all");
-  };
-
-  const handleAddHearing = () => {
-    console.log("Add hearing clicked");
-    // Will be implemented later
-  };
-
-  const handleEditHearing = (hearingId: string) => {
-    console.log("Edit hearing:", hearingId);
-    // Will be implemented later
-  };
-
-  const handleDeleteHearing = (hearingId: string, title: string) => {
-    console.log("Delete hearing:", hearingId, title);
-    // Will be implemented later
-  };
-
-  const handleViewHistory = (hearingId: string) => {
-    console.log("View postponement history:", hearingId);
-    // Will be implemented later
   };
 
   if (loading) {
@@ -159,16 +124,17 @@ export default function HearingsPage() {
           {/* Hearings Table */}
           <HearingsTable
             hearings={hearings ?? []}
-            search={search}
-            setSearch={setSearch}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            loading={loadingTable}
-            clearFilter={clearFilter}
+            search={hearingsState.filteredHearingState.query}
+            setSearch={hearingsState.filteredHearingState.setQuery}
+            statusFilter={hearingsState.filteredHearingState.status}
+            setStatusFilter={hearingsState.filteredHearingState.setStatus}
+            loading={hearingsState.filteredHearingState.loadingFilter}
+            clearFilter={hearingsState.filteredHearingState.clearFilter}
             onEditHearing={hearingFormModal.openNewSchedModal}
             onDeleteHearing={hearingDeleteModal.open}
             onStatusChange={handleStatusOnChange}
             onViewHistory={hearingPostponedHistoryState.open}
+            onViewCancellation={hearingCancelationState.open}
           />
         </div>
       </div>
@@ -199,6 +165,25 @@ export default function HearingsPage() {
         onClose={hearingPostponedHistoryState.close}
       />
 
+      <HearingCancellationFormModal
+        isOpen={hearingCancelationModal.isOpen}
+        onClose={hearingCancelationModal.close}
+        onConfirm={hearingCancelationModal.onConfirm}
+        hearingType={hearingCancelationModal.hearingType}
+        reason={hearingCancelationModal.reason}
+        setReason={hearingCancelationModal.setReason}
+      />
+
+      <HearingCancellationViewModal
+        isOpen={hearingCancelationState.isOpen}
+        onClose={hearingCancelationState.close}
+        hearingType={hearingCancelationState.hearingType}
+        scheduledDate={hearingCancelationState.scheduleDate}
+        cancellationDate={hearingCancelationState.cancellationDate}
+        reason={hearingCancelationState.reason!}
+        isLoading={hearingCancelationState.loading}
+      />
+
       <DeleteModal
         title="Delete Hearing Schedule"
         itemLabel="Hearing Type"
@@ -208,6 +193,14 @@ export default function HearingsPage() {
         isOpen={hearingDeleteModal.isOpen}
         onClose={hearingDeleteModal.close}
         onConfirm={hearingDeleteModal.confirm}
+      />
+
+      <HearingCompletionModal
+        isOpen={hearingCompletionModal.isOpen}
+        onClose={hearingCompletionModal.close}
+        onConfirm={hearingCompletionModal.confirm}
+        hearingType={hearingCompletionModal.hearingType ?? ""}
+        scheduledDate={hearingCompletionModal.scheduleDate ?? ""}
       />
     </>
   );
@@ -227,24 +220,35 @@ function HearingsTable({
   onDeleteHearing,
   onStatusChange,
   onViewHistory,
+  onViewCancellation,
 }: {
   hearings: HearingType[];
   search: string;
   setSearch: (value: string) => void;
-  statusFilter: "all" | HearingStatus;
-  setStatusFilter: (value: "all" | HearingStatus) => void;
+  statusFilter?: HearingStatus;
+  setStatusFilter: (value: HearingStatus) => void;
   loading: boolean;
   clearFilter: () => void;
 
   onEditHearing: (payload: HearingInputType) => void;
   onDeleteHearing: (payload: { id: string; hearingType: string }) => void;
   onStatusChange: (
-    payload: { hearing_id: string; old_date: string },
-    status: HearingStatus
+    payload: {
+      hearing_id: string;
+      old_date: string;
+      hearingType: string;
+      scheduled_date?: string;
+    },
+    status: HearingStatusType
   ) => void;
   onViewHistory: (payload: {
     hearingId: string;
     hearingDataType: string;
+  }) => void;
+  onViewCancellation: (payload: {
+    hearing_id: string;
+    hearing_type: string;
+    schedule_date: string;
   }) => void;
 }) {
   return (
@@ -316,7 +320,7 @@ function HearingsTable({
                         No hearings found
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {search || statusFilter !== "all"
+                        {search || statusFilter !== undefined
                           ? "Try adjusting your filters"
                           : "No hearings have been scheduled yet"}
                       </p>
@@ -332,6 +336,7 @@ function HearingsTable({
                     onDelete={onDeleteHearing}
                     onStatusChange={onStatusChange}
                     onViewHistory={onViewHistory}
+                    onViewCancellation={onViewCancellation}
                   />
                 ))
               )}
@@ -370,8 +375,8 @@ function FilterSection({
 }: {
   search: string;
   setSearch: (value: string) => void;
-  statusFilter: "all" | HearingStatus;
-  setStatusFilter: (value: "all" | HearingStatus) => void;
+  statusFilter?: HearingStatus;
+  setStatusFilter: (value: HearingStatus) => void;
   clearFilter: () => void;
 }) {
   return (
@@ -395,7 +400,7 @@ function FilterSection({
         {/* Status Filter and Reset */}
         <div className="flex items-center gap-3">
           <select
-            value={statusFilter}
+            value={statusFilter ?? "all"}
             onChange={(e) => setStatusFilter(e.target.value as any)}
             className="rounded-lg border-2 border-gray-200 bg-white py-2.5 px-4 text-sm text-gray-900 
               transition-all focus:border-[#D4AF37] focus:outline-none dark:border-white/[0.1] 
@@ -405,7 +410,7 @@ function FilterSection({
           >
             <option value="all">All Hearings</option>
             <option value="scheduled">Scheduled</option>
-            <option value="postponed">Postponed</option>
+
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
@@ -442,7 +447,7 @@ function FilterSection({
 // Hearing Row Component
 function HearingRow({
   hearing,
-
+  onViewCancellation,
   onEdit,
   onDelete,
   onStatusChange,
@@ -453,17 +458,28 @@ function HearingRow({
   onEdit: (payload: HearingInputType) => void;
   onDelete: (payload: { id: string; hearingType: string }) => void;
   onStatusChange: (
-    payload: { hearing_id: string; old_date: string },
-    status: HearingStatus
+    payload: {
+      hearing_id: string;
+      old_date: string;
+      hearingType: string;
+      scheduled_date: string;
+    },
+    status: HearingStatusType
   ) => void;
   onViewHistory: (payload: {
     hearingId: string;
     hearingDataType: string;
   }) => void;
+
+  onViewCancellation: (payload: {
+    hearing_id: string;
+    hearing_type: string;
+    schedule_date: string;
+  }) => void;
 }) {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
-  const getStatusBadge = (status: HearingStatus) => {
+  const getStatusBadge = (status: HearingStatusType) => {
     const styles = {
       scheduled:
         "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -477,7 +493,11 @@ function HearingRow({
     return (
       <div className="relative">
         <button
-          onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+          onClick={() =>
+            hearing.status === "cancelled" || hearing.status === "completed"
+              ? undefined
+              : setShowStatusDropdown(!showStatusDropdown)
+          }
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium 
             ${styles[status]} hover:opacity-80 transition-opacity`}
         >
@@ -496,12 +516,7 @@ function HearingRow({
               border border-gray-200 dark:border-gray-700 z-20 overflow-hidden"
             >
               {(
-                [
-                  "scheduled",
-                  "postponed",
-                  "completed",
-                  "cancelled",
-                ] as HearingStatus[]
+                ["postponed", "completed", "cancelled"] as HearingStatusType[]
               ).map((s) => (
                 <button
                   key={s}
@@ -510,6 +525,7 @@ function HearingRow({
                       {
                         hearing_id: hearing.id!,
                         old_date: hearing.scheduled_date,
+                        hearingType: hearing.type,
                       },
                       s
                     );
@@ -543,31 +559,54 @@ function HearingRow({
       </TableCell>
       <TableCell className="px-5 py-4 text-center">
         <div className="inline-flex items-center gap-2">
-          {/* Edit Button */}
-          <button
-            onClick={() => {
-              const { formattedDate, formattedTime } =
-                formatDateToDateInputString(hearing.scheduled_date);
+          {/* UPDATE - only available if status is scheduled */}
+          {hearing.status === "scheduled" && (
+            <button
+              onClick={() => {
+                const { formattedDate, formattedTime } =
+                  formatDateToDateInputString(hearing.scheduled_date);
 
-              onEdit({
-                id: hearing.id,
-                type: hearing.type,
-                date: formattedDate,
-                time: formattedTime,
-              });
-            }}
-            className="inline-flex items-center justify-center w-8 h-8 
+                onEdit({
+                  id: hearing.id,
+                  type: hearing.type,
+                  date: formattedDate,
+                  time: formattedTime,
+                });
+              }}
+              className="inline-flex items-center justify-center w-8 h-8 
               text-[#D4AF37] hover:text-white hover:bg-[#D4AF37] 
               dark:text-[#D4AF37] dark:hover:text-white dark:hover:bg-[#D4AF37]
               rounded-lg transition-all duration-300 focus:outline-none focus:ring-2
               focus:ring-[#D4AF37] focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-            aria-label="Edit hearing"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
+              aria-label="Edit hearing"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+          )}
 
-          {/* View History Button - Only show if has postponement history */}
+          {/* VIEW CANCELATION - only available if status is cancelled */}
+          {hearing.status === "cancelled" && (
+            <button
+              onClick={() =>
+                onViewCancellation({
+                  hearing_id: hearing.id!,
+                  hearing_type: hearing.type,
+                  schedule_date: hearing.created_at!,
+                })
+              }
+              className="inline-flex items-center justify-center w-8 h-8
+     text-red-700 hover:bg-red-700 hover:text-white
+     dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white
+      rounded-lg transition-all duration-300 focus:outline-none focus:ring-2
+      focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              aria-label="View cancellation history"
+              title="View cancellation history"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          )}
 
+          {/* VIEW POESTPONED HISTORY */}
           <button
             onClick={() =>
               onViewHistory({
@@ -586,20 +625,22 @@ function HearingRow({
             <Eye className="w-4 h-4" />
           </button>
 
-          {/* Delete Button */}
-          <button
-            onClick={() =>
-              onDelete({ id: hearing.id!, hearingType: hearing.type })
-            }
-            className="inline-flex items-center justify-center w-8 h-8
-              text-red-600 hover:text-white hover:bg-red-600 
-              dark:text-red-400 dark:hover:text-white dark:hover:bg-red-500
-              rounded-lg transition-all duration-300 focus:outline-none focus:ring-2
-              focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-            aria-label="Delete hearing"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {/* DELETION - only available if status is not complete */}
+          {hearing.status !== "completed" && hearing.status !== "cancelled" && (
+            <button
+              onClick={() =>
+                onDelete({ id: hearing.id!, hearingType: hearing.type })
+              }
+              className="inline-flex items-center justify-center w-8 h-8
+      text-red-600 hover:text-white hover:bg-red-600 
+      dark:text-red-400 dark:hover:text-white dark:hover:bg-red-500
+      rounded-lg transition-all duration-300 focus:outline-none focus:ring-2
+      focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              aria-label="Delete hearing"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </TableCell>
     </TableRow>

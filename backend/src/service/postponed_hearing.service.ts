@@ -70,4 +70,22 @@ export class PostponementService {
       throw error;
     }
   }
+
+  static async deleteAllByHearingId(
+    hearingId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      await connection.execute<ResultSetHeader>(
+        `
+      DELETE FROM hearing_postponements
+      WHERE hearing_id = ?
+      `,
+        [hearingId]
+      );
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
 }

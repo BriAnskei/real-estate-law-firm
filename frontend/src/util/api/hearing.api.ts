@@ -1,3 +1,4 @@
+import { HearingStatus } from "../../hooks/case/hearing/useHearing";
 import { HearingType, HearingStatusType } from "../../types/HearingTypes";
 import api from "./axiosInstance";
 
@@ -60,6 +61,28 @@ export class HearingApi {
     }
   }
 
+  static async filter(payload: {
+    query: string;
+    status?: HearingStatus;
+  }): Promise<HearingType[]> {
+    try {
+      const { query, status } = payload;
+
+      const res = await api.get("api/hearing/filter", {
+        params: {
+          query,
+          status,
+        },
+      });
+      if (!res.data.success) throw new Error(res.data.message);
+
+      return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   /**
    * Update a hearing by ID
    */
@@ -89,6 +112,36 @@ export class HearingApi {
         new_date,
         reason,
       });
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "unknown error");
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async cancel(payload: {
+    hearing_id: string;
+    reason: string;
+  }): Promise<void> {
+    const { hearing_id, reason } = payload;
+    try {
+      const res = await api.patch(`/api/hearing/cancel/${hearing_id}`, {
+        reason,
+      });
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "unknown error");
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async completed(hearing_id: string): Promise<void> {
+    try {
+      const res = await api.patch(`/api/hearing/complete/${hearing_id}`);
 
       if (!res.data.success)
         throw new Error(res.data.message || "unknown error");

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { HearingType } from "../../../types/HearingTypes";
+import { HearingStatusType, HearingType } from "../../../types/HearingTypes";
 import { useCaseTransaction } from "../../../context/CaseTransactionContext";
 import { useParams } from "react-router";
 import { HearingApi } from "../../../util/api/hearing.api";
@@ -8,9 +8,74 @@ import useHearingDeletionModal from "./useHearingDeletionModal";
 import useHearingScheduleFormModal from "./useHearingScheduleFormModal";
 import usePosponedHearingFormModal from "./usePostponedHearingFormModal";
 import useHearingPostponedHistoryModal from "./useHearingPostponedHistoryModal";
+import useHearingCancellationFormModal from "./useHearingCancellationFormModal";
+import useHearingCancellationViewModal from "./useHearingCancellationViewModal";
+import { debouncer } from "../../../util/debouncer";
+import { useFilteredData } from "../../useFilterData";
+import useHearingCompletionModal from "./useHearingCompletionModal";
+
+const useHearingFilter = () => {
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<HearingStatus | undefined>(undefined);
+
+  const [filteredHearings, setFilteredHearings] = useState<
+    HearingType[] | undefined
+  >(undefined);
+  const [loadingFilter, setLoadingFilter] = useState(false);
+
+  const debounceFilter = useRef<ReturnType<typeof debouncer> | undefined>(
+    undefined
+  );
+
+  const handleFilter = useCallback(
+    async (payload: { query: string; status?: HearingStatus }) => {
+      try {
+        const response = await HearingApi.filter(payload);
+        setFilteredHearings(response);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoadingFilter(false);
+      }
+    },
+    []
+  );
+
+  const clearFilter = useCallback(() => {
+    setQuery("");
+    setStatus(undefined);
+    setFilteredHearings(undefined);
+  }, []);
+
+  useEffect(() => {
+    debounceFilter.current = debouncer(handleFilter, 400);
+  }, [handleFilter]);
+
+  useEffect(() => {
+    if ((query.trim() || status) && debounceFilter.current) {
+      setLoadingFilter(true);
+      debounceFilter.current({ query, status });
+    } else {
+      clearFilter();
+    }
+  }, [query, status]);
+
+  return {
+    clearFilter,
+    filteredHearings,
+    loadingFilter,
+    onFiltered: !!query.length || status !== undefined,
+    setStatus,
+    status,
+    query,
+    setQuery,
+  };
+};
 
 const useCaseHearings = () => {
   const { id } = useParams();
+
+  const filteredHearingState = useHearingFilter();
 
   const [hearings, setHearings] = useState<HearingType[] | undefined>(
     undefined
@@ -57,6 +122,17 @@ const useCaseHearings = () => {
     );
   };
 
+  const cancelHearing = useCallback(
+    (hearingId: string) => {
+      setHearings((prev) =>
+        prev?.map((h) =>
+          h.id === hearingId ? { ...h, status: "cancelled" } : h
+        )
+      );
+    },
+    [setHearings]
+  );
+
   const deleteHearing = useCallback(
     (hearingId: string) => {
       setHearings((prev) => prev?.filter((h) => h.id !== hearingId));
@@ -64,16 +140,24 @@ const useCaseHearings = () => {
     [setHearings]
   );
 
+  const displayData = filteredHearingState.onFiltered
+    ? filteredHearingState.filteredHearings
+    : hearings;
+
   return {
-    hearings,
+    displayData,
     addNewHearing,
-    fetchingHearings,
+    cancelHearing,
+    fetchingHearings: fetchingHearings,
+    filterLoading: filteredHearingState.loadingFilter,
     updateHearingType,
     postponeHearing,
     deleteHearing,
+    filteredHearingState,
   };
 };
 
+// for hearing table dropdown
 export type HearingStatus =
   | "scheduled"
   | "postponed"
@@ -87,12 +171,8 @@ const useCaseHearingPage = () => {
     loading: caseDataLoading,
   } = useCaseTransaction();
 
-  // handles all the hearing schdule data state
   const hearingsState = useCaseHearings();
 
-  /**
-   * Handles the adding/update(only the type of hearing) schdule
-   */
   const hearingFormModal = useHearingScheduleFormModal({
     addNewHearing: hearingsState.addNewHearing,
     updateHearingType: hearingsState.updateHearingType,
@@ -102,27 +182,48 @@ const useCaseHearingPage = () => {
     deleteHearing: hearingsState.deleteHearing,
   });
 
-  /**
-   * Handles the posponed form submition/type edit
-   */
   const hearingPostponedState = usePosponedHearingFormModal({
     postponeHearing: hearingsState.postponeHearing,
   });
 
-  /**
-   * Hearing postponements history
-   */
   const hearingPostponedHistoryState = useHearingPostponedHistoryModal();
 
+  const hearingCancelationModal = useHearingCancellationFormModal({
+    cancelHearing: hearingsState.cancelHearing,
+  });
+
+  const hearingCancelationState = useHearingCancellationViewModal();
+
+  const hearingCompletionModal = useHearingCompletionModal();
+
   const handleStatusOnChange = (
-    payload: { hearing_id: string; old_date: string },
+    payload: {
+      hearing_id: string;
+      old_date: string;
+      scheduled_date?: string;
+      hearingType: string;
+    },
     status: HearingStatus
   ) => {
+    console.log("status onchange: ", payload);
     switch (status) {
       case "postponed":
         hearingPostponedState.open(payload);
         break;
+      case "cancelled":
+        hearingCancelationModal.open({
+          hearingDataId: payload.hearing_id,
+          hearingType: payload.hearingType,
+        });
+        break;
 
+      case "completed":
+        hearingCompletionModal.open({
+          hearing_id: payload.hearing_id,
+          hearing_type: payload.hearingType,
+          scheduled_date: payload.scheduled_date!,
+        });
+        break;
       default:
         throw new Error("Unkown Status");
     }
@@ -142,8 +243,13 @@ const useCaseHearingPage = () => {
     hearingDeleteModal,
     hearingPostponedState,
     hearingPostponedHistoryState,
+    hearingCancelationModal,
+    hearingCancelationState,
+    hearingCompletionModal,
 
-    hearings: hearingsState.hearings,
+    hearingsState,
+
+    hearings: hearingsState.displayData,
     loading,
 
     caseConcern: caseData?.concern,

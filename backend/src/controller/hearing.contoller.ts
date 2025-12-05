@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { HearingService } from "../service/hearing.service.js";
 import { AuthRequest } from "../types/express.types.js";
+import { json } from "stream/consumers";
 
 export class HearingController {
   static async create(req: AuthRequest, res: Response): Promise<void> {
@@ -42,6 +43,15 @@ export class HearingController {
     });
   }
 
+  static async filter(req: Request, res: Response): Promise<void> {
+    const response = await HearingService.filter({
+      query: req.query.query as string,
+      status: req.query.status as string,
+    });
+
+    res.json({ success: true, data: response });
+  }
+
   /**
    * Update the hearing type
    */
@@ -67,7 +77,7 @@ export class HearingController {
     const { hearing_id } = req.params;
     const { old_date, new_date, reason } = req.body;
 
-    await HearingService.processHearingPostponement({
+    await HearingService.proccessHearingPostponement({
       hearing_id,
       old_date,
       new_date,
@@ -77,10 +87,30 @@ export class HearingController {
     res.json({ success: true });
   }
 
+  static async cancelHearing(req: Request, res: Response): Promise<void> {
+    const { hearing_id } = req.params;
+    const { reason } = req.body;
+
+    await HearingService.proccessHearingCancelation({ hearing_id, reason });
+
+    res.json({ success: true });
+  }
+
+  static async completeHearing(req: Request, res: Response): Promise<void> {
+    const { hearing_id } = req.params;
+
+    await HearingService.updateHearingStatus({
+      hearing_id,
+      status: "completed",
+    });
+
+    res.json({ success: true });
+  }
+
   static async delete(req: Request, res: Response): Promise<void> {
     const { hearing_id } = req.params;
 
-    await HearingService.deleteById(hearing_id);
+    await HearingService.proccessHearingSchedDeletion(hearing_id);
 
     res.json({
       success: true,
