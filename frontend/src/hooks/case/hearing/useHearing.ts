@@ -10,67 +10,9 @@ import usePosponedHearingFormModal from "./usePostponedHearingFormModal";
 import useHearingPostponedHistoryModal from "./useHearingPostponedHistoryModal";
 import useHearingCancellationFormModal from "./useHearingCancellationFormModal";
 import useHearingCancellationViewModal from "./useHearingCancellationViewModal";
-import { debouncer } from "../../../util/debouncer";
-import { useFilteredData } from "../../useFilterData";
+
 import useHearingCompletionModal from "./useHearingCompletionModal";
-
-const useHearingFilter = () => {
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<HearingStatus | undefined>(undefined);
-
-  const [filteredHearings, setFilteredHearings] = useState<
-    HearingType[] | undefined
-  >(undefined);
-  const [loadingFilter, setLoadingFilter] = useState(false);
-
-  const debounceFilter = useRef<ReturnType<typeof debouncer> | undefined>(
-    undefined
-  );
-
-  const handleFilter = useCallback(
-    async (payload: { query: string; status?: HearingStatus }) => {
-      try {
-        const response = await HearingApi.filter(payload);
-        setFilteredHearings(response);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoadingFilter(false);
-      }
-    },
-    []
-  );
-
-  const clearFilter = useCallback(() => {
-    setQuery("");
-    setStatus(undefined);
-    setFilteredHearings(undefined);
-  }, []);
-
-  useEffect(() => {
-    debounceFilter.current = debouncer(handleFilter, 400);
-  }, [handleFilter]);
-
-  useEffect(() => {
-    if ((query.trim() || status) && debounceFilter.current) {
-      setLoadingFilter(true);
-      debounceFilter.current({ query, status });
-    } else {
-      clearFilter();
-    }
-  }, [query, status]);
-
-  return {
-    clearFilter,
-    filteredHearings,
-    loadingFilter,
-    onFiltered: !!query.length || status !== undefined,
-    setStatus,
-    status,
-    query,
-    setQuery,
-  };
-};
+import { useHearingFilter } from "./useHearingFilter";
 
 const useCaseHearings = () => {
   const { id } = useParams();
@@ -122,12 +64,10 @@ const useCaseHearings = () => {
     );
   };
 
-  const cancelHearing = useCallback(
-    (hearingId: string) => {
+  const updateStatus = useCallback(
+    (hearingId: string, newStatus: HearingStatusType) => {
       setHearings((prev) =>
-        prev?.map((h) =>
-          h.id === hearingId ? { ...h, status: "cancelled" } : h
-        )
+        prev?.map((h) => (h.id === hearingId ? { ...h, status: newStatus } : h))
       );
     },
     [setHearings]
@@ -147,7 +87,7 @@ const useCaseHearings = () => {
   return {
     displayData,
     addNewHearing,
-    cancelHearing,
+    updateStatus,
     fetchingHearings: fetchingHearings,
     filterLoading: filteredHearingState.loadingFilter,
     updateHearingType,
@@ -189,12 +129,14 @@ const useCaseHearingPage = () => {
   const hearingPostponedHistoryState = useHearingPostponedHistoryModal();
 
   const hearingCancelationModal = useHearingCancellationFormModal({
-    cancelHearing: hearingsState.cancelHearing,
+    updateHearingStatus: hearingsState.updateStatus,
   });
 
   const hearingCancelationState = useHearingCancellationViewModal();
 
-  const hearingCompletionModal = useHearingCompletionModal();
+  const hearingCompletionModal = useHearingCompletionModal({
+    updateStatus: hearingsState.updateStatus,
+  });
 
   const handleStatusOnChange = (
     payload: {

@@ -4,6 +4,8 @@ import { HearingModel } from "../model/hearing.model.js";
 import { PoolConnection } from "mysql2/promise";
 import { PostponementService } from "./postponed_hearing.service.js";
 import { HearingCancellationService } from "./hearing_cancellation.service.js";
+import { ResponseType } from "../types/auth.types.js";
+import { TaskService } from "./task.service.js";
 
 const HEARING_SELECT_BASE = `
     SELECT 
@@ -51,11 +53,12 @@ export class HearingService {
   }
 
   static async filter(payload: {
+    case_id: string;
     query?: string;
     status?: string;
   }): Promise<HearingModel[]> {
     try {
-      const { query, status } = payload;
+      const { query, status, case_id } = payload;
 
       const conditions: string[] = [];
       const params: string[] = [];
@@ -69,6 +72,9 @@ export class HearingService {
         conditions.push("h.status = ?");
         params.push(status);
       }
+
+      conditions.push("h.case_id = ?");
+      params.push(case_id);
 
       const whereClause =
         conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
@@ -89,9 +95,14 @@ export class HearingService {
     }
   }
 
-  static async findById(id: string): Promise<HearingModel> {
+  static async findById(
+    id: string,
+    connection?: PoolConnection
+  ): Promise<HearingModel> {
     try {
-      const [rows] = await pool.execute<(HearingModel & RowDataPacket)[]>(
+      const sqlPool = connection ?? pool;
+
+      const [rows] = await sqlPool.execute<(HearingModel & RowDataPacket)[]>(
         `
         ${HEARING_SELECT_BASE}
         WHERE h.id = ?
@@ -102,6 +113,71 @@ export class HearingService {
       if (!rows.length) throw new Error("Hearing does not exist");
 
       return rows[0];
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async areAllHearingsNotScheduled(case_id: string): Promise<boolean> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `
+      SELECT EXISTS(
+        SELECT 1
+        FROM hearings
+        WHERE case_id = ?
+          AND status = 'scheduled'
+      ) AS hasScheduled;
+      `,
+        [case_id]
+      );
+
+      return rows[0].hasScheduled === 0;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async isHearingExist(
+    id: string,
+    connection?: PoolConnection
+  ): Promise<boolean> {
+    try {
+      const hearingData = await this.findById(id, connection);
+
+      return Boolean(hearingData);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async isHearingPartOfCase(
+    payload: {
+      hearing_id: string;
+      case_id: string;
+    },
+    connection?: PoolConnection
+  ): Promise<boolean> {
+    try {
+      const sqlConnection = connection ?? pool;
+
+      const { hearing_id, case_id } = payload;
+
+      const [rows] = await sqlConnection.execute<
+        (HearingModel & RowDataPacket)[]
+      >(
+        `
+        SELECT id 
+        FROM hearings
+        WHERE id = ? AND case_id = ?
+      `,
+        [hearing_id, case_id]
+      );
+
+      return rows.length > 0;
     } catch (error) {
       console.error(error);
       throw error;
@@ -212,9 +288,19 @@ export class HearingService {
   static async updateHearingStatus(
     payload: { hearing_id: string; status: string },
     connection?: PoolConnection
-  ): Promise<void> {
+  ): Promise<ResponseType<undefined>> {
     const { hearing_id, status } = payload;
     try {
+      if (
+        status === "completed" &&
+        !(await TaskService.isAllHearingTaskComplete(hearing_id))
+      )
+        return {
+          success: false,
+          message:
+            "Completion of all tasks is required to process this request.",
+        };
+
       const sqlConnection = connection ?? pool;
 
       const [row] = await sqlConnection.execute<ResultSetHeader>(
@@ -224,6 +310,7 @@ export class HearingService {
         [status, hearing_id]
       );
       if (row.affectedRows === 0) throw new Error("Hearing does not exist");
+      return { success: true };
     } catch (error) {
       console.error(error);
       throw error;

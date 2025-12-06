@@ -12,9 +12,14 @@ caseStageRoute.get(
 );
 
 caseStageRoute.patch(
-  "/update/status/:caseId/:id",
+  "/update/status/:caseId/:id/:stage_name",
   asyncHandler(authMiddleware),
   asyncHandler(CaseStagesController.updateStatus)
+);
+
+caseStageRoute.patch(
+  "/selection/hearing/:case_id",
+  asyncHandler(CaseStagesController.setSelectedHearingSched)
 );
 
 export default caseStageRoute;

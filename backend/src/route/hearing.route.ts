@@ -24,7 +24,7 @@ hearingRoute.get(
 );
 
 hearingRoute.get(
-  "/filter",
+  "/filter/:case_id",
   // asyncHandler(authMiddleware),
   asyncHandler(HearingController.filter)
 );

@@ -36,7 +36,10 @@ import { RootState } from "../../store/store";
 import { DeleteModal } from "../../components/modal/caseModal/DeleteModal";
 import { ApexOptions } from "apexcharts";
 import { ScrollToTop } from "../../components/common/ScrollToTop";
-import HearingScheduleCard from "./Components/HearingScheduleCard";
+import HearingTabTaskHeader from "./Components/HearingTabTaskHeader";
+import HearingScheduleSelectionModal from "../../components/modal/caseModal/HearingSchduleSelectionModal";
+import useHearingSelectionModal from "../../hooks/case/hearing/useHearingSelectionModal";
+import { HearingStatus } from "../../hooks/case/hearing/useHearing";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -209,7 +212,13 @@ export function Content() {
     setActiveTab,
     activeTab,
     calculateCompleteStages,
+
+    setSelectedHearingSched,
   } = useCaseTransaction();
+  const hearingSchduleSelectionModal = useHearingSelectionModal({
+    setSelectedHearingSched,
+  });
+
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isAuthLoading = useSelector(selectAuthLoading);
 
@@ -225,33 +234,39 @@ export function Content() {
       case "details":
         return <CaseDetailsTab />;
       default:
-        return <CaseStage tabName={activeTab} />;
+        return (
+          <CaseStage
+            tabName={activeTab}
+            openHearingSelection={hearingSchduleSelectionModal.open}
+          />
+        );
     }
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <ScrollToTop />
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Header
-          formatDate={formatDate}
-          date_filed={caseData?.created_at!}
-          concern={caseData?.concern!}
-          getCompletedStagesCount={() =>
-            calculateCompleteStages()?.stageComplete ?? 0
-          }
-          calculateProgress={() => calculateCompleteStages()?.progress ?? 0}
-        />
+    <>
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <ScrollToTop />
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <Header
+            formatDate={formatDate}
+            date_filed={caseData?.created_at!}
+            concern={caseData?.concern!}
+            getCompletedStagesCount={() =>
+              calculateCompleteStages()?.stageComplete ?? 0
+            }
+            calculateProgress={() => calculateCompleteStages()?.progress ?? 0}
+          />
 
-        <Tabs setActiveTab={setActiveTab} activeTab={activeTab} />
+          <Tabs setActiveTab={setActiveTab} activeTab={activeTab} />
 
-        {/* Content */}
-        <div className="rounded-lg border-2 border-gray-200 bg-white px-6 py-8 dark:border-gray-700 dark:bg-gray-800 xl:px-10 xl:py-12">
-          <Pages />
+          {/* Content */}
+          <div className="rounded-lg border-2 border-gray-200 bg-white px-6 py-8 dark:border-gray-700 dark:bg-gray-800 xl:px-10 xl:py-12">
+            <Pages />
+          </div>
         </div>
-      </div>
 
-      <style>{`
+        <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -263,7 +278,26 @@ export function Content() {
           }
         }
       `}</style>
-    </div>
+      </div>
+
+      <HearingScheduleSelectionModal
+        isLoading={hearingSchduleSelectionModal.loading}
+        isSubmitting={hearingSchduleSelectionModal.isSubmitting}
+        Hearings={hearingSchduleSelectionModal.displayData ?? []}
+        isOpen={hearingSchduleSelectionModal.isOpen}
+        onClose={hearingSchduleSelectionModal.close}
+        onConfirm={hearingSchduleSelectionModal.onConfirm}
+        query={hearingSchduleSelectionModal.filteredHearingState.query}
+        setQuery={hearingSchduleSelectionModal.filteredHearingState.setQuery}
+        status={
+          hearingSchduleSelectionModal.filteredHearingState.status ?? "all"
+        }
+        setStatus={hearingSchduleSelectionModal.filteredHearingState.setStatus}
+        clearFilter={
+          hearingSchduleSelectionModal.filteredHearingState.clearFilter
+        }
+      />
+    </>
   );
 }
 
@@ -362,13 +396,21 @@ function CaseDetailsTab() {
   );
 }
 
-function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
+function CaseStage({
+  tabName,
+  openHearingSelection,
+}: {
+  tabName: Exclude<TabTypes, "details">;
+  openHearingSelection?: () => void;
+}) {
   const {
     fetchStageTask,
     taskLoading,
     statusHandler,
     displayData,
     formatDate,
+
+    selectedHearing,
   } = useCaseTransaction();
 
   // manage stage data by stage tab
@@ -395,33 +437,87 @@ function CaseStage({ tabName }: { tabName: Exclude<TabTypes, "details"> }) {
 
   const { title, description } = displayHeaderText[tabName];
 
+  const HearingHeader = () => (
+    <HearingTabTaskHeader
+      selectedHearing={selectedHearing}
+      formatDate={formatDate}
+      openHearingSelection={openHearingSelection}
+    >
+      <StageHeader
+        isAddTaskEnabled={
+          stage.stage_status !== "ongoing" ||
+          (selectedHearing && selectedHearing.status === "cancelled")!
+        }
+        title={title}
+        description={description}
+        status={stage!.stage_status}
+        onAddTask={addtask}
+        onStatusChange={handleStatusOnChange}
+      />
+    </HearingTabTaskHeader>
+  );
+
+  const isActionEnabled = () => {
+    // requiremnts an docs stage for task action
+    const isActionEnabledForUnHearingTask = stage.stage_status === "ongoing";
+
+    // hearing action
+    const isActionEnabledInHearingTask =
+      tabName === "hearings" &&
+      selectedHearing!.status !== "cancelled" &&
+      stage.stage_status === "ongoing";
+
+    return tabName === "hearings"
+      ? isActionEnabledInHearingTask
+      : isActionEnabledForUnHearingTask;
+  };
+
   return (
     <>
       <div>
         {/* hearing detials */}
-        {tabName === "hearings" && (
-          <HearingScheduleCard formatDate={formatDate} />
+        {tabName === "hearings" ? (
+          <HearingHeader />
+        ) : (
+          <StageHeader
+            isAddTaskEnabled={stage.stage_status !== "ongoing"}
+            title={title}
+            description={description}
+            status={stage!.stage_status}
+            onAddTask={addtask}
+            onStatusChange={handleStatusOnChange}
+          />
         )}
 
-        <StageHeader
-          title={title}
-          description={description}
-          status={stage!.stage_status}
-          onAddTask={addtask}
-          onStatusChange={handleStatusOnChange}
-        />
-
-        <AllTasks
-          // if stage is complete, action is not allowed in task
-          isActionAllowed={stage.stage_status === "ongoing"}
-          curUserId={currUser?.id}
-          deleteTask={taskDeleteState.openModal}
-          onEditTask={updateTask}
-          tasks={task!}
-          formatDate={formatDate}
-          loading={taskLoading}
-          onViewTask={viewTask}
-        />
+        {tabName === "hearings" && selectedHearing === undefined ? null : (
+          <AllTasks
+            // if stage is complete, action is not allowed in task
+            isActionAllowed={isActionEnabled()}
+            curUserId={currUser?.id}
+            deleteTask={taskDeleteState.openModal}
+            onEditTask={updateTask}
+            tasks={task!}
+            formatDate={formatDate}
+            loading={taskLoading}
+            onViewTask={(payload: {
+              assignTo: string;
+              taskId: string;
+              isTaskComplete: boolean;
+            }) =>
+              // if task is on hearing we add isTaskOnHearingAndCancelled to
+              // verify if hearing is cancelled, this will redirect to task review
+              viewTask({
+                ...payload,
+                ...(stage.stage_name === "HEARING"
+                  ? {
+                      isTaskOnHearingAndCancelled:
+                        selectedHearing?.status === "cancelled",
+                    }
+                  : {}),
+              })
+            }
+          />
+        )}
       </div>
 
       <DeleteModal
@@ -443,12 +539,14 @@ function StageHeader({
   status,
   onStatusChange,
   onAddTask,
+  isAddTaskEnabled,
 }: {
   title: string;
   description: string;
   status: CaseStageStatus;
   onStatusChange: (status: CaseStageStatus) => void;
   onAddTask: () => void;
+  isAddTaskEnabled: boolean;
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -472,7 +570,7 @@ function StageHeader({
         />
         <button
           onClick={onAddTask}
-          disabled={status === "complete"}
+          disabled={isAddTaskEnabled}
           className="inline-flex items-center gap-2 rounded-md bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#D4AF37]"
         >
           <Plus className="h-4 w-4 flex-shrink-0" />
@@ -692,7 +790,7 @@ const AllTasks = React.memo(function AllTasks({
                       Assigned by:{" "}
                       <span className="font-medium">
                         {isCurUserId(task.assign_by)
-                          ? "You"
+                          ? "Me"
                           : task.assigner_name}
                       </span>
                     </span>
@@ -703,7 +801,7 @@ const AllTasks = React.memo(function AllTasks({
                       Assigned to:{" "}
                       <span className="font-medium">
                         {isCurUserId(task.assign_to)
-                          ? "You"
+                          ? "Me"
                           : task.assignee_name}
                       </span>
                     </span>

@@ -22,6 +22,8 @@ import { ClientApi } from "../util/api/client.api";
 import { useToast } from "../hooks/useToast";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
+import { HearingType } from "../types/HearingTypes";
+import { HearingApi } from "../util/api/hearing.api";
 
 export type CaseTransactionContextType = {
   loading: boolean;
@@ -72,6 +74,17 @@ export type CaseTransactionContextType = {
     | undefined;
 
   addTaskCommentCount: (payload: { stage: Stages; taskId: string }) => void;
+
+  selectedHearing: HearingType | undefined;
+  setSelectedHearingSched: (payload: {
+    hearingData: HearingType;
+    hearingId: string;
+  }) => void;
+
+  updateHearing: (payload: {
+    hearingId: string;
+    updatedData: Partial<HearingType>;
+  }) => void;
 };
 
 export type TabTypes = "details" | "requirements" | "documents" | "hearings";
@@ -95,6 +108,12 @@ export const CaseTransactionProvider: React.FC<{
   const [clientData, setClientData] = useState<ClientType | undefined>(
     undefined
   );
+
+  //SelectedHearing
+  const [selectedHearing, setSelectedHearing] = useState<
+    HearingType | undefined
+  >(undefined);
+
   // stages
   const [requirementsStage, setRequirementsStage] = useState<
     CaseStagesType | undefined
@@ -132,11 +151,20 @@ export const CaseTransactionProvider: React.FC<{
         // fetch case data
         const caseData = await caseApi.find(caseId);
         const clientData = await ClientApi.findById(caseData.client_id!);
+
         setClientData(clientData.data);
         setCaseData(caseData);
 
         // transaction stages
         const stages = await CaseStagesApi.getStages(caseId);
+
+        if (stages.hearingStage.selected_hearing_id) {
+          const fetchedHearing = await HearingApi.find(
+            stages.hearingStage.selected_hearing_id!
+          );
+
+          setSelectedHearing(fetchedHearing);
+        }
 
         setRequirementsStage(stages.requirementsStage);
         setdocumentsStage(stages.documentsStage);
@@ -156,6 +184,45 @@ export const CaseTransactionProvider: React.FC<{
 
     initializeData();
   }, [caseId]);
+
+  // hearing functions
+  const updateHearing = useCallback(
+    (payload: { hearingId: string; updatedData: Partial<HearingType> }) => {
+      const { hearingId, updatedData } = payload;
+
+      if (!selectedHearing || selectedHearing.id !== hearingId) return;
+
+      setSelectedHearing((prev) => ({ ...prev!, ...updatedData }));
+    },
+    [selectedHearing]
+  );
+
+  const setSelectedHearingSched = useCallback(
+    async (payload: { hearingData: HearingType; hearingId: string }) => {
+      try {
+        const { hearingId, hearingData } = payload;
+
+        setSelectedHearing(hearingData);
+        setHearingStage((prev) => ({
+          ...prev!,
+          selected_hearing_id: hearingId,
+        }));
+
+        setTaskloading(true);
+        const fetchHearingStageTask = await TaskApi.getHearingTask({
+          case_stage_id: hearingStage?.id!,
+          hearing_id: hearingId,
+        });
+
+        setHearingTask(fetchHearingStageTask);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setTaskloading(false);
+      }
+    },
+    [hearingStage]
+  );
 
   // task functions
   const addTask = useCallback(
@@ -184,9 +251,20 @@ export const CaseTransactionProvider: React.FC<{
       if (taskLoading) return;
       setTaskloading(true);
       try {
-        const { stageName } = payload;
+        const { stageName, stageId } = payload;
 
-        const response = (await TaskApi.getTask(payload)) ?? [];
+        const fetchedTask = async (): Promise<CaseTransactionTask[]> => {
+          const tasks: CaseTransactionTask[] =
+            stageName === "HEARING" && selectedHearing
+              ? await TaskApi.getHearingTask({
+                  hearing_id: selectedHearing.id!,
+                  case_stage_id: stageId,
+                })
+              : await TaskApi.getTask(payload);
+          return tasks;
+        };
+
+        const response = (await fetchedTask()) ?? [];
 
         switch (stageName) {
           case "MANAGE_REQUIREMENTS":
@@ -207,7 +285,7 @@ export const CaseTransactionProvider: React.FC<{
         setTaskloading(false);
       }
     },
-    []
+    [selectedHearing]
   );
 
   const updateTask = useCallback(
@@ -300,6 +378,7 @@ export const CaseTransactionProvider: React.FC<{
               stageId,
               status,
               caseId: caseId,
+              stageName,
             })
           ).isAllStageComplete;
         },
@@ -408,6 +487,8 @@ export const CaseTransactionProvider: React.FC<{
           taskLoading,
           displayData,
 
+          selectedHearing,
+
           fetchStageTask,
 
           statusHandler,
@@ -426,6 +507,8 @@ export const CaseTransactionProvider: React.FC<{
           calculateCompleteStages,
 
           addTaskCommentCount,
+          setSelectedHearingSched,
+          updateHearing,
         } satisfies CaseTransactionContextType
       }
     >

@@ -47,6 +47,7 @@ export class HearingController {
     const response = await HearingService.filter({
       query: req.query.query as string,
       status: req.query.status as string,
+      case_id: req.params.case_id,
     });
 
     res.json({ success: true, data: response });
@@ -99,12 +100,12 @@ export class HearingController {
   static async completeHearing(req: Request, res: Response): Promise<void> {
     const { hearing_id } = req.params;
 
-    await HearingService.updateHearingStatus({
+    const response = await HearingService.updateHearingStatus({
       hearing_id,
       status: "completed",
     });
 
-    res.json({ success: true });
+    res.json({ ...response });
   }
 
   static async delete(req: Request, res: Response): Promise<void> {

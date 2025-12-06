@@ -18,4 +18,5 @@ export type CaseStageModel = {
   stage_name: string;
   stage_status: string;
   create_at?: string;
+  selected_hearing_id: string;
 };

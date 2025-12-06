@@ -1,4 +1,9 @@
-import { CaseStageStatus, CaseStagesType } from "../../store/Slice/case.slice";
+import {
+  CaseStageStatus,
+  CaseStagesType,
+  Stages,
+} from "../../store/Slice/case.slice";
+import { HearingType } from "../../types/HearingTypes";
 import api from "./axiosInstance";
 
 export class CaseStagesApi {
@@ -23,11 +28,12 @@ export class CaseStagesApi {
     caseId: string;
     stageId: string;
     status: CaseStageStatus;
+    stageName: Stages;
   }): Promise<{ isAllStageComplete: boolean }> {
-    const { caseId, stageId, status } = payload;
+    const { caseId, stageId, status, stageName } = payload;
     try {
       const res = await api.patch(
-        `/api/case/stages/update/status/${caseId}/${stageId}`,
+        `/api/case/stages/update/status/${caseId}/${stageId}/${stageName}`,
         {
           status,
         }
@@ -37,6 +43,30 @@ export class CaseStagesApi {
         throw new Error(res.data.message || "Unknown Error");
 
       return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async setSelectedHearing(paylaod: {
+    caseId: string;
+    hearing_id: string;
+  }): Promise<HearingType> {
+    try {
+      const { caseId, hearing_id } = paylaod;
+
+      const res = await api.patch(
+        `/api/case/stages/selection/hearing/${caseId}`,
+        {
+          hearing_id,
+        }
+      );
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "Unknown Error");
+
+      return res.data.data.hearingData;
     } catch (error) {
       console.error(error);
       throw error;

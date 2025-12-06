@@ -9,6 +9,8 @@ export class taskController {
     const { case_stage_id, stage_name } = req.params;
     const { title, description, assign_to, due_date } = req.body;
 
+    const hearing_id = req.params.hearing_id ?? null;
+
     const response = await TaskService.add({
       case_stage_id,
       stage_name,
@@ -17,6 +19,7 @@ export class taskController {
       assign_by,
       assign_to,
       due_date,
+      hearing_id,
     });
 
     res.json({
@@ -30,6 +33,17 @@ export class taskController {
     const { case_stage_id, stage_name } = req.params;
 
     const response = await TaskService.getAll({ case_stage_id, stage_name });
+
+    res.json({ success: true, data: response });
+  }
+
+  static async getTasksByHearing(req: Request, res: Response): Promise<void> {
+    const { case_stage_id, hearing_id } = req.params;
+
+    const response = await TaskService.getAllByHearing({
+      case_stage_id,
+      hearing_id,
+    });
 
     res.json({ success: true, data: response });
   }

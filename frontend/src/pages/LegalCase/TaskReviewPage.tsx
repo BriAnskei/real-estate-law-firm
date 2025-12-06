@@ -14,8 +14,13 @@ import {
 import useReviewTaskPage from "../../hooks/case/ongoing/useReviewTaskPage";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
 import { MarkCompleteModal } from "../../components/modal/caseModal/MarkCompleteModal";
+import { useParams } from "react-router";
+import { useCaseTransaction } from "../../context/CaseTransactionContext";
+import { Stages } from "../../store/Slice/case.slice";
 
 export default function TaskReviewPage() {
+  const { stage } = useParams();
+  const { selectedHearing } = useCaseTransaction();
   const {
     curUser,
 
@@ -75,12 +80,14 @@ export default function TaskReviewPage() {
     );
   }
 
-  // anyble Mark complete if the current user is the assinee
+  // enable Mark complete if the current user is the assinee
   const isCurUserAssignee = curUser?.id === taskData.assign_by;
 
-  // if task is compltete, desable actions(comments, approve)
-  const isTaskComplete = taskData.status === "complete";
-
+  // if task is compltete or if tast is from hearing stage
+  // amd hearing status is cancelled, disable actions(comments, approve)
+  const isTaskComplete =
+    taskData.status === "complete" ||
+    (stage === "HEARING" && selectedHearing?.status === "cancelled");
   return (
     <>
       <div className="min-h-screen bg-white dark:bg-gray-900">

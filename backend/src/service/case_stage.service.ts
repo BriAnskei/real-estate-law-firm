@@ -5,6 +5,8 @@ import { PoolConnection } from "mysql2/promise";
 import { ResponseType } from "../types/auth.types.js";
 import { TaskService } from "./task.service.js";
 import { CaseService } from "./case.service.js";
+import { HearingService } from "./hearing.service.js";
+import { HearingModel } from "../model/hearing.model.js";
 
 export class CaseStageService {
   static async create(id: string, connection: PoolConnection) {
@@ -65,17 +67,118 @@ export class CaseStageService {
     }
   }
 
+  static async getSelectedHearing(caseId: string): Promise<number | null> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `
+      SELECT selected_hearing_id 
+      FROM case_stages 
+      WHERE case_id = ? AND stage_name = 'HEARING'
+      LIMIT 1
+      `,
+        [caseId]
+      );
+
+      if (rows.length === 0) return null;
+
+      return rows[0].selected_hearing_id ?? null;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async processSelectHearingSched(
+    payload: {
+      case_id: string;
+      hearingId: string;
+    },
+    connection?: PoolConnection
+  ): Promise<ResponseType<{ hearingData: HearingModel }>> {
+    const { case_id, hearingId } = payload;
+
+    try {
+      const hearingData = await HearingService.findById(hearingId, connection);
+      const isCaseActive = await CaseService.isCaseActive(case_id, connection);
+
+      if (!isCaseActive)
+        throw new Error("Cannot select hearing for unactive case");
+
+      const isHearingPartOfCase = await HearingService.isHearingPartOfCase(
+        {
+          case_id,
+          hearing_id: hearingId!,
+        },
+        connection
+      );
+
+      if (!isHearingPartOfCase) {
+        throw new Error("Cannot select hearing that is not part of the case");
+      }
+
+      await this.setSelectedHearing(payload, connection);
+
+      return { success: true, data: { hearingData } };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async setSelectedHearing(
+    payload: {
+      case_id: string;
+      hearingId: string | null; // allow unselecting
+    },
+    connection?: PoolConnection
+  ): Promise<ResponseType<undefined>> {
+    const { case_id, hearingId } = payload;
+
+    try {
+      const sqlConnection = connection ?? pool;
+
+      const [row] = await sqlConnection.execute<ResultSetHeader>(
+        `
+      UPDATE case_stages 
+      SET selected_hearing_id = ?
+      WHERE stage_name = 'HEARING' AND case_id = ?
+      `,
+        [hearingId, case_id]
+      );
+
+      if (row.affectedRows === 0)
+        throw new Error("Hearing does does not exist");
+
+      return { success: true };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async processCaseStageUpdate(payload: {
     caseId: string;
     stageId: string;
     status: string;
+    stage_name: string;
   }): Promise<ResponseType<{ isAllStageComplete: boolean }>> {
-    const { caseId, stageId, status } = payload;
+    const { caseId, stageId, status, stage_name } = payload;
 
     const connection = await pool.getConnection();
     try {
+      // if stage is hearing stage, check if all hearing is not schduled
+      if (
+        stage_name === "HEARING" &&
+        !(await HearingService.areAllHearingsNotScheduled(caseId))
+      )
+        return {
+          success: false,
+          message:
+            "Complemention of all hearing is required to make this stage as complete",
+        };
+
       const response = await this.updateStatus(
-        { id: stageId, status: status },
+        { id: stageId, status: status, stage: stage_name },
         connection
       );
 
@@ -139,12 +242,14 @@ export class CaseStageService {
     payload: {
       id: string;
       status: string;
+      stage: string;
     },
     connection: PoolConnection
   ): Promise<ResponseType<undefined>> {
-    const { id, status } = payload;
+    const { id, status, stage } = payload;
     try {
       if (
+        stage !== "HEARING" &&
         status === "complete" &&
         !(await TaskService.isAllStageTaskComplete(id))
       ) {

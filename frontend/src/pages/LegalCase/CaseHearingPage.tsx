@@ -526,6 +526,7 @@ function HearingRow({
                         hearing_id: hearing.id!,
                         old_date: hearing.scheduled_date,
                         hearingType: hearing.type,
+                        scheduled_date: hearing.scheduled_date,
                       },
                       s
                     );

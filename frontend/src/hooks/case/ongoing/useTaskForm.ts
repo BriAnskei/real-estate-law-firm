@@ -219,9 +219,10 @@ const useAddtask = (payload: {
   stage: Stages;
   stageId: string;
   context: CaseTransactionContextType;
+  hearingId?: string;
 }) => {
   const navigate = useNavigate();
-  const { stage, stageId, context, caseId } = payload;
+  const { stage, stageId, context, caseId, hearingId } = payload;
 
   const {
     input,
@@ -273,6 +274,7 @@ const useAddtask = (payload: {
           stageId,
           fileForm: pdfFileState.getFormData(),
           case_id: caseId,
+          ...(stage === "HEARING" && { hearingId: hearingId }),
         });
 
         return newTask; // VERY IMPORTANT
@@ -480,6 +482,7 @@ const useTaskForm = () => {
         stage: stage as Stages,
         stageId: stageId!,
         context,
+        hearingId: context.selectedHearing?.id,
       });
 
   const [taskLabel, setTaskLabel] = useState("Case Requirement");

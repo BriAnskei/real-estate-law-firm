@@ -16,6 +16,12 @@ taskRoute.post(
   asyncHandler(taskController.create)
 );
 
+taskRoute.post(
+  "/create/:stage_name/:case_stage_id/:hearing_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(taskController.create)
+);
+
 taskRoute.patch(
   "/update/:case_id/:stage_name/:task_id/:file_type",
   asyncHandler(authMiddleware),
@@ -34,6 +40,12 @@ taskRoute.get(
   "/get/:stage_name/:case_stage_id",
   asyncHandler(authMiddleware),
   asyncHandler(taskController.getTasks)
+);
+
+taskRoute.get(
+  "/get/hearing/:hearing_id/:case_stage_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(taskController.getTasksByHearing)
 );
 
 taskRoute.get(

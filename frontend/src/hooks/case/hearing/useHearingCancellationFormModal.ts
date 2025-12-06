@@ -1,14 +1,19 @@
 import { useCallback, useState } from "react";
 import { useToast } from "../../useToast";
 import { HearingApi } from "../../../util/api/hearing.api";
+import { HearingStatusType } from "../../../types/HearingTypes";
+import { useCaseTransaction } from "../../../context/CaseTransactionContext";
 
 const useHearingCancellationFormModal = ({
-  cancelHearing,
+  updateHearingStatus,
 }: {
-  cancelHearing: (hearingId: string) => void;
+  updateHearingStatus: (
+    hearingId: string,
+    newStatus: HearingStatusType
+  ) => void;
 }) => {
   const { promiseToast } = useToast();
-
+  const { updateHearing } = useCaseTransaction();
   const [isOpen, setIsOpen] = useState(false);
 
   const [hearingId, setHearingId] = useState<string | undefined>(undefined);
@@ -42,7 +47,13 @@ const useHearingCancellationFormModal = ({
         loading: "Proccessing request....",
         success: () => {
           setIsSubmitting(false);
-          cancelHearing(hearingId!);
+          updateHearingStatus(hearingId!, "cancelled");
+
+          updateHearing({
+            hearingId: hearingId!,
+            updatedData: { status: "cancelled" },
+          });
+          close();
           return "Hearing is setted to canceled";
         },
         error: (err) =>

@@ -1,5 +1,5 @@
 import { HearingStatus } from "../../hooks/case/hearing/useHearing";
-import { HearingType, HearingStatusType } from "../../types/HearingTypes";
+import { HearingType } from "../../types/HearingTypes";
 import api from "./axiosInstance";
 
 export class HearingApi {
@@ -62,13 +62,14 @@ export class HearingApi {
   }
 
   static async filter(payload: {
+    case_id: string;
     query: string;
     status?: HearingStatus;
   }): Promise<HearingType[]> {
     try {
-      const { query, status } = payload;
+      const { query, status, case_id } = payload;
 
-      const res = await api.get("api/hearing/filter", {
+      const res = await api.get(`api/hearing/filter/${case_id}`, {
         params: {
           query,
           status,

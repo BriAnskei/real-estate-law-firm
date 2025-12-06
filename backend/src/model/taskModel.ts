@@ -1,6 +1,7 @@
 export type taskModel = {
   id?: string;
   case_stage_id: string;
+  hearing_id?: string;
   stage_name: string;
   title: string;
   description: string;

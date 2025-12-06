@@ -28,7 +28,7 @@ const useHearingScheduleFormModal = ({
   updateHearingType: (payload: { id: string; newType: string }) => void;
 }) => {
   const { id } = useParams();
-  const { promiseToast } = useToast();
+  const { promiseToast, errorToast } = useToast();
 
   const [input, setInput] = useState<HearingInputType>(initialInput);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +49,9 @@ const useHearingScheduleFormModal = ({
   };
 
   const handleSubmit = useCallback(async () => {
+    const { valid, message } = validateHearingInput(input);
+    if (!valid) return errorToast(message || "Unkown error");
+
     setIsSubmitting(true);
     await promiseToast(
       async () => {
@@ -107,3 +110,31 @@ const useHearingScheduleFormModal = ({
 };
 
 export default useHearingScheduleFormModal;
+
+const validateHearingInput = (input: HearingInputType) => {
+  const { type, date, time } = input;
+
+  if (!type || !type.trim()) {
+    return { valid: false, message: "Hearing type is required." };
+  }
+
+  if (!date) {
+    return { valid: false, message: "Hearing date is required." };
+  }
+
+  if (!time) {
+    return { valid: false, message: "Hearing time is required." };
+  }
+
+  // Combine date + time
+  const scheduledDate = decodeInputDateAndTimeToDate(date, time);
+
+  if (new Date(scheduledDate) < new Date()) {
+    return {
+      valid: false,
+      message: "Scheduled date and time must not be in the past.",
+    };
+  }
+
+  return { valid: true };
+};

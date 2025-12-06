@@ -27,14 +27,15 @@ export class TaskService {
         assign_by,
         assign_to,
         due_date,
+        hearing_id,
       } = payload;
 
       const [row] = await pool.execute<ResultSetHeader>(
         `
-        INSERT INTO tasks
-        (case_stage_id, stage_name, title, description, assign_by, assign_to, due_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-        `,
+      INSERT INTO tasks
+      (case_stage_id, stage_name, title, description, assign_by, assign_to, due_date, hearing_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
         [
           case_stage_id,
           stage_name,
@@ -43,6 +44,7 @@ export class TaskService {
           assign_by,
           assign_to,
           due_date,
+          hearing_id,
         ]
       );
 
@@ -64,6 +66,31 @@ export class TaskService {
      ${TASK_SELECT_BASE} WHERE case_stage_id  = ? AND stage_name = ?  ORDER BY created_at DESC;
     `,
         [case_stage_id, stage_name]
+      );
+
+      return rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async getAllByHearing({
+    hearing_id,
+    case_stage_id,
+  }: {
+    hearing_id: string;
+    case_stage_id: string;
+  }): Promise<TaskType[]> {
+    try {
+      const [rows] = await pool.execute<(TaskType & RowDataPacket)[]>(
+        `
+      ${TASK_SELECT_BASE}
+      WHERE t.hearing_id = ?
+      AND t.case_stage_id = ?
+      ORDER BY t.created_at DESC
+      `,
+        [hearing_id, case_stage_id]
       );
 
       return rows;
@@ -107,6 +134,27 @@ export class TaskService {
       const hasPending: boolean = rows[0].hasPending === 0;
 
       return hasPending;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async isAllHearingTaskComplete(hearing_id: string): Promise<boolean> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `
+      SELECT EXISTS(
+        SELECT 1 
+        FROM tasks
+        WHERE hearing_id = ?
+          AND status = 'pending'
+      ) AS hasPending;
+      `,
+        [hearing_id]
+      );
+
+      return rows[0].hasPending === 0;
     } catch (error) {
       console.error(error);
       throw error;

@@ -24,6 +24,7 @@ export type CaseStageStatus = "ongoing" | "complete";
 export type CaseStagesType = {
   id?: string;
   case_id: string;
+  selected_hearing_id?: string;
   stage_name: Stages;
   stage_status: CaseStageStatus;
   create_at?: string;
@@ -32,6 +33,7 @@ export type CaseStagesType = {
 export type CaseTransactionTask = {
   id?: string;
   case_stage_id: string;
+  hearing_id?: string;
   stage_name: string;
   title: string;
   description: string;

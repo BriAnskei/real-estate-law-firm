@@ -79,9 +79,14 @@ export class CaseService {
     }
   }
 
-  static async findById(id: string): Promise<ResponseType<CasesModel>> {
+  static async findById(
+    id: string,
+    connection?: PoolConnection
+  ): Promise<ResponseType<CasesModel>> {
     try {
-      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(
+      const sqlPool = connection ?? pool;
+
+      const [rows] = await sqlPool.execute<(CasesModel & RowDataPacket)[]>(
         `
       SELECT * FROM cases WHERE id = ?
       `,
@@ -92,6 +97,26 @@ export class CaseService {
 
       return { success: true, data: rows[0] };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Check if case is ongoing or complete
+   */
+  static async isCaseActive(
+    caseId: string,
+    connection?: PoolConnection
+  ): Promise<boolean> {
+    try {
+      const response = await this.findById(caseId, connection);
+
+      if (!response.success)
+        throw new Error(response.message || "Unknown error");
+
+      return response.data!.status !== "pending";
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }

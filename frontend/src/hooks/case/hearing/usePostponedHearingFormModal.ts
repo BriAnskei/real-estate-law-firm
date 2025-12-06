@@ -21,7 +21,7 @@ const usePosponedHearingFormModal = ({
 }: {
   postponeHearing: (payload: { hearingId: string; new_date: string }) => void;
 }) => {
-  const { promiseToast } = useToast();
+  const { promiseToast, errorToast } = useToast();
 
   const [hearingData, setHearingData] = useState<
     { hearing_id: string; old_date: string } | undefined
@@ -44,6 +44,10 @@ const usePosponedHearingFormModal = ({
   const onchangeHanlder = createChangeHandler<PostponeInputType>(setInput);
 
   const onSubmit = useCallback(async () => {
+    const { valid, message } = validatePostponeInput(input);
+
+    if (!valid) return errorToast(message || "Invalid input");
+
     await promiseToast(
       async () => {
         await HearingApi.postpone({
@@ -87,3 +91,28 @@ const usePosponedHearingFormModal = ({
 };
 
 export default usePosponedHearingFormModal;
+
+const validatePostponeInput = (input: PostponeInputType) => {
+  const { new_date, new_time, reason } = input;
+
+  // Check empty fields
+  if (!new_date || !new_time || !reason.trim()) {
+    return {
+      valid: false,
+      message: "Please fill in all the fields.",
+    };
+  }
+
+  // Convert to full JS date
+  const scheduledDate = decodeInputDateAndTimeToDate(new_date, new_time);
+
+  // Check for past date/time
+  if (new Date(scheduledDate) < new Date()) {
+    return {
+      valid: false,
+      message: "Selected date and time must not be in the past.",
+    };
+  }
+
+  return { valid: true };
+};

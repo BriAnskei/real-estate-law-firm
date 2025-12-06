@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { HearingPostponementsType } from "../../../types/HearingPostponementsType";
 import { HearingPostponeApi } from "../../../util/api/hearing_postpone.api";
 
-const usePostponedHistory = (hearingId?: string) => {
+const usePostponedHistory = ({
+  hearingId,
+  isOpen,
+}: {
+  hearingId?: string;
+  isOpen: boolean;
+}) => {
   const [postponements, setPostponements] = useState<
     HearingPostponementsType[] | undefined
   >([]);
@@ -10,7 +16,7 @@ const usePostponedHistory = (hearingId?: string) => {
 
   useEffect(() => {
     async function fetchHearingPostponements() {
-      if (!hearingId) return;
+      if (!hearingId || !isOpen) return;
       setFetchingLoading(true);
 
       try {
@@ -24,11 +30,7 @@ const usePostponedHistory = (hearingId?: string) => {
       }
     }
     fetchHearingPostponements();
-  }, [hearingId]);
-
-  useEffect(() => {
-    console.log(postponements);
-  }, [postponements]);
+  }, [hearingId, isOpen]);
 
   const loading = fetchingLoading || !postponements;
 
@@ -44,7 +46,7 @@ const useHearingPostponedHistoryModal = () => {
   const [hearingType, setHearingType] = useState<string | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(false);
 
-  const hearingPostponementsState = usePostponedHistory(hearingId);
+  const hearingPostponementsState = usePostponedHistory({ hearingId, isOpen });
 
   const open = (payload: { hearingId: string; hearingDataType: string }) => {
     const { hearingId, hearingDataType } = payload;

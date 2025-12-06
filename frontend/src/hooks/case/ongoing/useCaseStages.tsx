@@ -153,12 +153,20 @@ const useCaseStage = (payload: {
       assignTo: string;
       taskId: string;
       isTaskComplete: boolean;
+      isTaskOnHearingAndCancelled?: boolean;
     }) => {
-      const { assignTo, taskId, isTaskComplete } = payload;
+      const { assignTo, taskId, isTaskComplete, isTaskOnHearingAndCancelled } =
+        payload;
       // wait for the curUserData before navigating
       if (!currUser) return;
 
-      if (assignTo.toString() === currUser.id!.toString() && !isTaskComplete) {
+      console.log("navigating", payload);
+
+      if (
+        assignTo.toString() === currUser.id!.toString() &&
+        !isTaskComplete &&
+        !isTaskOnHearingAndCancelled
+      ) {
         // if user asigneee and task is pending go to task view
         navigate(`${stageData.stage_name}/task/${taskId}`);
       } else {
