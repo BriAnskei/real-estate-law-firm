@@ -9,7 +9,6 @@ export const fetchCurrentUser = createAsyncThunk(
     try {
       const res = await UserApi.fetchUser();
 
-      console.log("fetching curr user");
       if (!res.success) {
         return rejectWithValue(res.message);
       }
@@ -75,7 +74,7 @@ interface UserState extends NormalizeState<UserType> {
   filterIds: string[];
   filterLoading: boolean;
 
-  currUserData: UserType | null;
+  currUserData: UserType | undefined;
 }
 
 const initialState: UserState = {
@@ -86,12 +85,7 @@ const initialState: UserState = {
   filterById: {},
   filterIds: [],
   filterLoading: false,
-  currUserData: {
-    email: "",
-    firstName: "",
-    lastName: "",
-    role: Roles.foundingManager,
-  },
+  currUserData: undefined,
 };
 
 const useSlice = createSlice({
@@ -114,7 +108,7 @@ const useSlice = createSlice({
       state.allIds = [];
       state.filterById = {};
       state.filterIds = [];
-      state.currUserData = null;
+      state.currUserData = undefined;
     },
 
     addAllFilter: (state, action) => {

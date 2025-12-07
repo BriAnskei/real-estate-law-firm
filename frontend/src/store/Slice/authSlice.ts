@@ -97,8 +97,9 @@ export const refreshTokens = createAsyncThunk(
       const newAccessToken = await AuthApi.refreshAccessToken();
 
       dispatch(setTokens(newAccessToken));
-    } catch (error: any) {
+    } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
+
       return rejectWithValue(message);
     }
   }
@@ -108,6 +109,7 @@ type AuthState = {
   accessToken?: string | null;
   isAuthenticated: boolean;
   loading: boolean;
+  refreshLoading: boolean;
   error?: string | null;
 };
 
@@ -115,6 +117,7 @@ const initialState: AuthState = {
   accessToken: "",
   isAuthenticated: false,
   loading: false,
+  refreshLoading: false,
   error: null,
 };
 
@@ -158,14 +161,14 @@ const authSlice = createSlice({
       })
 
       .addCase(refreshTokens.pending, (state) => {
-        state.loading = true;
+        state.refreshLoading = true;
       })
       .addCase(refreshTokens.fulfilled, (state) => {
-        state.loading = false;
+        state.refreshLoading = false;
       })
       .addCase(refreshTokens.rejected, (state, action) => {
         state.error = action.payload as string;
-        state.loading = false;
+        state.refreshLoading = false;
       });
   },
 });

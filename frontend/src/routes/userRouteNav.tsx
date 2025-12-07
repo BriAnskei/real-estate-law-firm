@@ -5,7 +5,7 @@ import {
   Notification,
   LegalRecords,
 } from "../icons";
-import { GridIcon } from "lucide-react";
+import { GridIcon, ListTodo } from "lucide-react";
 import { JSX } from "react";
 import Home from "../pages/Dashboard/Home";
 import ConsultationPage from "../pages/LegalCase/ConsultationPage";
@@ -14,6 +14,7 @@ import AllAccountPage from "../pages/AdminPages/AllAccountsPage";
 import ClientPage from "../pages/LegalCase/ClientsPage";
 import CasesPage from "../pages/LegalCase/CasePage";
 import CaseTransaction from "../pages/LegalCase/CaseTransaction";
+import ProccessServerTaskPage from "../pages/LegalCase/ProccessServerTaskPage";
 
 export type NavItem = {
   name: string;
@@ -130,15 +131,9 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
     [Roles.processServer]: {
       menu: [
         {
-          icon: <GridIcon />,
-          name: "Dashboard",
-          path: "/",
-        },
-
-        {
-          icon: <CalenderIcon />,
+          icon: <ListTodo />,
           name: "Tasks",
-          path: "/calendar",
+          path: "/",
         },
         {
           icon: <Notification />,
@@ -184,7 +179,7 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/client", element: <ClientPage /> },
   ],
   [Roles.processServer]: [
-    { path: "/", element: <Home /> },
+    { path: "/", element: <ProccessServerTaskPage /> },
     { path: "/tasks", element: <AccountRequest /> },
     { path: "/notification", element: <AllAccountPage /> },
   ],
@@ -200,30 +195,4 @@ export const caseTransaction: Record<CaseTransactionRoles, AppRoutes> = {
   [Roles.foundingManager]: caseTransactionPath,
   [Roles.lawyer]: caseTransactionPath,
   [Roles.paralegal]: caseTransactionPath,
-};
-
-// helper function to help validate allowed routes
-export const isRouteValid = (userRole: Roles): string[] => {
-  const allowedRoutes: string[] = [];
-  const userRoutes = { ...(navRoutes[userRole] || []) };
-
-  // main
-  userRoutes.menu.map((route) => {
-    if (route.subItems) {
-      route.subItems.map((r) => allowedRoutes.push(r.path));
-    } else {
-      allowedRoutes.push(route.path!);
-    }
-  });
-
-  //others
-  userRoutes.others.map((route) => {
-    if (route.subItems) {
-      route.subItems.map((r) => allowedRoutes.push(r.path));
-    } else {
-      allowedRoutes.push(route.path!);
-    }
-  });
-
-  return allowedRoutes;
 };

@@ -16,6 +16,22 @@ const TASK_SELECT_BASE = `
     LEFT JOIN users u2 ON u2.id = t.assign_to
 `;
 
+const PROCESS_SERVER_TASK_SELECT_BASE = `
+  SELECT 
+        t.*,
+        CONCAT(u1.firstName, ' ', u1.lastName) AS assigner_name,
+        CONCAT(u2.firstName, ' ', u2.lastName) AS assignee_name,
+        c.concern AS case_concern,
+        cl.client_name AS client_name
+      FROM tasks t
+      LEFT JOIN users u1 ON u1.id = t.assign_by
+      LEFT JOIN users u2 ON u2.id = t.assign_to
+      LEFT JOIN case_stages cs ON cs.id = t.case_stage_id
+      LEFT JOIN cases c ON c.id = cs.case_id
+      LEFT JOIN client cl ON cl.id = c.client_id
+    
+`;
+
 export class TaskService {
   static async add(payload: taskModel): Promise<TaskType> {
     try {
@@ -66,6 +82,65 @@ export class TaskService {
      ${TASK_SELECT_BASE} WHERE case_stage_id  = ? AND stage_name = ?  ORDER BY created_at DESC;
     `,
         [case_stage_id, stage_name]
+      );
+
+      return rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  /**
+   * mainly used in process server role
+   */
+  static async getAllByAssignTo(
+    userId: string
+  ): Promise<(TaskType & { client_name: string; case_concern: string })[]> {
+    try {
+      const [rows] = await pool.execute<
+        ((TaskType & { client_name: string; case_concern: string }) &
+          RowDataPacket)[]
+      >(
+        `
+      ${PROCESS_SERVER_TASK_SELECT_BASE}   WHERE t.assign_to = ?
+      ORDER BY t.created_at DESC
+        `,
+        [userId]
+      );
+
+      return rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async searchProcessServerTasks({
+    userId,
+    keyword,
+  }: {
+    userId: string;
+    keyword: string;
+  }): Promise<(TaskType & { client_name: string; case_concern: string })[]> {
+    try {
+      const searchTerm = `%${keyword}%`;
+
+      const [rows] = await pool.execute<
+        ((TaskType & { client_name: string; case_concern: string }) &
+          RowDataPacket)[]
+      >(
+        `
+        ${PROCESS_SERVER_TASK_SELECT_BASE}
+        WHERE t.assign_to = ?
+        AND (
+          t.title LIKE ?
+          OR c.concern LIKE ?
+          OR cl.client_name LIKE ?
+        )
+        ORDER BY t.created_at DESC
+      `,
+        [userId, searchTerm, searchTerm, searchTerm]
       );
 
       return rows;

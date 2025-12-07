@@ -1,4 +1,5 @@
 import { TaskFormType } from "../../hooks/case/ongoing/useTaskForm";
+import { ProcessServerTask } from "../../hooks/proccessServer/useProccessServerTask";
 import {
   CaseTransactionTask,
   Stages,
@@ -97,6 +98,41 @@ export class TaskApi {
     } catch (error) {
       console.error(error);
 
+      throw error;
+    }
+  }
+
+  static async getByProcessServer(
+    assignee_id: string
+  ): Promise<ProcessServerTask[]> {
+    try {
+      const res = await api.get(`/api/task/processserver/get/${assignee_id}`);
+
+      return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async filterByProcessServer(payload: {
+    assignee_id: string;
+    query: string;
+  }): Promise<ProcessServerTask[]> {
+    const { assignee_id, query } = payload;
+    try {
+      const res = await api.get(
+        `/api/task/processserver/search/${assignee_id}`,
+        {
+          params: {
+            query,
+          },
+        }
+      );
+
+      return res.data.data;
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }

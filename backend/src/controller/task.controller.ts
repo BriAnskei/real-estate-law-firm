@@ -37,6 +37,23 @@ export class taskController {
     res.json({ success: true, data: response });
   }
 
+  static async fetchByAssignTo(req: Request, res: Response): Promise<void> {
+    const { assign_to } = req.params;
+
+    const response = await TaskService.getAllByAssignTo(assign_to);
+
+    res.json({ success: true, data: response });
+  }
+
+  static async processServerFilter(req: Request, res: Response): Promise<void> {
+    const response = await TaskService.searchProcessServerTasks({
+      userId: req.params.assign_to,
+      keyword: req.query.query as string,
+    });
+
+    res.json({ success: true, data: response });
+  }
+
   static async getTasksByHearing(req: Request, res: Response): Promise<void> {
     const { case_stage_id, hearing_id } = req.params;
 

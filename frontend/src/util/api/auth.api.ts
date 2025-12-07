@@ -113,7 +113,7 @@ export class AuthApi {
       );
 
       if (!res.data.success) {
-        throw new Error(res.data.message);
+        throw new Error(res.data.message || undefined);
       }
 
       return res.data.accessToken;

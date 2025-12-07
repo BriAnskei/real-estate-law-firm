@@ -291,15 +291,18 @@ export class HearingService {
   ): Promise<ResponseType<undefined>> {
     const { hearing_id, status } = payload;
     try {
-      if (
-        status === "completed" &&
-        !(await TaskService.isAllHearingTaskComplete(hearing_id))
-      )
-        return {
-          success: false,
-          message:
-            "Completion of all tasks is required to process this request.",
-        };
+      if (status === "completed") {
+        const isAllTaskComplete = await TaskService.isAllHearingTaskComplete(
+          hearing_id
+        );
+
+        if (!isAllTaskComplete)
+          return {
+            success: false,
+            message:
+              "Completion of all tasks is required to process this request.",
+          };
+      }
 
       const sqlConnection = connection ?? pool;
 

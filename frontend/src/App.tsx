@@ -21,8 +21,9 @@ import TaskFormPage from "./pages/LegalCase/TaskFormPage";
 import TaskReviewPage from "./pages/LegalCase/TaskReviewPage";
 import ViewTaskPage from "./pages/LegalCase/ViewTaskPage";
 import HearingsPage from "./pages/LegalCase/CaseHearingPage";
+import ProcessServerTaskView from "./pages/ProccessServer/ProccessServerTaskView";
 
-function useCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
+function isCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
   return role !== Roles.processServer;
 }
 
@@ -43,8 +44,8 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
           ))}
       </Route>
 
-      {/* Case transaction - whole page */}
-      {useCaseTransactionRole(userRole) && (
+      {/* Case transaction - stand alone page for (admin, lawyer, proccess server)*/}
+      {userRole && isCaseTransactionRole(userRole) && (
         <Route
           key={caseTransaction[userRole].path}
           path={caseTransaction[userRole].path}
@@ -65,7 +66,15 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
           <Route path="hearing" element={<HearingsPage />} />
         </Route>
       )}
-      {/* Catch all - must be last */}
+
+      {/* proccess server stand alone page for viewing task */}
+      {userRole && userRole === Roles.processServer && (
+        <Route
+          path="proccess_server/view/task"
+          element={<ProcessServerTaskView />}
+        />
+      )}
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -73,13 +82,17 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
 
 export default function App() {
   const { loading } = useSelector((state: RootState) => state.user);
+  const { refreshLoading } = useSelector((state: RootState) => state.auth);
+
   const user = useSelector(selectCurrentUser);
 
   return (
     <>
       <AuthProvider>
-        {loading ? (
-          <AppInitializationLoader isLoading={loading} />
+        {!user || refreshLoading || loading ? (
+          <AppInitializationLoader
+            isLoading={refreshLoading || loading || !user}
+          />
         ) : (
           <AppRoutes userRole={user?.role!} />
         )}

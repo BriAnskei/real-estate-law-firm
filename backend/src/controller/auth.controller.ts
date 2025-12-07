@@ -113,9 +113,9 @@ export class AuthController {
 
       if (!refreshToken) {
         res.clearCookie("refreshToken");
+
         return res.json({
           success: false,
-          message: "Error please login again",
         });
       }
 
@@ -138,7 +138,7 @@ export class AuthController {
         maxAge: response.data?.rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
       });
 
-      return res.json({
+      res.json({
         success: true,
         accessToken: response.data?.accessToken,
       });
@@ -148,7 +148,6 @@ export class AuthController {
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
       });
-      throw error;
     }
   }
 }
