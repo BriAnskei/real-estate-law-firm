@@ -1,7 +1,6 @@
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { taskModel, TaskType } from "../model/taskModel.js";
-import { ResponseType } from "../types/auth.types.js";
 import { TaskFileService } from "./task_file.service.js";
 import { PoolConnection } from "mysql2/promise";
 import { FileType } from "../model/task_files.model.js";

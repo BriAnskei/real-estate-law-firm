@@ -5,11 +5,7 @@ import { selectCurrentUser } from "../../store/selector/user/userSelector";
 import { Roles, UserType } from "../../store/Slice/userSlice";
 import { TaskApi } from "../../util/api/task.api";
 import { debouncer } from "../../util/debouncer";
-
-export type ProcessServerTask = CaseTransactionTask & {
-  client_name: string;
-  case_concern: string;
-};
+import { ProcessServerTask } from "../../types/ProcessServerTaskType";
 
 const useTaskFiler = ({ currUser }: { currUser?: UserType }) => {
   const [query, setQuery] = useState("");

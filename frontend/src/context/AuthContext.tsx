@@ -5,6 +5,7 @@ import { AppDispatch, RootState } from "../store/store";
 import { refreshTokens } from "../store/Slice/authSlice";
 import { fetchCurrentUser } from "../store/Slice/userSlice";
 import { AxiosError } from "axios";
+import { selectCurrentUser } from "../store/selector/user/userSelector";
 
 const AuthContext = createContext(null);
 
@@ -17,6 +18,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { isAuthenticated, accessToken, loading } = useSelector(
     (state: RootState) => state.auth
   );
+
+  const currUser = useSelector(selectCurrentUser);
 
   const hasFetchedUser = useRef(false);
   const hasAttemptedRefresh = useRef(false);
@@ -78,11 +81,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const currentPath = window.location.pathname;
     const isAuthPage = currentPath === "/signin" || currentPath === "/signup";
 
-    if (isAuthenticated && isAuthPage) {
-      console.log("redirecting to fomepage: ", isAuthenticated);
+    if (isAuthenticated && currUser && isAuthPage) {
       navigate("/", { replace: true });
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, currUser]);
 
   return <AuthContext.Provider value={null}>{children}</AuthContext.Provider>;
 };

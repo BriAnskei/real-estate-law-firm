@@ -69,7 +69,7 @@ taskRoute.get(
 taskRoute.delete(
   "/rollback/:id",
   asyncHandler(authMiddleware),
-  asyncHandler(taskController.findOneById)
+  asyncHandler(taskController.rollBackDrop)
 );
 
 taskRoute.delete(

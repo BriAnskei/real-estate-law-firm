@@ -22,13 +22,17 @@ const useTaskReviewInput = () => {
   };
 };
 
-const useTaskReview = (payload: { taskId?: string; stage: Stages }) => {
-  const { taskId, stage } = payload;
+const useTaskReview = (payload: {
+  taskId?: string;
+  stage: Stages;
+  addTaskCommentCount?: (payload: { stage: Stages; taskId: string }) => void;
+}) => {
+  const { taskId, stage, addTaskCommentCount } = payload;
   const curUser = useSelector(selectCurrentUser);
-  const context = useCaseTransaction();
 
   // ref for reviews scroll
   const commentsContainerRef = useRef<HTMLDivElement>(null);
+
   const [taskReviews, setTaskReviews] = useState<TaskReviewType[] | undefined>(
     undefined
   );
@@ -63,7 +67,11 @@ const useTaskReview = (payload: { taskId?: string; stage: Stages }) => {
       });
 
       setTaskReviews((prev) => [...(prev ?? []), newTaskData]);
-      context.addTaskCommentCount({ stage, taskId: taskId! });
+
+      if (addTaskCommentCount) {
+        addTaskCommentCount({ stage, taskId: taskId! });
+      }
+
       commentInputState.setCommentInput("");
       scrollToBottom();
     } catch (error) {

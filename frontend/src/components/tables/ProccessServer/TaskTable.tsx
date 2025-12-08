@@ -7,8 +7,8 @@ import {
   Table,
 } from "../../ui/table";
 
-import { ProcessServerTask } from "../../../hooks/proccessServer/useProccessServerTask";
 import { useNavigate } from "react-router";
+import { ProcessServerTask } from "../../../types/ProcessServerTaskType";
 
 export default function TaskTables({
   Tasks,
@@ -198,7 +198,9 @@ export default function TaskTables({
                     </TableCell>
                     <TableCell className="px-5 py-4 text-center">
                       <button
-                        onClick={() => navigate("proccess_server/view/task")}
+                        onClick={() =>
+                          navigate(`proccess_server/view/task/${task.id}`)
+                        }
                         className="inline-flex items-center justify-center w-8 h-8 text-[#D4AF37] hover:text-white hover:bg-[#D4AF37] dark:text-[#D4AF37] dark:hover:text-white dark:hover:bg-[#D4AF37] rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 dark:focus:ring-offset-gray-900"
                         aria-label="View task details"
                       >

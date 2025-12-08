@@ -85,6 +85,12 @@ export type CaseTransactionContextType = {
     hearingId: string;
     updatedData: Partial<HearingType>;
   }) => void;
+
+  /**
+   *  this is for the add sched action in the hearing page
+   * if the hearing stage is complete, disable the add sched action
+   */
+  isHearingStageComplete: boolean;
 };
 
 export type TabTypes = "details" | "requirements" | "documents" | "hearings";
@@ -509,6 +515,8 @@ export const CaseTransactionProvider: React.FC<{
           addTaskCommentCount,
           setSelectedHearingSched,
           updateHearing,
+
+          isHearingStageComplete: hearingStage?.stage_status === "complete",
         } satisfies CaseTransactionContextType
       }
     >

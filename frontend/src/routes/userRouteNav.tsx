@@ -15,6 +15,7 @@ import ClientPage from "../pages/LegalCase/ClientsPage";
 import CasesPage from "../pages/LegalCase/CasePage";
 import CaseTransaction from "../pages/LegalCase/CaseTransaction";
 import ProccessServerTaskPage from "../pages/LegalCase/ProccessServerTaskPage";
+import AppInitializationLoader from "../components/ui/loading/AppInitializationLoader";
 
 export type NavItem = {
   name: string;
@@ -196,3 +197,9 @@ export const caseTransaction: Record<CaseTransactionRoles, AppRoutes> = {
   [Roles.lawyer]: caseTransactionPath,
   [Roles.paralegal]: caseTransactionPath,
 };
+
+export function userUserRoute(userRoles?: Roles): AppRoutes[] | undefined {
+  if (!userRoles) return undefined;
+
+  return appRoutes[userRoles];
+}

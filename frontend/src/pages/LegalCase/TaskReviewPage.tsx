@@ -16,7 +16,7 @@ import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLo
 import { MarkCompleteModal } from "../../components/modal/caseModal/MarkCompleteModal";
 import { useParams } from "react-router";
 import { useCaseTransaction } from "../../context/CaseTransactionContext";
-import { Stages } from "../../store/Slice/case.slice";
+import { formatDateTime } from "../../util/DateDecoder";
 
 export default function TaskReviewPage() {
   const { stage } = useParams();
@@ -398,7 +398,7 @@ export default function TaskReviewPage() {
                         </div>
                       </div>
                       <span className="text-xs text-gray-600 dark:text-gray-400">
-                        {c.reviewed_at}
+                        {formatDateTime(c.reviewed_at!)}
                       </span>
                     </div>
                     <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300 ml-13">

@@ -104,6 +104,19 @@ export class caseApi {
     }
   }
 
+  static async findByStageId(case_stage_id: string): Promise<CaseType> {
+    try {
+      const res = await api.get(`/api/case/find/stage/${case_stage_id}`);
+
+      if (!res.data.success) throw new Error(res.data.message);
+
+      return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   static async update(payload: {
     id: string;
     caseUpdate: Partial<CaseType>;

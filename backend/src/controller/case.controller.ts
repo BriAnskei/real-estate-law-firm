@@ -55,6 +55,14 @@ export class CaseController {
     res.json({ success: true, data: response.data });
   }
 
+  static async fetchByStageId(req: Request, res: Response): Promise<void> {
+    const { case_stage_id } = req.params;
+
+    const response = await CaseService.getCaseDataByCaseStageId(case_stage_id);
+
+    res.json({ success: true, data: response });
+  }
+
   static async update(req: Request, res: Response): Promise<void> {
     const id = req.params.id;
     const { caseUpdate, clientUpdate } = req.body;

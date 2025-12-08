@@ -109,6 +109,8 @@ const useCaseHearingPage = () => {
     clientData,
     caseData,
     loading: caseDataLoading,
+
+    isHearingStageComplete,
   } = useCaseTransaction();
 
   const hearingsState = useCaseHearings();
@@ -200,6 +202,8 @@ const useCaseHearingPage = () => {
 
     // functions
     handleStatusOnChange,
+
+    isHearingStageComplete,
   };
 };
 

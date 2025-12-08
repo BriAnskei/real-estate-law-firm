@@ -34,8 +34,6 @@ import HearingCancellationFormModal from "../../components/modal/hearingModal/He
 import HearingCancellationViewModal from "../../components/modal/hearingModal/HearingCancellationViewModal";
 import HearingCompletionModal from "../../components/modal/hearingModal/HearingCompletionModal";
 
-// Mock data types
-
 export default function HearingsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -59,6 +57,8 @@ export default function HearingsPage() {
     loading,
 
     handleStatusOnChange,
+
+    isHearingStageComplete,
   } = useCaseHearingPage();
 
   const formatDate = (dateString: string): string => {
@@ -110,10 +110,11 @@ export default function HearingsPage() {
               </div>
 
               <button
+                disabled={isHearingStageComplete}
                 onClick={() => hearingFormModal.openNewSchedModal()}
                 className="inline-flex items-center gap-2 rounded-md bg-[#D4AF37] px-5 py-2.5 
                 text-sm font-medium text-white transition-all hover:bg-[#C4A037] 
-                active:scale-95 shadow-sm whitespace-nowrap"
+                active:scale-95 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="h-4 w-4" />
                 Add Schedule

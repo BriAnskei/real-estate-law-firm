@@ -35,6 +35,12 @@ caseRoute.get(
   asyncHandler(CaseController.findById)
 );
 
+caseRoute.get(
+  "/find/stage/:case_stage_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.fetchByStageId)
+);
+
 caseRoute.patch(
   "/update/:id",
   asyncHandler(authMiddleware),

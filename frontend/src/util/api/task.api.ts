@@ -1,10 +1,11 @@
 import { TaskFormType } from "../../hooks/case/ongoing/useTaskForm";
-import { ProcessServerTask } from "../../hooks/proccessServer/useProccessServerTask";
+
 import {
   CaseTransactionTask,
   Stages,
   file_type,
 } from "../../store/Slice/case.slice";
+import { ProcessServerTask } from "../../types/ProcessServerTaskType";
 
 import api from "./axiosInstance";
 import { TaskFileApi } from "./task_file.api";
@@ -106,7 +107,7 @@ export class TaskApi {
     assignee_id: string
   ): Promise<ProcessServerTask[]> {
     try {
-      const res = await api.get(`/api/task/processserver/get/${assignee_id}`);
+      const res = await api.get(`/api/task/process_server/get/${assignee_id}`);
 
       return res.data.data;
     } catch (error) {
@@ -122,7 +123,7 @@ export class TaskApi {
     const { assignee_id, query } = payload;
     try {
       const res = await api.get(
-        `/api/task/processserver/search/${assignee_id}`,
+        `/api/task/process_server/search/${assignee_id}`,
         {
           params: {
             query,

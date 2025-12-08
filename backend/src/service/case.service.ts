@@ -10,6 +10,19 @@ import { TaskFileService } from "./task_file.service.js";
 import { deleteCaseFolder } from "../util/deleteCaseFolderHandler.js";
 import { TaskReviewService } from "./task_review.service.js";
 
+const CASE_STAGE_MODEL_JOIN = ` SELECT 
+        c.id AS case_id,
+        c.client_id as client_id,
+        c.concern AS concern,
+        c.description AS description,
+        c.status AS status,
+        c.paid AS paid,
+        c.created_at AS created_at,
+        c.opposing_party,
+        c.consultation_date
+      FROM case_stages cs
+      LEFT JOIN cases c ON c.id = cs.case_id`;
+
 export class CaseService {
   static async handleNewCase(payload: {
     caseData: CasesModel;
@@ -136,6 +149,27 @@ export class CaseService {
 
       return { success: true, data: rows[0] };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getCaseDataByCaseStageId(
+    case_stage_id: string
+  ): Promise<CasesModel> {
+    try {
+      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(
+        `
+          ${CASE_STAGE_MODEL_JOIN} WHERE cs.id = ? 
+          LIMIT 1
+          `,
+        [case_stage_id]
+      );
+
+      if (!rows[0]) throw new Error("Case with this stage_id does not exist");
+
+      return rows[0];
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }

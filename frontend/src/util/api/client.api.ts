@@ -7,7 +7,9 @@ export class ClientApi {
     try {
       const res = await api.get(`/api/client/find/${id}`);
 
-      return { ...res.data };
+      console.log("response data: ", res.data);
+
+      return res.data;
     } catch (error) {
       console.error(error);
 

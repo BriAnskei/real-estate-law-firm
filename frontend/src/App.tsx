@@ -21,13 +21,24 @@ import TaskFormPage from "./pages/LegalCase/TaskFormPage";
 import TaskReviewPage from "./pages/LegalCase/TaskReviewPage";
 import ViewTaskPage from "./pages/LegalCase/ViewTaskPage";
 import HearingsPage from "./pages/LegalCase/CaseHearingPage";
-import ProcessServerTaskView from "./pages/ProccessServer/ProccessServerTaskView";
+import ProcessServerTaskView from "./pages/ProcessServer/ProcessServerTaskView";
 
 function isCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
   return role !== Roles.processServer;
 }
 
-const AppRoutes = ({ userRole }: { userRole: Roles }) => {
+const AppRoutes = () => {
+  const { loading } = useSelector((state: RootState) => state.user);
+  const { refreshLoading, isAuthenticated, accessToken } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  const user = useSelector(selectCurrentUser);
+
+  if (!user && (refreshLoading || loading || isAuthenticated)) {
+    return <AppInitializationLoader isLoading />;
+  }
+
   return (
     <Routes>
       {/* public Routes */}
@@ -38,18 +49,18 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
 
       {/* Protected routes */}
       <Route element={<AppLayout />}>
-        {userRole &&
-          appRoutes[userRole].map((r) => (
+        {user?.role &&
+          appRoutes[user!.role].map((r) => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}
       </Route>
 
       {/* Case transaction - stand alone page for (admin, lawyer, proccess server)*/}
-      {userRole && isCaseTransactionRole(userRole) && (
+      {user && isCaseTransactionRole(user.role) && (
         <Route
-          key={caseTransaction[userRole].path}
-          path={caseTransaction[userRole].path}
-          element={caseTransaction[userRole].element}
+          key={caseTransaction[user.role].path}
+          path={caseTransaction[user.role].path}
+          element={caseTransaction[user.role].element}
         >
           <Route index element={<Content />} />
           <Route
@@ -68,34 +79,26 @@ const AppRoutes = ({ userRole }: { userRole: Roles }) => {
       )}
 
       {/* proccess server stand alone page for viewing task */}
-      {userRole && userRole === Roles.processServer && (
+      {user && user.role === Roles.processServer && (
         <Route
-          path="proccess_server/view/task"
+          path="proccess_server/view/task/:taskId"
           element={<ProcessServerTaskView />}
         />
       )}
 
-      <Route path="*" element={<NotFound />} />
+      {(!loading || !refreshLoading) && user && (
+        <Route path="*" element={<NotFound />} />
+      )}
     </Routes>
   );
 };
 
 export default function App() {
-  const { loading } = useSelector((state: RootState) => state.user);
-  const { refreshLoading } = useSelector((state: RootState) => state.auth);
-
-  const user = useSelector(selectCurrentUser);
-
   return (
     <>
       <AuthProvider>
-        {!user || refreshLoading || loading ? (
-          <AppInitializationLoader
-            isLoading={refreshLoading || loading || !user}
-          />
-        ) : (
-          <AppRoutes userRole={user?.role!} />
-        )}
+        <AppRoutes />
+
         <Toaster position="top-left" />
       </AuthProvider>
     </>
