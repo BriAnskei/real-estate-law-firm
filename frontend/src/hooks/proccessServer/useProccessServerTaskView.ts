@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ProcessServerTask } from "../../types/ProcessServerTaskType";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../store/selector/user/userSelector";
 import { TaskApi } from "../../util/api/task.api";
@@ -18,8 +18,14 @@ import useClientDetailsModal from "./useClientDetailsModal";
 import useFormUploads from "../case/ongoing/useFormUploads";
 import usePdfFileTask from "../case/ongoing/usePdfFileTask";
 import useTaskReview from "../case/ongoing/useTaskReview";
+import { TaskReviewApi } from "../../util/api/task_review.api";
+import { useToast } from "../useToast";
 
 const useProcessServerTaskView = () => {
+  const { promiseToast } = useToast();
+
+  const navigate = useNavigate();
+
   const { taskId } = useParams();
   const currUser = useSelector(selectCurrentUser);
 
@@ -79,6 +85,7 @@ const useProcessServerTaskView = () => {
         setClientData(clientDataResponse);
       } catch (error) {
         console.error(error);
+        navigate("/", { replace: true });
       } finally {
         setFetchingLoading(false);
       }
@@ -90,7 +97,7 @@ const useProcessServerTaskView = () => {
   const fetchTaskData = useCallback(
     async (taskId: string): Promise<CaseTransactionTask> => {
       try {
-        const response = await TaskApi.getById(taskId);
+        const response = await TaskApi.findOneByProcessServer(taskId);
 
         return response;
       } catch (error) {
@@ -128,11 +135,36 @@ const useProcessServerTaskView = () => {
     []
   );
 
+  let executeTimer: ReturnType<typeof setTimeout> | null = null;
+  const onExecuted = () => {
+    if (executeTimer) clearTimeout(executeTimer);
+
+    executeTimer = setTimeout(async () => {
+      await promiseToast(
+        async () => {
+          const response = await TaskReviewApi.taskExecutedReview(
+            taskId as string
+          );
+
+          reviewState.addNewReviewInState(response);
+        },
+        {
+          loading: "Submitting execution request...",
+          success: () =>
+            "Execution submitted successfully. Please wait for the assigner’s review.",
+          error: (err) => `Failed: ${err || "unknown error"}`,
+        }
+      );
+    }, 300);
+  };
+
   return {
     loading: fetchingLoading || reviewState.fetchingReviewsLoading,
     taskData,
     caseData,
     clientData,
+
+    onExecuted,
 
     reviewState,
 

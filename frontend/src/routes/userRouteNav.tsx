@@ -4,6 +4,7 @@ import {
   AccountReqIcon,
   Notification,
   LegalRecords,
+  PaymentIcon,
 } from "../icons";
 import { GridIcon, ListTodo } from "lucide-react";
 import { JSX } from "react";
@@ -15,7 +16,9 @@ import ClientPage from "../pages/LegalCase/ClientsPage";
 import CasesPage from "../pages/LegalCase/CasePage";
 import CaseTransaction from "../pages/LegalCase/CaseTransaction";
 import ProccessServerTaskPage from "../pages/LegalCase/ProccessServerTaskPage";
-import AppInitializationLoader from "../components/ui/loading/AppInitializationLoader";
+
+import PaymentsPage from "../pages/LegalCase/CasePaymentPage";
+import NotificationsPage from "../pages/Notification/NotificationPage";
 
 export type NavItem = {
   name: string;
@@ -56,9 +59,9 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
 
         cases,
         {
-          icon: <CalenderIcon />,
-          name: "Calendar",
-          path: "/calendar",
+          icon: <PaymentIcon />,
+          name: "Payments",
+          path: "/payments",
         },
       ],
       others: [
@@ -79,7 +82,7 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
         {
           icon: <Notification />,
           name: "Notifications",
-          path: "/notifications",
+          path: "/notification",
         },
       ],
     },
@@ -101,8 +104,8 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
       others: [
         {
           icon: <Notification />,
-          name: "Notifications",
-          path: "/notifications",
+          name: "Notification",
+          path: "/notification",
         },
       ],
     },
@@ -160,8 +163,12 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/case", element: <CasesPage /> },
     { path: "/client", element: <ClientPage /> },
 
+    { path: "/payments", element: <PaymentsPage /> },
+
     { path: "/request", element: <AccountRequest /> },
     { path: "/accounts", element: <AllAccountPage /> },
+
+    { path: "/notification", element: <NotificationsPage /> },
   ],
   [Roles.lawyer]: [
     { path: "/", element: <Home /> },
@@ -170,6 +177,8 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/consultation", element: <ConsultationPage /> },
     { path: "/case", element: <CasesPage /> },
     { path: "/client", element: <ClientPage /> },
+
+    { path: "/notification", element: <NotificationsPage /> },
   ],
   [Roles.paralegal]: [
     { path: "/", element: <Home /> },

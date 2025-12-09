@@ -25,8 +25,7 @@ import { formatDateTime } from "../../util/DateDecoder";
 export default function ProcessServerTaskView() {
   const [isDragging, setIsDragging] = useState(false);
 
-  const fileInputRef = useRef(null);
-  const commentsContainerRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
   const {
@@ -36,6 +35,8 @@ export default function ProcessServerTaskView() {
     clientData,
     caseDetialsModalState,
     clientDetailsModalState,
+
+    onExecuted,
 
     referenceFiles,
     addFiles,
@@ -55,19 +56,19 @@ export default function ProcessServerTaskView() {
     reviewState,
   } = useProcessServerTaskView();
 
-  const handleDragEnter = (e) => {
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
@@ -92,8 +93,6 @@ export default function ProcessServerTaskView() {
       addFiles(files);
     }
   };
-
-  const handleExecuted = () => {};
 
   if (loading || !taskData)
     return (
@@ -290,7 +289,7 @@ export default function ProcessServerTaskView() {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => fileInputRef.current!.click()}
               className={`transition border-2 border-dashed cursor-pointer rounded-xl hover:border-[#D4AF37] dark:hover:border-[#D4AF37] mb-6 ${
                 isDragging
                   ? "border-[#D4AF37] bg-gray-100 dark:bg-gray-800 dark:border-[#D4AF37]"
@@ -459,7 +458,7 @@ export default function ProcessServerTaskView() {
                   ADD A COMMENT
                 </h3>
                 <button
-                  onClick={handleExecuted}
+                  onClick={onExecuted}
                   className="
                       px-4 py-2 text-sm font-medium
                       text-gray-900 dark:text-white

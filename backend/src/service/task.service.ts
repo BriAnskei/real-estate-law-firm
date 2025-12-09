@@ -63,7 +63,7 @@ export class TaskService {
         ]
       );
 
-      return await this.findById(row.insertId.toString());
+      return await this.findById({ id: row.insertId.toString() });
     } catch (error) {
       console.error(error);
       throw error;
@@ -102,7 +102,7 @@ export class TaskService {
           RowDataPacket)[]
       >(
         `
-      ${PROCESS_SERVER_TASK_SELECT_BASE}   WHERE t.assign_to = ?
+      ${PROCESS_SERVER_TASK_SELECT_BASE} WHERE t.assign_to = ? AND t.status = 'pending'
       ORDER BY t.created_at DESC
         `,
         [userId]
@@ -136,7 +136,7 @@ export class TaskService {
           t.title LIKE ?
           OR c.concern LIKE ?
           OR cl.client_name LIKE ?
-        )
+        ) AND t.status = 'pending'
         ORDER BY t.created_at DESC
       `,
         [userId, searchTerm, searchTerm, searchTerm]
@@ -174,13 +174,28 @@ export class TaskService {
     }
   }
 
-  static async findById(id: string): Promise<TaskType> {
+  static async findById(payload: {
+    id: string;
+    status?: string;
+  }): Promise<TaskType> {
     try {
+      const { id, status } = payload;
+
+      let whereClause = "WHERE t.id = ? ";
+      const values = [];
+
+      values.push(id);
+
+      if (status) {
+        whereClause += "AND t.status = ? ";
+        values.push(status);
+      }
+
       const [rows] = await pool.execute<(TaskType & RowDataPacket)[]>(
         `
-         ${TASK_SELECT_BASE}  WHERE t.id = ?
+         ${TASK_SELECT_BASE} ${whereClause}
         `,
-        [id]
+        [...values]
       );
 
       if (!rows.length) {
@@ -254,12 +269,12 @@ export class TaskService {
         // early commit, theres no need to update field in this case
 
         await connection.commit();
-        return await this.findById(id.toString());
+        return await this.findById({ id: id.toString() });
       }
       await this.update({ id, formData }, connection);
 
       await connection.commit();
-      return await this.findById(id.toString());
+      return await this.findById({ id: id.toString() });
     } catch (error) {
       await connection.rollback();
 

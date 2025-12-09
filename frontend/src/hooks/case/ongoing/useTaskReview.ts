@@ -66,7 +66,7 @@ const useTaskReview = (payload: {
         comment: commentInputState.commentInput,
       });
 
-      setTaskReviews((prev) => [...(prev ?? []), newTaskData]);
+      addNewReviewInState(newTaskData);
 
       if (addTaskCommentCount) {
         addTaskCommentCount({ stage, taskId: taskId! });
@@ -78,6 +78,10 @@ const useTaskReview = (payload: {
       console.error(error);
     }
   }, [setTaskReviews, commentInputState.commentInput]);
+
+  const addNewReviewInState = (payload: TaskReviewType) => {
+    setTaskReviews((prev) => [...(prev ?? []), payload]);
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -96,6 +100,8 @@ const useTaskReview = (payload: {
     addNewReview,
 
     ...commentInputState,
+
+    addNewReviewInState,
 
     commentsContainerRef,
     curUser,

@@ -116,6 +116,22 @@ export const filterActiveCases = createAsyncThunk(
   }
 );
 
+export const filterPayments = createAsyncThunk(
+  "case/get/payment/filter",
+  async (
+    payload: { query?: string; paidType?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await caseApi.filterPayments(payload);
+
+      return response;
+    } catch (error) {
+      rejectWithValue(error);
+    }
+  }
+);
+
 export const fetchAllUnpaidCases = createAsyncThunk(
   "case/get/unpiad",
   async (
@@ -410,6 +426,22 @@ const caseSlice = createSlice({
         state.filterLoading = false;
       })
       .addCase(filterActiveCases.rejected, (state, action) => {
+        state.filterLoading = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(filterPayments.pending, (state) => {
+        state.filterLoading = true;
+      })
+      .addCase(filterPayments.fulfilled, (state, action) => {
+        const { allIds, byId } = normalizeResponse(action.payload as any);
+
+        state.filterIds = allIds;
+        state.filterById = byId;
+
+        state.filterLoading = false;
+      })
+      .addCase(filterPayments.rejected, (state, action) => {
         state.filterLoading = false;
         state.error = action.payload as string;
       })

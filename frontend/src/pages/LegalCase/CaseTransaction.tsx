@@ -40,6 +40,7 @@ import HearingTabTaskHeader from "./Components/HearingTabTaskHeader";
 import HearingScheduleSelectionModal from "../../components/modal/caseModal/HearingSchduleSelectionModal";
 import useHearingSelectionModal from "../../hooks/case/hearing/useHearingSelectionModal";
 import { HearingStatus } from "../../hooks/case/hearing/useHearing";
+import PageMeta from "../../components/common/PageMeta";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -245,6 +246,10 @@ export function Content() {
 
   return (
     <>
+      <PageMeta
+        title="Case transaction"
+        description="Handles all the case transaction and services"
+      />
       <div className="min-h-screen bg-white dark:bg-gray-900">
         <ScrollToTop />
         <div className="max-w-7xl mx-auto px-6 py-8">

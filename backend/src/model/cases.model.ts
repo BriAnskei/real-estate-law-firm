@@ -8,7 +8,7 @@ export type CasesModel = {
   paid: "no" | "partial" | "paid";
   status: "pending" | "ongiong" | "complete";
   consultation_date: Date;
-  promise_to_pay: Date;
+  promise_to_pay: Date | null;
   created_at?: Date;
 };
 

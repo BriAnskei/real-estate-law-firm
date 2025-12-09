@@ -9,6 +9,7 @@ import { TaskService } from "./task.service.js";
 import { TaskFileService } from "./task_file.service.js";
 import { deleteCaseFolder } from "../util/deleteCaseFolderHandler.js";
 import { TaskReviewService } from "./task_review.service.js";
+import { NotificationService } from "./notification.service.js";
 
 const CASE_STAGE_MODEL_JOIN = ` SELECT 
         c.id AS case_id,
@@ -27,8 +28,9 @@ export class CaseService {
   static async handleNewCase(payload: {
     caseData: CasesModel;
     clientData: ClientModel;
+    userId: string;
   }): Promise<{ newCaseData: CasesModel; newClientData: ClientModel }> {
-    const { caseData, clientData } = payload;
+    const { caseData, clientData, userId } = payload;
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
@@ -36,6 +38,15 @@ export class CaseService {
       const newClientId = await ClientService.addClient(clientData, connection);
       const newCaseId = await this.create(
         { ...caseData, client_id: newClientId },
+        connection
+      );
+
+      await NotificationService.consultation(
+        {
+          related_case_id: newCaseId,
+          user_Id: userId,
+          case_concern: caseData.concern,
+        },
         connection
       );
 
@@ -321,6 +332,45 @@ export class CaseService {
     }
   }
 
+  /**
+   * this filter is used on payment page
+   * filter cases of paid = partial || paid
+   */
+  static async filterPayments(payload: {
+    query?: string;
+    paidType?: string;
+  }): Promise<CasesModel[]> {
+    try {
+      const { query, paidType } = payload;
+      if (!query && !paidType)
+        throw new Error("No filter recieve to process this request");
+
+      var whereClause = "WHERE status IN ('ongoing', 'complete')";
+      const params = [];
+
+      if (query?.trim()) {
+        whereClause += " AND (client_name LIKE ? OR concern LIKE ?)";
+        params.push(`%${query}%`, `%${query}%`);
+      }
+
+      if (paidType) {
+        whereClause += " AND paid = ?";
+        params.push(paidType);
+      }
+
+      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(
+        `
+      SELECT * FROM cases ${whereClause} 
+        `,
+        [...params]
+      );
+
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async fetchCaseStatus(
     id: string,
     connection?: PoolConnection
@@ -376,9 +426,11 @@ export class CaseService {
       id: string;
       update: Partial<CasesModel>;
     },
-    connection: PoolConnection
+    connection?: PoolConnection
   ) {
     try {
+      const sqlPool = connection ?? pool;
+
       const { id, update } = payload;
       const keys = Object.keys(update).filter(
         (key) =>
@@ -396,7 +448,7 @@ export class CaseService {
     UPDATE cases SET ${setClause}
     WHERE id = ?
     `;
-      const [res] = await connection.execute<ResultSetHeader>(query, [
+      const [res] = await sqlPool.execute<ResultSetHeader>(query, [
         ...values,
         id,
       ]);
@@ -404,6 +456,20 @@ export class CaseService {
       if (res.affectedRows === 0) throw new Error("Case not found");
     } catch (error) {
       console.error(error);
+      throw error;
+    }
+  }
+
+  static async markAsPaid(caseId: string): Promise<void> {
+    try {
+      const [row] = await pool.execute<ResultSetHeader>(
+        `
+        UPDATE cases SET promise_to_pay = NULL, paid = 'paid' WHERE id = ? 
+        `,
+        [caseId]
+      );
+      if (row.affectedRows === 0) throw new Error("Case not found");
+    } catch (error) {
       throw error;
     }
   }

@@ -84,6 +84,23 @@ export class TaskApi {
     }
   }
 
+  /**
+   * Find one with pending status, this only implemented for process server
+   */
+  static async findOneByProcessServer(
+    id: string
+  ): Promise<CaseTransactionTask> {
+    try {
+      const res = await api.get(`/api/task/find/process_server/${id}`);
+
+      if (!res.data.success) throw new Error(res.data.message);
+
+      return res.data.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getTask(payload: {
     stageId: string;
     stageName: Stages;

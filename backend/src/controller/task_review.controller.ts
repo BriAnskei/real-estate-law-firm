@@ -17,6 +17,25 @@ export class TaskReviewController {
     res.json({ success: true, data: response });
   }
 
+  /**
+   * Process server task execution function
+   */
+  static async executedReview(req: AuthRequest, res: Response): Promise<void> {
+    const reviewer_id = req.userId;
+    const { task_id } = req.params;
+    const { comment } = req.body;
+
+    const response = await TaskReviewService.add({
+      task_id,
+      reviewer_id: reviewer_id!,
+      comment,
+    });
+
+    // TODO: add diff notification for this functionality
+
+    res.json({ success: true, data: response });
+  }
+
   static async fetchAll(req: Request, res: Response): Promise<void> {
     const { task_id } = req.params;
 

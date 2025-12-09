@@ -38,6 +38,10 @@ export class caseApi {
     }
   }
 
+  /**
+   * cases with status on ongoing or complete
+   * amd paid of partial or paid
+   */
   static async fetchFilteredActiveCases(payload: {
     query?: string;
     status: "ongoing" | "complete";
@@ -54,6 +58,26 @@ export class caseApi {
       return res.data.data;
     } catch (error) {
       console.error(error);
+      throw error;
+    }
+  }
+
+  static async filterPayments(payload: {
+    query?: string;
+    paidType?: string;
+  }): Promise<CaseType[]> {
+    const { query, paidType } = payload;
+
+    try {
+      const res = await api.get(`/api/case/filter/payment`, {
+        params: { query, paidType },
+      });
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "Unknown error");
+
+      return res.data.data;
+    } catch (error) {
       throw error;
     }
   }
@@ -151,6 +175,16 @@ export class caseApi {
       if (!res.data.success) throw new Error(res.data.message);
     } catch (error) {
       console.error(error);
+      throw error;
+    }
+  }
+
+  static async markAsPaid(caseId: string): Promise<void> {
+    try {
+      const res = await api.patch(`api/case/mark/paid/${caseId}`);
+
+      if (!res.data.success) throw new Error(res.data.message);
+    } catch (error) {
       throw error;
     }
   }

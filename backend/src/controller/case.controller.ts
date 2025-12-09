@@ -1,13 +1,16 @@
 import { Request, Response } from "express";
 import { CaseService } from "../service/case.service.js";
+import { AuthRequest } from "../types/express.types.js";
 
 export class CaseController {
-  static async addNewCase(req: Request, res: Response): Promise<void> {
+  static async addNewCase(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.userId;
     const { caseData, clientData } = req.body;
 
     const newCaseData = await CaseService.handleNewCase({
       caseData,
       clientData,
+      userId: userId!,
     });
 
     res.json({ success: true, data: newCaseData });
@@ -25,6 +28,14 @@ export class CaseController {
       status: req.query.status as string,
     });
 
+    res.json({ success: true, data: response });
+  }
+
+  static async filterPayment(req: Request, res: Response): Promise<void> {
+    const response = await CaseService.filterPayments({
+      query: req.query.query as string,
+      paidType: req.query.paidType as string,
+    });
     res.json({ success: true, data: response });
   }
 
@@ -63,6 +74,9 @@ export class CaseController {
     res.json({ success: true, data: response });
   }
 
+  /**
+   * Used in consultation
+   */
   static async update(req: Request, res: Response): Promise<void> {
     const id = req.params.id;
     const { caseUpdate, clientUpdate } = req.body;
@@ -72,6 +86,12 @@ export class CaseController {
       caseUpdate,
       clientUpdate,
     });
+    res.json({ success: true });
+  }
+
+  static async markAsPaid(req: Request, res: Response): Promise<void> {
+    await CaseService.markAsPaid(req.params.id as string);
+
     res.json({ success: true });
   }
 

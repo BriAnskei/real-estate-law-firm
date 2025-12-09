@@ -11,6 +11,12 @@ taskReviewRoute.post(
   asyncHandler(TaskReviewController.addNewReview)
 );
 
+taskReviewRoute.post(
+  "/executed/:task_id",
+  asyncHandler(authMiddleware),
+  asyncHandler(TaskReviewController.executedReview)
+);
+
 taskReviewRoute.get(
   "/get/:task_id",
   asyncHandler(authMiddleware),

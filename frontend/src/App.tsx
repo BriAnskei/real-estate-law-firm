@@ -22,6 +22,7 @@ import TaskReviewPage from "./pages/LegalCase/TaskReviewPage";
 import ViewTaskPage from "./pages/LegalCase/ViewTaskPage";
 import HearingsPage from "./pages/LegalCase/CaseHearingPage";
 import ProcessServerTaskView from "./pages/ProcessServer/ProcessServerTaskView";
+import { NotificationContextProvider } from "./context/NotificationContext";
 
 function isCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
   return role !== Roles.processServer;
@@ -29,7 +30,7 @@ function isCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
 
 const AppRoutes = () => {
   const { loading } = useSelector((state: RootState) => state.user);
-  const { refreshLoading, isAuthenticated, accessToken } = useSelector(
+  const { refreshLoading, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
   );
 
@@ -86,9 +87,16 @@ const AppRoutes = () => {
         />
       )}
 
-      {(!loading || !refreshLoading) && user && (
-        <Route path="*" element={<NotFound />} />
-      )}
+      <Route
+        path="*"
+        element={
+          isAuthenticated && !user && loading ? (
+            <AppInitializationLoader isLoading />
+          ) : (
+            <NotFound />
+          )
+        }
+      />
     </Routes>
   );
 };
@@ -97,9 +105,11 @@ export default function App() {
   return (
     <>
       <AuthProvider>
-        <AppRoutes />
+        <NotificationContextProvider>
+          <AppRoutes />
 
-        <Toaster position="top-left" />
+          <Toaster position="top-left" />
+        </NotificationContextProvider>
       </AuthProvider>
     </>
   );

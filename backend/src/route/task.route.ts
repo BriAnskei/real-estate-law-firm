@@ -66,6 +66,12 @@ taskRoute.get(
   asyncHandler(taskController.findOneById)
 );
 
+taskRoute.get(
+  "/find/process_server/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(taskController.findOneByProcessServer)
+);
+
 taskRoute.delete(
   "/rollback/:id",
   asyncHandler(authMiddleware),

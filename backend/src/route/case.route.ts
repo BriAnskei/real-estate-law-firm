@@ -24,6 +24,12 @@ caseRoute.get(
 );
 
 caseRoute.get(
+  "/filter/payment",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.filterPayment)
+);
+
+caseRoute.get(
   "/get/unpaid",
   asyncHandler(authMiddleware),
   asyncHandler(CaseController.getPending)
@@ -51,6 +57,12 @@ caseRoute.patch(
   "/mark/ongoing/:id",
   asyncHandler(authMiddleware),
   asyncHandler(CaseController.markOngoing)
+);
+
+caseRoute.patch(
+  "/mark/paid/:id",
+  asyncHandler(authMiddleware),
+  asyncHandler(CaseController.markAsPaid)
 );
 
 caseRoute.delete(

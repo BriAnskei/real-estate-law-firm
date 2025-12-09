@@ -7,8 +7,6 @@ import DemographicCard from "../../components/ecommerce/DemographicCard";
 import PageMeta from "../../components/common/PageMeta";
 
 export default function Home() {
-  console.log("home page render");
-
   return (
     <>
       <PageMeta

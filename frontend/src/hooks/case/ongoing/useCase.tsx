@@ -100,8 +100,6 @@ const useCase = () => {
     setFilter("all");
   };
 
-  const deleteCase = () => {};
-
   return {
     displayData,
     loading: loading || filterLoading || fetchingFilter,

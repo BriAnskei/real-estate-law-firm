@@ -68,7 +68,21 @@ export class taskController {
   static async findOneById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
 
-    const response = await TaskService.findById(id as string);
+    const response = await TaskService.findById({ id: id as string });
+
+    res.json({ success: true, data: response });
+  }
+
+  static async findOneByProcessServer(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    const { id } = req.params;
+
+    const response = await TaskService.findById({
+      id: id as string,
+      status: "pending",
+    });
 
     res.json({ success: true, data: response });
   }

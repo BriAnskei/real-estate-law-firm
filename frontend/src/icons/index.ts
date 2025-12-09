@@ -57,8 +57,10 @@ import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
 import { ReactComponent as Notification } from "./notification.svg?react";
 import { ReactComponent as LegalRecords } from "./legal-records-icon.svg?react";
 import { ReactComponent as Signout } from "./signout-icon.svg?react";
+import { ReactComponent as PaymentIcon } from "./payment-icon.svg?react";
 
 export {
+  PaymentIcon,
   Signout,
   LegalRecords,
   Notification,
