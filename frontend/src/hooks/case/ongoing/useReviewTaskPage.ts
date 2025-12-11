@@ -59,7 +59,7 @@ const useReviewTaskPage = () => {
     markCompleteModalState.setMarkingLoading(true);
     await promiseToast(
       async () => {
-        await TaskApi.markComplete(taskId!);
+        await TaskApi.markComplete({ task_id: taskId!, case_id: id as string });
       },
       {
         loading: "Loading....",

@@ -9,4 +9,16 @@ export class NotificationController {
 
     res.json({ success: true, data: response });
   }
+
+  static async markAsRead(req: AuthRequest, res: Response): Promise<void> {
+    await NotificationService.markAsRead(req.params.id);
+
+    res.json({ success: true });
+  }
+
+  static async markAllAsRead(req: AuthRequest, res: Response): Promise<void> {
+    await NotificationService.markAllAsRead(req.userId!);
+
+    res.json({ success: true });
+  }
 }

@@ -6,6 +6,7 @@ import { PostponementService } from "./postponed_hearing.service.js";
 import { HearingCancellationService } from "./hearing_cancellation.service.js";
 import { ResponseType } from "../types/auth.types.js";
 import { TaskService } from "./task.service.js";
+import { NotificationService } from "./notification.service.js";
 
 const HEARING_SELECT_BASE = `
     SELECT 
@@ -14,17 +15,31 @@ const HEARING_SELECT_BASE = `
 `;
 
 export class HearingService {
-  static async add(payload: HearingModel): Promise<HearingModel> {
-    try {
-      const { case_id, type, scheduled_date } = payload;
+  static async add(payload: {
+    hearingData: HearingModel;
+    userId: string;
+  }): Promise<HearingModel> {
+    const connection = await pool.getConnection();
 
-      const [row] = await pool.execute<ResultSetHeader>(
+    try {
+      const { hearingData, userId } = payload;
+
+      const [row] = await connection.execute<ResultSetHeader>(
         `
         INSERT INTO hearings
         (case_id, type, scheduled_date)
         VALUES (?, ?, ?)
         `,
-        [case_id, type, scheduled_date]
+        [hearingData.case_id, hearingData.type, hearingData.scheduled_date]
+      );
+
+      await NotificationService.caseNewHearing(
+        {
+          related_case_id: hearingData.case_id,
+          user_id: userId,
+          hearing_type: hearingData.type,
+        },
+        connection
       );
 
       return await this.findById(row.insertId.toString());
@@ -214,18 +229,39 @@ export class HearingService {
     old_date: string;
     new_date: string;
     reason: string;
+
+    userId: string; // who postponed
   }): Promise<void> {
-    const { hearing_id, new_date } = payload;
+    const { hearing_id, new_date, userId, reason, old_date } = payload;
 
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
+      const hearingData = await this.findById(hearing_id, connection);
+
+      await NotificationService.hearingPosponent(
+        {
+          related_case_id: hearingData.case_id,
+          user_id: userId,
+          hearingType: hearingData.type,
+        },
+        connection
+      );
+
       await this.postponeHearing({ hearing_id, new_date }, connection);
 
       // add new history
-      await PostponementService.add(payload, connection);
+      await PostponementService.add(
+        {
+          hearing_id,
+          old_date,
+          new_date,
+          reason,
+        },
+        connection
+      );
 
       await connection.commit();
     } catch (error) {
@@ -262,17 +298,31 @@ export class HearingService {
   static async proccessHearingCancelation(payload: {
     hearing_id: string;
     reason: string;
+    userId: string;
   }): Promise<void> {
-    const { hearing_id } = payload;
+    const { hearing_id, reason, userId } = payload;
     const connection = await pool.getConnection();
     try {
+      await connection.beginTransaction();
+
       await this.updateHearingStatus(
-        { hearing_id, status: "cancelled" },
+        { hearing_id, status: "cancelled", userId },
         connection
       );
 
       // add record
-      await HearingCancellationService.add({ ...payload }, connection);
+      await HearingCancellationService.add(
+        {
+          hearing_id,
+          reason,
+        },
+        connection
+      );
+
+      await NotificationService.hearingStatus(
+        { userId, hearingId: hearing_id },
+        connection
+      );
 
       await connection.commit();
     } catch (error) {
@@ -286,10 +336,13 @@ export class HearingService {
   }
 
   static async updateHearingStatus(
-    payload: { hearing_id: string; status: string },
+    payload: { hearing_id: string; status: string; userId: string },
     connection?: PoolConnection
   ): Promise<ResponseType<undefined>> {
-    const { hearing_id, status } = payload;
+    const { hearing_id, status, userId } = payload;
+
+    const sqlConnection = connection ?? (await pool.getConnection());
+
     try {
       if (status === "completed") {
         const isAllTaskComplete = await TaskService.isAllHearingTaskComplete(
@@ -302,9 +355,14 @@ export class HearingService {
             message:
               "Completion of all tasks is required to process this request.",
           };
+
+        await NotificationService.hearingStatus(
+          { userId, hearingId: hearing_id, status: "completed" },
+          sqlConnection
+        );
       }
 
-      const sqlConnection = connection ?? pool;
+      if (!connection) await sqlConnection.beginTransaction();
 
       const [row] = await sqlConnection.execute<ResultSetHeader>(
         `
@@ -312,11 +370,17 @@ export class HearingService {
         `,
         [status, hearing_id]
       );
+
+      if (!connection) await sqlConnection.commit();
+
       if (row.affectedRows === 0) throw new Error("Hearing does not exist");
       return { success: true };
     } catch (error) {
+      if (!connection) await sqlConnection.rollback();
       console.error(error);
       throw error;
+    } finally {
+      if (!connection) sqlConnection.release();
     }
   }
 

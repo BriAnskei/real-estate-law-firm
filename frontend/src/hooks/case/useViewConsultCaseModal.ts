@@ -26,6 +26,8 @@ export const useViewConsultCaseModal = (dispatch: AppDispatch) => {
   }, []);
 
   const confirmCase = useCallback(async () => {
+    if (!selectedCase) return;
+
     if (!paymentType) {
       return errorToast("Please select a payment type");
     }
@@ -51,6 +53,8 @@ export const useViewConsultCaseModal = (dispatch: AppDispatch) => {
             id: selectedCase?.id!,
             paymentMode: paymentType,
             promiseToPay: promiseToPayDate,
+            case_concern: selectedCase.concern,
+            client_name: selectedCase.client_name,
           })
         );
       },

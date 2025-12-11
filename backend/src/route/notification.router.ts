@@ -11,4 +11,16 @@ notificationRoute.get(
   asyncHandler(NotificationController.fetchByUser)
 );
 
+notificationRoute.patch(
+  "/read/one/:id",
+  asyncHandler(authMiddleware),
+  NotificationController.markAsRead
+);
+
+notificationRoute.patch(
+  "/read/all",
+  asyncHandler(authMiddleware),
+  NotificationController.markAllAsRead
+);
+
 export default notificationRoute;

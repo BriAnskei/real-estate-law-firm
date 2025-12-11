@@ -18,16 +18,32 @@ export class TaskApi {
     stageId: string;
     hearingId?: string;
     fileForm?: FormData;
+
+    assignerName: string;
+    case_concern: string;
   }): Promise<CaseTransactionTask> {
     try {
-      const { case_id, stage_name, formData, stageId, fileForm, hearingId } =
-        payload;
+      const {
+        case_id,
+        stage_name,
+        formData,
+        stageId,
+        fileForm,
+        hearingId,
+        assignerName,
+        case_concern,
+      } = payload;
 
       var taskCreateApi = `/api/task/create/${stage_name}/${stageId}`;
 
       if (hearingId) taskCreateApi += `/${hearingId}`;
 
-      const taskApiRes = await api.post(taskCreateApi, formData);
+      const taskApiRes = await api.post(taskCreateApi, {
+        ...formData,
+        assignerName,
+        case_concern,
+        case_id,
+      });
 
       const taskData = taskApiRes.data?.data;
       if (!taskApiRes.data?.success || !taskData) {
@@ -196,9 +212,14 @@ export class TaskApi {
     }
   }
 
-  static async markComplete(task_id: string): Promise<void> {
+  static async markComplete(payload: {
+    task_id: string;
+    case_id: string;
+  }): Promise<void> {
     try {
-      const res = await api.patch(`/api/task/complete/${task_id}`);
+      const { task_id, case_id } = payload;
+
+      const res = await api.patch(`/api/task/complete/${task_id}`, { case_id });
 
       if (!res.data.success) throw new Error(res.data.message);
     } catch (error) {

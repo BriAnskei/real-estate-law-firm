@@ -7,11 +7,15 @@ export class HearingController {
   static async create(req: AuthRequest, res: Response): Promise<void> {
     const { case_id } = req.params;
     const { type, scheduled_date } = req.body;
+    const userId = req.userId;
 
     const response = await HearingService.add({
-      case_id,
-      type,
-      scheduled_date,
+      hearingData: {
+        case_id,
+        type,
+        scheduled_date,
+      },
+      userId: userId!,
     });
 
     res.json({
@@ -74,35 +78,44 @@ export class HearingController {
   /**
    * Postponse the hearing schedule
    */
-  static async postponeHearing(req: Request, res: Response): Promise<void> {
+  static async postponeHearing(req: AuthRequest, res: Response): Promise<void> {
     const { hearing_id } = req.params;
     const { old_date, new_date, reason } = req.body;
+    const userId = req.userId;
 
     await HearingService.proccessHearingPostponement({
       hearing_id,
       old_date,
       new_date,
       reason,
+      userId: userId!,
     });
 
     res.json({ success: true });
   }
 
-  static async cancelHearing(req: Request, res: Response): Promise<void> {
+  static async cancelHearing(req: AuthRequest, res: Response): Promise<void> {
     const { hearing_id } = req.params;
     const { reason } = req.body;
+    const userId = req.userId;
 
-    await HearingService.proccessHearingCancelation({ hearing_id, reason });
+    await HearingService.proccessHearingCancelation({
+      hearing_id,
+      reason,
+      userId: userId!,
+    });
 
     res.json({ success: true });
   }
 
-  static async completeHearing(req: Request, res: Response): Promise<void> {
+  static async completeHearing(req: AuthRequest, res: Response): Promise<void> {
     const { hearing_id } = req.params;
+    const userId = req.userId;
 
     const response = await HearingService.updateHearingStatus({
       hearing_id,
       status: "completed",
+      userId: userId!,
     });
 
     res.json({ ...response });

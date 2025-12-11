@@ -2,6 +2,7 @@ import { RowDataPacket } from "mysql2";
 import pool from "../config/db.js";
 import { FileType, TaskFileModel } from "../model/task_files.model.js";
 import { PoolConnection, ResultSetHeader } from "mysql2/promise";
+import { NotificationService } from "./notification.service.js";
 
 export class TaskFileService {
   static async createFiles(
@@ -50,7 +51,7 @@ export class TaskFileService {
     file_type: FileType;
     files: Express.Multer.File[];
   }): Promise<void> {
-    const { file_type, files } = payload;
+    const { file_type, files, task_id } = payload;
 
     const connection = await pool.getConnection();
     try {
@@ -109,6 +110,7 @@ export class TaskFileService {
       await this.delete({ taskId: task_id, file_type }, connection);
 
       if (!files || files.length === 0) return; // no need to update or add if there is not file
+      await NotificationService.taskFileSubmission(task_id, connection);
 
       await this.createFiles({ files, task_id, file_type }, connection);
     } catch (error) {

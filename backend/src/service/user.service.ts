@@ -4,6 +4,7 @@ import { users } from "../model/user.model.js";
 import { PasswordUtils } from "../util/password.util.js";
 import { ResponseType, SignInPayload } from "../types/auth.types.js";
 import { Roles } from "../model/registration_request.model.js";
+import { PoolConnection } from "mysql2/promise";
 
 export class UsersService {
   static async createUser(user: users): Promise<void> {
@@ -85,15 +86,20 @@ export class UsersService {
     }
   }
 
-  static async findUserById(userId: string): Promise<ResponseType<users>> {
+  static async findUserById(
+    userId: string,
+    connection?: PoolConnection
+  ): Promise<ResponseType<users>> {
     try {
-      const [rows] = await pool.execute<(users & RowDataPacket)[]>(
+      const sqlPool = connection ?? pool;
+
+      const [rows] = await sqlPool.execute<(users & RowDataPacket)[]>(
         `SELECT * FROM users WHERE id = ?`,
         [userId]
       );
 
       if (!rows[0]) {
-        return { success: false, message: "User does not exist" };
+        throw new Error("User does not exist");
       }
 
       return { success: true, data: rows[0] };

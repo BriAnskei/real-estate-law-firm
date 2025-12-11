@@ -13,4 +13,26 @@ export class NotificationApi {
       throw error;
     }
   }
+
+  static async markAsRead(id: string): Promise<void> {
+    try {
+      const res = await api.patch(`/api/notification/read/one/${id}`);
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "Unkown error");
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async markAllAsRead(): Promise<void> {
+    try {
+      const res = await api.patch("/api/notification/read/all");
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "Unkown error");
+    } catch (error) {
+      throw error;
+    }
+  }
 }

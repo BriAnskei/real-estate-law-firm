@@ -4,6 +4,10 @@ import { taskModel, TaskType } from "../model/taskModel.js";
 import { TaskFileService } from "./task_file.service.js";
 import { PoolConnection } from "mysql2/promise";
 import { FileType } from "../model/task_files.model.js";
+import { UsersService } from "./user.service.js";
+import { CaseService } from "./case.service.js";
+import { NotificationService } from "./notification.service.js";
+import { CaseStageService } from "./case_stage.service.js";
 
 const TASK_SELECT_BASE = `
     SELECT 
@@ -32,41 +36,59 @@ const PROCESS_SERVER_TASK_SELECT_BASE = `
 `;
 
 export class TaskService {
-  static async add(payload: taskModel): Promise<TaskType> {
+  static async add(payload: {
+    taskData: taskModel;
+    taskDetials: {
+      assignerName: string;
+      case_concern: string;
+      case_id: string;
+    };
+  }): Promise<TaskType> {
+    const connection = await pool.getConnection();
     try {
-      const {
-        case_stage_id,
-        stage_name,
-        title,
-        description,
-        assign_by,
-        assign_to,
-        due_date,
-        hearing_id,
-      } = payload;
+      await connection.beginTransaction();
 
-      const [row] = await pool.execute<ResultSetHeader>(
+      const { taskData, taskDetials } = payload;
+
+      const [row] = await connection.execute<ResultSetHeader>(
         `
       INSERT INTO tasks
       (case_stage_id, stage_name, title, description, assign_by, assign_to, due_date, hearing_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
         [
-          case_stage_id,
-          stage_name,
-          title,
-          description,
-          assign_by,
-          assign_to,
-          due_date,
-          hearing_id,
+          taskData.case_stage_id,
+          taskData.stage_name,
+          taskData.title,
+          taskData.description,
+          taskData.assign_by,
+          taskData.assign_to,
+          taskData.due_date,
+          taskData.hearing_id,
         ]
       );
 
+      await NotificationService.newTaskNotification(
+        {
+          user_id: taskData.assign_to,
+          related_case_id: taskDetials.case_id,
+          related_task_id: row.insertId.toString(),
+          task_title: taskData.title,
+
+          case_concern: taskDetials.case_concern,
+          assignerName: taskDetials.assignerName,
+        },
+        connection
+      );
+
+      await connection.commit();
       return await this.findById({ id: row.insertId.toString() });
     } catch (error) {
+      await connection.rollback();
       console.error(error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
@@ -174,11 +196,16 @@ export class TaskService {
     }
   }
 
-  static async findById(payload: {
-    id: string;
-    status?: string;
-  }): Promise<TaskType> {
+  static async findById(
+    payload: {
+      id: string;
+      status?: string;
+    },
+    connection?: PoolConnection
+  ): Promise<TaskType> {
     try {
+      const sqlPool = connection ?? pool;
+
       const { id, status } = payload;
 
       let whereClause = "WHERE t.id = ? ";
@@ -191,7 +218,7 @@ export class TaskService {
         values.push(status);
       }
 
-      const [rows] = await pool.execute<(TaskType & RowDataPacket)[]>(
+      const [rows] = await sqlPool.execute<(TaskType & RowDataPacket)[]>(
         `
          ${TASK_SELECT_BASE} ${whereClause}
         `,
@@ -260,6 +287,8 @@ export class TaskService {
 
     const connection = await pool.getConnection();
     try {
+      await connection.beginTransaction();
+
       await TaskFileService.proccessUpdateSavedFiles(
         { task_id: id, file_type, files },
         connection
@@ -318,19 +347,53 @@ export class TaskService {
     }
   }
 
-  static async markTaskAsComplete(taskId: string): Promise<void> {
+  static async markTaskAsComplete(payload: {
+    task_id: string;
+    case_id: string;
+  }): Promise<void> {
+    const { task_id, case_id } = payload;
+    const connection = await pool.getConnection();
+
     try {
-      await pool.execute(
+      await connection.beginTransaction();
+
+      await connection.execute(
         `
-  UPDATE tasks
-SET status = 'complete'
-WHERE id = ?;
+      UPDATE tasks
+    SET status = 'complete'
+    WHERE id = ?;
   `,
-        [taskId]
+        [task_id]
       );
+
+      const taskData = await this.findById({ id: task_id }, connection);
+      const stageData = await CaseStageService.findById(
+        taskData.case_stage_id,
+        connection
+      );
+      const caseData = (await CaseService.findById(stageData.case_id)).data;
+
+      // notification for the assigneee for completion
+      await NotificationService.taskCompletion(
+        {
+          user_id: taskData.assign_to,
+          task_title: taskData.title,
+          related_case_id: case_id,
+          related_task_id: task_id,
+          case_concern: caseData?.concern!,
+          stage_name: stageData.stage_name,
+        },
+        connection
+      );
+
+      await connection.commit();
     } catch (error) {
+      await connection.rollback();
+
       console.error(error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
@@ -356,6 +419,8 @@ WHERE id = ?;
   static async processTaskDeletion(id: string): Promise<void> {
     const connection = await pool.getConnection();
     try {
+      await connection.beginTransaction();
+
       await this.deleteById(id, connection);
       await TaskFileService.delete({ taskId: id }, connection);
 

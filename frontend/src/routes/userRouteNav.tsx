@@ -141,8 +141,8 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
         },
         {
           icon: <Notification />,
-          name: "Notifications",
-          path: "/notifications",
+          name: "Notification",
+          path: "/notification",
         },
       ],
       others: [],
@@ -187,11 +187,13 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/consultation", element: <ConsultationPage /> },
     { path: "/case", element: <CasesPage /> },
     { path: "/client", element: <ClientPage /> },
+
+    { path: "/notification", element: <NotificationsPage /> },
   ],
   [Roles.processServer]: [
     { path: "/", element: <ProccessServerTaskPage /> },
     { path: "/tasks", element: <AccountRequest /> },
-    { path: "/notification", element: <AllAccountPage /> },
+    { path: "/notification", element: <NotificationsPage /> },
   ],
 };
 

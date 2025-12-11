@@ -165,12 +165,17 @@ export class caseApi {
     id: string;
     paymentMode: string;
     promiseToPay: string;
+    case_concern: string;
+    client_name: string;
   }): Promise<void> {
     try {
-      const { id, paymentMode, promiseToPay } = payload;
+      const { id, paymentMode, promiseToPay, case_concern, client_name } =
+        payload;
       const res = await api.patch(`api/case/mark/ongoing/${id}`, {
         paymentMode,
         promiseToPay,
+        case_concern,
+        client_name,
       });
       if (!res.data.success) throw new Error(res.data.message);
     } catch (error) {

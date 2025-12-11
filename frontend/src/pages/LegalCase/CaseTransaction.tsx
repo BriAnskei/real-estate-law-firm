@@ -416,6 +416,7 @@ function CaseStage({
     formatDate,
 
     selectedHearing,
+    caseData,
   } = useCaseTransaction();
 
   // manage stage data by stage tab

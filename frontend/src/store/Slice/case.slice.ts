@@ -219,6 +219,8 @@ export const markCaseAsOngoing = createAsyncThunk(
       id: string;
       paymentMode: string;
       promiseToPay: string;
+      case_concern: string;
+      client_name: string;
     },
     { rejectWithValue, dispatch }
   ) => {

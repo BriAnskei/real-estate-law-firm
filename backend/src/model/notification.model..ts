@@ -9,10 +9,10 @@ export type NotificationModel = {
   created_at?: string;
 };
 
-type notificationType =
-  | "NEW_CASE"
-  | "NEW_TASK"
-  | "TASK_COMMENT"
-  | "TASK_DUE_SOON"
-  | "STAGE_COMPLETED"
-  | "CASE_COMPLETED";
+export type notificationType =
+  | "CASE_CONSULTATION"
+  | "ONGOING_CASE"
+  | "CASE_COMPLETION"
+  | "CASE_STAGE_STATUS"
+  | "TASK_RELATED"
+  | "ACCOUNTS_RELATED";

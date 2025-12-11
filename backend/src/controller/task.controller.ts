@@ -7,19 +7,30 @@ export class taskController {
   static async create(req: AuthRequest, res: Response): Promise<void> {
     const assign_by = req.userId as string;
     const { case_stage_id, stage_name } = req.params;
-    const { title, description, assign_to, due_date } = req.body;
+    const {
+      title,
+      description,
+      assign_to,
+      due_date,
+      assignerName,
+      case_concern,
+      case_id,
+    } = req.body;
 
     const hearing_id = req.params.hearing_id ?? null;
 
     const response = await TaskService.add({
-      case_stage_id,
-      stage_name,
-      title,
-      description,
-      assign_by,
-      assign_to,
-      due_date,
-      hearing_id,
+      taskData: {
+        case_stage_id,
+        stage_name,
+        title,
+        description,
+        assign_by,
+        assign_to,
+        due_date,
+        hearing_id,
+      },
+      taskDetials: { assignerName, case_concern, case_id },
     });
 
     res.json({
@@ -105,8 +116,9 @@ export class taskController {
 
   static async markComplete(req: Request, res: Response): Promise<void> {
     const { task_id } = req.params;
+    const { case_id } = req.body;
 
-    await TaskService.markTaskAsComplete(task_id);
+    await TaskService.markTaskAsComplete({ task_id, case_id });
     res.json({ success: true });
   }
 

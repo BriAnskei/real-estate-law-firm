@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { CaseStageService } from "../service/case_stage.service.js";
+import { AuthRequest } from "../types/express.types.js";
 
 export class CaseStagesController {
   static async getByCaseId(req: Request, res: Response): Promise<void> {
@@ -10,14 +11,17 @@ export class CaseStagesController {
     res.json({ success: true, data: response });
   }
 
-  static async updateStatus(req: Request, res: Response): Promise<void> {
+  static async updateStatus(req: AuthRequest, res: Response): Promise<void> {
     const { id, caseId, stage_name } = req.params;
     const { status } = req.body;
+    const userId = req.userId;
+
     const response = await CaseStageService.processCaseStageUpdate({
       stageId: id,
       caseId,
       status,
       stage_name,
+      userId: userId!,
     });
 
     res.json({ ...response });

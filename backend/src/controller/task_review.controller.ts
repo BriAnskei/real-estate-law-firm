@@ -9,9 +9,11 @@ export class TaskReviewController {
     const { comment } = req.body;
 
     const response = await TaskReviewService.add({
-      task_id,
-      reviewer_id: reviewer_id!,
-      comment,
+      newReview: {
+        task_id,
+        reviewer_id: reviewer_id!,
+        comment,
+      },
     });
 
     res.json({ success: true, data: response });
@@ -19,6 +21,7 @@ export class TaskReviewController {
 
   /**
    * Process server task execution function
+   * this function sends a notification on assigner only.
    */
   static async executedReview(req: AuthRequest, res: Response): Promise<void> {
     const reviewer_id = req.userId;
@@ -26,12 +29,13 @@ export class TaskReviewController {
     const { comment } = req.body;
 
     const response = await TaskReviewService.add({
-      task_id,
-      reviewer_id: reviewer_id!,
-      comment,
+      newReview: {
+        task_id,
+        reviewer_id: reviewer_id!,
+        comment,
+      },
+      reviewType: "executed",
     });
-
-    // TODO: add diff notification for this functionality
 
     res.json({ success: true, data: response });
   }

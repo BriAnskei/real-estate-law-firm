@@ -222,6 +222,10 @@ const useAddtask = (payload: {
   hearingId?: string;
 }) => {
   const navigate = useNavigate();
+
+  const { caseData } = useCaseTransaction();
+  const currUser = useSelector(selectCurrentUser);
+
   const { stage, stageId, context, caseId, hearingId } = payload;
 
   const {
@@ -274,6 +278,14 @@ const useAddtask = (payload: {
           stageId,
           fileForm: pdfFileState.getFormData(),
           case_id: caseId,
+
+          // this two params is important for notifcation, instead of fetching we
+          // can just directly pass here to the api
+          assignerName: `${currUser?.firstName} ${currUser?.lastName}`,
+          case_concern: caseData?.concern!,
+
+          // if stage is hearing there is surely a hearing hearing ID
+          // currently have in our context api state
           ...(stage === "HEARING" && { hearingId: hearingId }),
         });
 

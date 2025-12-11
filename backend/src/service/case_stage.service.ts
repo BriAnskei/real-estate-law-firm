@@ -7,6 +7,7 @@ import { TaskService } from "./task.service.js";
 import { CaseService } from "./case.service.js";
 import { HearingService } from "./hearing.service.js";
 import { HearingModel } from "../model/hearing.model.js";
+import { NotificationService } from "./notification.service.js";
 
 export class CaseStageService {
   static async create(id: string, connection: PoolConnection) {
@@ -156,13 +157,36 @@ export class CaseStageService {
     }
   }
 
+  static async findById(
+    stageId: string,
+    connection?: PoolConnection
+  ): Promise<CaseStageModel> {
+    try {
+      const sqlPool = connection ?? pool;
+
+      const [rows] = await sqlPool.execute<(CaseStageModel & RowDataPacket)[]>(
+        `
+        SELECT * FROM case_stages WHERE id = ?
+        `,
+        [stageId]
+      );
+
+      if (!rows.length) throw new Error("Stage does not exist");
+
+      return rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async processCaseStageUpdate(payload: {
     caseId: string;
+    userId: string;
     stageId: string;
     status: string;
     stage_name: string;
   }): Promise<ResponseType<{ isAllStageComplete: boolean }>> {
-    const { caseId, stageId, status, stage_name } = payload;
+    const { caseId, stageId, status, stage_name, userId } = payload;
 
     const connection = await pool.getConnection();
     try {
@@ -177,28 +201,40 @@ export class CaseStageService {
             "Complemention of all hearing is required to make this stage as complete",
         };
 
-      const response = await this.updateStatus(
+      await this.updateStatus(
         { id: stageId, status: status, stage: stage_name },
         connection
       );
-
-      if (!response.success) return { ...response };
 
       const isAllStageComplete = await this.isAllStageComplete(
         caseId,
         connection
       );
-
       const caseCurrentStatus = await CaseService.fetchCaseStatus(
         caseId,
         connection
       );
-
       const newCaseStatus = isAllStageComplete ? "complete" : "ongoing";
+
+      if (newCaseStatus === "complete") {
+        await NotificationService.caseCompletion(caseId, connection);
+      }
 
       if (isAllStageComplete || caseCurrentStatus !== newCaseStatus) {
         await CaseService.updateCaseStatus(
           { id: caseId, status: newCaseStatus },
+          connection
+        );
+      }
+
+      if (stage_name !== "HEARING") {
+        await NotificationService.caseStageStatusRelated(
+          {
+            related_case_id: caseId,
+            user_id: userId,
+            stage_name,
+            status,
+          },
           connection
         );
       }
@@ -253,11 +289,9 @@ export class CaseStageService {
         status === "complete" &&
         !(await TaskService.isAllStageTaskComplete(id))
       ) {
-        return {
-          success: false,
-          message:
-            "Completion of all tasks is required before marking the stage as complete.",
-        };
+        throw new Error(
+          "Completion of all tasks is required before marking the stage as complete."
+        );
       }
 
       const [res] = await connection.execute<ResultSetHeader>(

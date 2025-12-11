@@ -95,11 +95,18 @@ export class CaseController {
     res.json({ success: true });
   }
 
-  static async markOngoing(req: Request, res: Response): Promise<void> {
+  static async markOngoing(req: AuthRequest, res: Response): Promise<void> {
     const { id } = req.params;
-    const { paymentMode, promiseToPay } = req.body;
+    const { paymentMode, promiseToPay, case_concern, client_name } = req.body;
 
-    await CaseService.setCaseAsOngiong({ id, paymentMode, promiseToPay });
+    await CaseService.setCaseAsOngiong({
+      id,
+      paymentMode,
+      promiseToPay,
+      case_concern,
+      user_id: req.userId!,
+      client_name,
+    });
 
     res.json({ success: true });
   }

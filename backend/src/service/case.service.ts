@@ -44,8 +44,9 @@ export class CaseService {
       await NotificationService.consultation(
         {
           related_case_id: newCaseId,
-          user_Id: userId,
+          user_id: userId,
           case_concern: caseData.concern,
+          client_name: clientData.client_name,
         },
         connection
       );
@@ -117,7 +118,7 @@ export class CaseService {
         [id]
       );
 
-      if (!rows[0]) return { success: false, message: "case does not exist" };
+      if (!rows[0]) throw new Error("Case does not exist");
 
       return { success: true, data: rows[0] };
     } catch (error) {
@@ -501,10 +502,23 @@ export class CaseService {
     id: string;
     paymentMode: string;
     promiseToPay?: Date;
+    case_concern: string;
+    client_name: string;
+    user_id: string; // the one who marked as ongoing
   }) {
     const connection = await pool.getConnection();
     try {
-      await this.setPayment(payload, connection);
+      const {
+        id,
+        paymentMode,
+        promiseToPay,
+        case_concern,
+        user_id,
+        client_name,
+      } = payload;
+
+      await this.setPayment({ id, paymentMode, promiseToPay }, connection);
+
       await this.updateCaseStatus(
         { id: payload.id, status: "ongoing" },
         connection
@@ -512,6 +526,16 @@ export class CaseService {
 
       // stages
       await CaseStageService.create(payload.id, connection);
+
+      await NotificationService.caseOngoing(
+        {
+          related_case_id: id,
+          user_id,
+          case_concern,
+          client_name,
+        },
+        connection
+      );
 
       await connection.commit();
     } catch (error) {
@@ -609,6 +633,10 @@ export class CaseService {
       await TaskFileService.deleteAllByCaseId(id, connection);
       await TaskService.deleteAllByCaseId(id, connection);
       await CaseStageService.deleteAllByCaseId(id, connection);
+
+      await NotificationService.deleteByRelatedCaseId(id, connection);
+      await NotificationService.deleteByRelatedCaseId(id, connection);
+
       await this.deleteCaseById(id, connection);
 
       await deleteCaseFolder(id);
