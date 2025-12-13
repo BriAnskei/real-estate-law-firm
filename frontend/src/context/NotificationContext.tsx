@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { notificationType, NotificationType } from "../types/NotificationType";
 import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
@@ -37,9 +43,9 @@ export const NotificationContextProvider: React.FC<{
 
       try {
         setNotificationLoading(true);
-        const response = await NotificationApi.fetchAll();
 
-        setNotifications(response);
+        await fetchAllNotifs();
+        await fetchAllDue();
       } catch (error) {
         console.error(error);
       }
@@ -47,6 +53,28 @@ export const NotificationContextProvider: React.FC<{
 
     fetch();
   }, [isAuthenticated]);
+
+  const fetchAllNotifs = useCallback(async () => {
+    try {
+      const response = await NotificationApi.fetchAll();
+
+      setNotifications(response);
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const fetchAllDue = useCallback(async () => {
+    try {
+      const response = await NotificationApi.fetchCloseDue();
+
+      if (!response) return;
+
+      setNotifications((prev) => [...(prev ?? []), ...response]);
+    } catch (error) {
+      throw error;
+    }
+  }, []);
 
   const markAsRead = async (id: string) => {
     try {

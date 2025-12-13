@@ -75,7 +75,7 @@ const useDeleteTaskModal = (
 
 const useCaseStage = (payload: {
   stageData: CaseStagesType;
-  stageTask: CaseTransactionTask[] | undefined;
+
   fetchStageTask: (payload: {
     stageId: string;
     stageName: Stages;
@@ -93,26 +93,12 @@ const useCaseStage = (payload: {
 
   const navigate = useNavigate();
 
-  const { stageData, stageTask, fetchStageTask, statusHandler, taskLoading } =
-    payload;
+  const { stageData, statusHandler } = payload;
 
   const taskDeleteState = useDeleteTaskModal(
     stageData.stage_name,
     caseTransactionContext
   );
-
-  useEffect(() => {
-    async function fetchTask() {
-      if (stageTask !== undefined || taskLoading) return;
-
-      fetchStageTask({
-        stageId: stageData.id!,
-        stageName: stageData.stage_name,
-      });
-    }
-
-    fetchTask();
-  }, [stageData.id, stageData.stage_name, stageTask, fetchStageTask]);
 
   const handleStatusOnChange = statusHandler(
     stageData.id!,
@@ -159,8 +145,6 @@ const useCaseStage = (payload: {
         payload;
       // wait for the curUserData before navigating
       if (!currUser) return;
-
-      console.log("navigating", payload);
 
       if (
         assignTo.toString() === currUser.id!.toString() &&

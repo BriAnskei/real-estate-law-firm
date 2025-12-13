@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -24,6 +25,7 @@ import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { HearingType } from "../types/HearingTypes";
 import { HearingApi } from "../util/api/hearing.api";
+import { debouncer } from "../util/debouncer";
 
 export type CaseTransactionContextType = {
   loading: boolean;
@@ -31,13 +33,13 @@ export type CaseTransactionContextType = {
   caseData: CaseType | undefined;
   clientData: ClientType | undefined;
 
-  displayData: Record<
-    Exclude<TabTypes, "details">,
-    {
-      stage: CaseStagesType;
-      task: CaseTransactionTask[] | undefined;
-    }
-  >;
+  // display data
+  getStageData: (
+    tabName: "requirements" | "documents" | "hearings"
+  ) => CaseStagesType | undefined;
+  getTaskData: (
+    tabName: "requirements" | "documents" | "hearings"
+  ) => CaseTransactionTask[] | undefined;
 
   // functions
   fetchStageTask: (payload: {
@@ -57,6 +59,18 @@ export type CaseTransactionContextType = {
   setActiveTab: React.Dispatch<React.SetStateAction<TabTypes>>;
   activeTab: TabTypes;
   addTask: (payload: { stage: Stages; newTask: CaseTransactionTask }) => void;
+
+  handleTaskFilter: (payload: {
+    filter: "assigned_to_me" | "assigned_by_me";
+    stageId: string;
+    stage_name: Stages;
+  }) => Promise<void>;
+
+  // filtered task types
+  taskFilterOption: TaskFilterType;
+  setTaskFilterOption: (f: TaskFilterType) => void;
+  filteredTask: CaseTransactionTask[] | undefined;
+  isOnTaskFilter: boolean;
 
   updateTask: (payload: {
     taskId: string;
@@ -94,6 +108,9 @@ export type CaseTransactionContextType = {
 };
 
 export type TabTypes = "details" | "requirements" | "documents" | "hearings";
+
+// task stage filter
+export type TaskFilterType = "all" | "assigned_to_me" | "assigned_by_me";
 
 const CaseTransactionContext = createContext<CaseTransactionContextType | null>(
   null
@@ -142,10 +159,58 @@ export const CaseTransactionProvider: React.FC<{
     CaseTransactionTask[] | undefined
   >(undefined);
 
+  // filtered task all stages
+  const [taskFilterOption, setTaskFilterOption] =
+    useState<TaskFilterType>("all");
+  const [filteredTask, setFilteredTask] = useState<CaseTransactionTask[]>([]);
+
   // global loader flag
   const [loading, setLoading] = useState(false);
   // task loader
   const [taskLoading, setTaskloading] = useState(false);
+
+  const debouncerFilterRef = useRef<ReturnType<typeof debouncer> | null>(null);
+
+  const getStageData = useCallback(
+    (tabName: Exclude<TabTypes, "details">) => {
+      switch (tabName) {
+        case "documents":
+          return documentsStage;
+        case "requirements":
+          return requirementsStage;
+        case "hearings":
+          return hearingStage;
+        default:
+          throw new Error("Invalid tab");
+      }
+    },
+    [documentsStage, requirementsStage, hearingStage]
+  );
+
+  const getTaskData = useCallback(
+    (tabName: Exclude<TabTypes, "details">) => {
+      // if task filter option is not set to all(default dropdown value), we return the filtered task
+      if (taskFilterOption !== "all") return filteredTask;
+
+      switch (tabName) {
+        case "documents":
+          return documentsTask;
+        case "requirements":
+          return requirementsTask;
+        case "hearings":
+          return hearingTask;
+        default:
+          throw new Error("Invalid tab");
+      }
+    },
+    [
+      taskFilterOption,
+      documentsTask,
+      requirementsTask,
+      hearingTask,
+      filteredTask,
+    ]
+  );
 
   useEffect(() => {
     async function initializeData() {
@@ -253,9 +318,13 @@ export const CaseTransactionProvider: React.FC<{
   );
 
   const fetchStageTask = useCallback(
-    async (payload: { stageId: string; stageName: Stages }) => {
+    async (payload: {
+      stageId: string;
+      stageName: Stages;
+      filter?: TaskFilterType;
+    }) => {
       if (taskLoading) return;
-      setTaskloading(true);
+
       try {
         const { stageName, stageId } = payload;
 
@@ -293,6 +362,53 @@ export const CaseTransactionProvider: React.FC<{
     },
     [selectedHearing]
   );
+
+  // task filter
+  useEffect(() => {
+    if (!debouncerFilterRef.current)
+      debouncerFilterRef.current = debouncer(handleTaskFilter, 400);
+  }, []);
+
+  const isTaskOnFiltered = taskFilterOption !== "all";
+  useEffect(() => {
+    if (isTaskOnFiltered) {
+      setTaskloading(true);
+      const stageData = getStageData(activeTab as Exclude<TabTypes, "details">);
+      debouncerFilterRef.current!({
+        filter: taskFilterOption,
+        stageId: stageData!.id!,
+      });
+    }
+  }, [taskFilterOption, isTaskOnFiltered, activeTab]);
+
+  const handleTaskFilter = useCallback(
+    async (payload: {
+      filter: Exclude<TaskFilterType, "all">;
+      stageId: string;
+      stage_name: Stages;
+    }) => {
+      try {
+        const response = await TaskApi.filterTask({
+          ...payload,
+          ...(payload.stage_name === "HEARING" &&
+            selectedHearing && { hearingId: selectedHearing.id! }),
+        });
+
+        setFilteredTask(response);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setTaskloading(false);
+      }
+    },
+    [selectedHearing, isTaskOnFiltered]
+  );
+
+  // if active tab changes we clear the task filter
+  useEffect(() => {
+    setTaskFilterOption("all");
+    setFilteredTask([]);
+  }, [activeTab]);
 
   const updateTask = useCallback(
     (payload: {
@@ -469,29 +585,15 @@ export const CaseTransactionProvider: React.FC<{
     });
   }, []);
 
-  const displayData = useMemo(
-    () => ({
-      documents: { stage: documentsStage!, task: documentsTask },
-      requirements: { stage: requirementsStage!, task: requirementsTask },
-      hearings: { stage: hearingStage!, task: hearingTask },
-    }),
-    [
-      documentsStage,
-      documentsTask,
-      requirementsStage,
-      requirementsTask,
-      hearingStage,
-      hearingTask,
-    ]
-  );
-
   return (
     <CaseTransactionContext.Provider
       value={
         {
           loading,
           taskLoading,
-          displayData,
+
+          getStageData,
+          getTaskData,
 
           selectedHearing,
 
@@ -505,7 +607,16 @@ export const CaseTransactionProvider: React.FC<{
 
           activeTab,
           setActiveTab,
+
           addTask,
+
+          // filtered function
+          handleTaskFilter,
+          filteredTask,
+          isOnTaskFilter: taskFilterOption !== "all",
+          taskFilterOption,
+          setTaskFilterOption,
+
           updateTask,
           deleteTask,
 

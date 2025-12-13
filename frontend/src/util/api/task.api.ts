@@ -1,3 +1,4 @@
+import { TaskFilterType } from "../../context/CaseTransactionContext";
 import { TaskFormType } from "../../hooks/case/ongoing/useTaskForm";
 
 import {
@@ -136,6 +137,47 @@ export class TaskApi {
     }
   }
 
+  static async getHearingTask(payload: {
+    hearing_id: string;
+    case_stage_id: string;
+  }): Promise<CaseTransactionTask[]> {
+    try {
+      const { hearing_id, case_stage_id } = payload;
+      const res = await api.get(
+        `/api/task/get/hearing/${hearing_id}/${case_stage_id}`
+      );
+      if (!res.data.success) throw new Error(res.data.message);
+
+      return res.data.data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  static async filterTask(payload: {
+    stageId: string;
+    hearingId?: string;
+    filter: TaskFilterType;
+  }): Promise<CaseTransactionTask[]> {
+    try {
+      const { stageId, hearingId, filter } = payload;
+      let apiRoute = `/api/task/filter/${stageId}`;
+
+      if (hearingId) apiRoute += `/hearing/${hearingId}`;
+
+      const res = await api.get(apiRoute, {
+        params: { filter },
+      });
+
+      if (!res.data.success) throw new Error(res.data.message);
+
+      return res.data.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getByProcessServer(
     assignee_id: string
   ): Promise<ProcessServerTask[]> {
@@ -163,24 +205,6 @@ export class TaskApi {
           },
         }
       );
-
-      return res.data.data;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-  }
-
-  static async getHearingTask(payload: {
-    hearing_id: string;
-    case_stage_id: string;
-  }): Promise<CaseTransactionTask[]> {
-    try {
-      const { hearing_id, case_stage_id } = payload;
-      const res = await api.get(
-        `/api/task/get/hearing/${hearing_id}/${case_stage_id}`
-      );
-      if (!res.data.success) throw new Error(res.data.message);
 
       return res.data.data;
     } catch (error) {

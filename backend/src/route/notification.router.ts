@@ -11,6 +11,12 @@ notificationRoute.get(
   asyncHandler(NotificationController.fetchByUser)
 );
 
+notificationRoute.get(
+  "/due",
+  asyncHandler(authMiddleware),
+  asyncHandler(NotificationController.fetchCloseDue)
+);
+
 notificationRoute.patch(
   "/read/one/:id",
   asyncHandler(authMiddleware),

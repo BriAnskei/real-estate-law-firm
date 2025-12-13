@@ -635,7 +635,6 @@ export class CaseService {
       await CaseStageService.deleteAllByCaseId(id, connection);
 
       await NotificationService.deleteByRelatedCaseId(id, connection);
-      await NotificationService.deleteByRelatedCaseId(id, connection);
 
       await this.deleteCaseById(id, connection);
 

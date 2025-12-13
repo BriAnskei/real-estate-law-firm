@@ -236,6 +236,90 @@ export class TaskService {
     }
   }
 
+  static async fetchFilterTask(payload: {
+    userId: string;
+    stageId: string;
+    hearingId?: string;
+    filter: string;
+  }): Promise<taskModel[]> {
+    try {
+      const { userId, stageId, filter, hearingId } = payload;
+
+      let whereClause = "WHERE t.case_stage_id = ? ";
+      const param = [stageId];
+
+      if (hearingId) {
+        whereClause += "AND t.hearing_id = ? ";
+        param.push(hearingId);
+      }
+
+      whereClause +=
+        filter === "assigned_to_me"
+          ? "AND t.assign_to = ?"
+          : "AND t.assign_by = ?";
+
+      param.push(userId);
+
+      const [rows] = await pool.execute<(taskModel & RowDataPacket)[]>(
+        `
+         ${TASK_SELECT_BASE} ${whereClause}
+        `,
+        [...param]
+      );
+
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * fetch the task that dues are 3-5 days from now on
+   */
+  static async fetchAllCloseDueTask(userId: string): Promise<
+    {
+      id: string;
+      title: string;
+      case_stage_id: string;
+      due_date: string;
+      days_remaining: string;
+    }[]
+  > {
+    try {
+      const [rows] = await pool.execute<
+        ({
+          id: string;
+          title: string;
+          case_stage_id: string;
+          due_date: string;
+          days_remaining: string;
+        } & RowDataPacket)[]
+      >(
+        ` 
+     SELECT 
+    id,
+    title,
+    case_stage_id,
+    due_date,
+    DATEDIFF(due_date, CURDATE()) AS days_remaining
+FROM 
+    tasks
+WHERE
+   assign_to  = ? AND
+    status = 'pending'
+    AND due_date BETWEEN CURDATE() + INTERVAL 3 DAY
+                      AND CURDATE() + INTERVAL 5 DAY;
+
+        `,
+        [userId]
+      );
+
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async isAllStageTaskComplete(stageId: string): Promise<boolean> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(

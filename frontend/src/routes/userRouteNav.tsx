@@ -95,11 +95,6 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
         },
 
         cases,
-        {
-          icon: <CalenderIcon />,
-          name: "Calendar",
-          path: "/calendar",
-        },
       ],
       others: [
         {
@@ -119,16 +114,16 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
 
         cases,
         {
-          icon: <CalenderIcon />,
-          name: "Calendar",
-          path: "/calendar",
+          icon: <PaymentIcon />,
+          name: "Payments",
+          path: "/payments",
         },
       ],
       others: [
         {
           icon: <Notification />,
           name: "Notifications",
-          path: "/notifications",
+          path: "/notification",
         },
       ],
     },
@@ -187,6 +182,8 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/consultation", element: <ConsultationPage /> },
     { path: "/case", element: <CasesPage /> },
     { path: "/client", element: <ClientPage /> },
+
+    { path: "/payments", element: <PaymentsPage /> },
 
     { path: "/notification", element: <NotificationsPage /> },
   ],

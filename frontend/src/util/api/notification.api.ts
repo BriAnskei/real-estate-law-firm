@@ -14,6 +14,18 @@ export class NotificationApi {
     }
   }
 
+  static async fetchCloseDue(): Promise<NotificationType[]> {
+    try {
+      const res = await api.get("/api/notification/due");
+
+      if (!res.data.success)
+        throw new Error(res.data.message || "Unkown error");
+      return res.data.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async markAsRead(id: string): Promise<void> {
     try {
       const res = await api.patch(`/api/notification/read/one/${id}`);

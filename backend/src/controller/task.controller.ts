@@ -48,6 +48,23 @@ export class taskController {
     res.json({ success: true, data: response });
   }
 
+  static async filterTask(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.userId as string;
+    const { stageId, hearingId } = req.params;
+
+    const filter = req.query.filter as string;
+
+    const response = await TaskService.fetchFilterTask({
+      userId,
+      stageId,
+      filter,
+      hearingId,
+    });
+
+    res.json({ success: true, data: response });
+  }
+
+  // process server usage
   static async fetchByAssignTo(req: Request, res: Response): Promise<void> {
     const { assign_to } = req.params;
 

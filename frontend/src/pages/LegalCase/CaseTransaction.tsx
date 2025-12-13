@@ -1,4 +1,4 @@
-import React, { JSX, useCallback, useMemo, useState } from "react";
+import React, { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -18,11 +18,13 @@ import StatusDropdown from "../../components/ui/dropdown/caseTransaction/StatusD
 import { Outlet, useNavigate, useParams } from "react-router";
 import {
   CaseStageStatus,
+  CaseStagesType,
   CaseTransactionTask,
 } from "../../store/Slice/case.slice";
 import {
   CaseTransactionProvider,
   TabTypes,
+  TaskFilterType,
   useCaseTransaction,
 } from "../../context/CaseTransactionContext";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
@@ -39,8 +41,9 @@ import { ScrollToTop } from "../../components/common/ScrollToTop";
 import HearingTabTaskHeader from "./Components/HearingTabTaskHeader";
 import HearingScheduleSelectionModal from "../../components/modal/caseModal/HearingSchduleSelectionModal";
 import useHearingSelectionModal from "../../hooks/case/hearing/useHearingSelectionModal";
-import { HearingStatus } from "../../hooks/case/hearing/useHearing";
 import PageMeta from "../../components/common/PageMeta";
+import TaskFilterDropdown from "../../components/ui/dropdown/caseTransaction/TaskFilterDropdown";
+import useStageTask from "../../hooks/case/ongoing/useStageTask";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -409,20 +412,20 @@ function CaseStage({
   openHearingSelection?: () => void;
 }) {
   const {
+    getStageData,
+    getTaskData,
+
     fetchStageTask,
     taskLoading,
     statusHandler,
-    displayData,
+
     formatDate,
 
     selectedHearing,
-    caseData,
   } = useCaseTransaction();
 
-  // manage stage data by stage tab
-  const { stage, task } = useMemo(() => displayData[tabName], [tabName]);
+  const stageData = getStageData(tabName);
 
-  // handle header lable
   const {
     handleStatusOnChange,
     displayHeaderText,
@@ -434,8 +437,8 @@ function CaseStage({
 
     currUser,
   } = useCaseStage({
-    stageData: stage,
-    stageTask: task,
+    stageData: stageData!,
+
     fetchStageTask,
     statusHandler,
     taskLoading,
@@ -450,13 +453,14 @@ function CaseStage({
       openHearingSelection={openHearingSelection}
     >
       <StageHeader
+        stageData={stageData!}
         isAddTaskEnabled={
-          stage.stage_status !== "ongoing" ||
+          stageData!.stage_status !== "ongoing" ||
           (selectedHearing && selectedHearing.status === "cancelled")!
         }
         title={title}
         description={description}
-        status={stage!.stage_status}
+        status={stageData!.stage_status}
         onAddTask={addtask}
         onStatusChange={handleStatusOnChange}
       />
@@ -465,13 +469,14 @@ function CaseStage({
 
   const isActionEnabled = () => {
     // requiremnts an docs stage for task action
-    const isActionEnabledForUnHearingTask = stage.stage_status === "ongoing";
+    const isActionEnabledForUnHearingTask =
+      stageData?.stage_status === "ongoing";
 
     // hearing action
     const isActionEnabledInHearingTask =
       tabName === "hearings" &&
       selectedHearing!.status !== "cancelled" &&
-      stage.stage_status === "ongoing";
+      stageData?.stage_status === "ongoing";
 
     return tabName === "hearings"
       ? isActionEnabledInHearingTask
@@ -486,15 +491,16 @@ function CaseStage({
           <HearingHeader />
         ) : (
           <StageHeader
-            isAddTaskEnabled={stage.stage_status !== "ongoing"}
+            stageData={stageData!}
+            isAddTaskEnabled={stageData!.stage_status !== "ongoing"}
             title={title}
             description={description}
-            status={stage!.stage_status}
+            status={stageData!.stage_status}
             onAddTask={addtask}
             onStatusChange={handleStatusOnChange}
           />
         )}
-
+        {/* if stage is hearing and there is not selected hearing sched */}
         {tabName === "hearings" && selectedHearing === undefined ? null : (
           <AllTasks
             // if stage is complete, action is not allowed in task
@@ -502,7 +508,7 @@ function CaseStage({
             curUserId={currUser?.id}
             deleteTask={taskDeleteState.openModal}
             onEditTask={updateTask}
-            tasks={task!}
+            tabName={tabName}
             formatDate={formatDate}
             loading={taskLoading}
             onViewTask={(payload: {
@@ -514,7 +520,7 @@ function CaseStage({
               // verify if hearing is cancelled, this will redirect to task review
               viewTask({
                 ...payload,
-                ...(stage.stage_name === "HEARING"
+                ...(stageData!.stage_name === "HEARING"
                   ? {
                       isTaskOnHearingAndCancelled:
                         selectedHearing?.status === "cancelled",
@@ -546,6 +552,7 @@ function StageHeader({
   onStatusChange,
   onAddTask,
   isAddTaskEnabled,
+  stageData,
 }: {
   title: string;
   description: string;
@@ -553,8 +560,11 @@ function StageHeader({
   onStatusChange: (status: CaseStageStatus) => void;
   onAddTask: () => void;
   isAddTaskEnabled: boolean;
+
+  stageData: CaseStagesType;
 }) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
 
   return (
     <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
@@ -567,12 +577,17 @@ function StageHeader({
         </p>
       </div>
 
-      <div className="inline-flex items-center gap-3 flex-shrink-0">
+      <div className="inline-flex items-center gap-3 flex-shrink-0 flex-wrap">
+        <TaskFilterDropdown
+          stageData={stageData}
+          isOpen={filterDropdownOpen}
+          setIsOpen={setFilterDropdownOpen}
+        />
         <StatusDropdown
           status={status}
           onStatusChange={onStatusChange}
-          isOpen={dropdownOpen}
-          setIsOpen={setDropdownOpen}
+          isOpen={statusDropdownOpen}
+          setIsOpen={setStatusDropdownOpen}
         />
         <button
           onClick={onAddTask}
@@ -589,7 +604,7 @@ function StageHeader({
 
 // tasks
 const AllTasks = React.memo(function AllTasks({
-  tasks,
+  tabName,
   formatDate,
   loading = true,
   onEditTask,
@@ -598,7 +613,7 @@ const AllTasks = React.memo(function AllTasks({
   isActionAllowed,
   curUserId,
 }: {
-  tasks: CaseTransactionTask[] | undefined;
+  tabName: "requirements" | "documents" | "hearings";
   formatDate: (dateString: string) => string;
   loading?: boolean;
   onEditTask: (taskId: string) => void;
@@ -611,6 +626,8 @@ const AllTasks = React.memo(function AllTasks({
   deleteTask: (taskId: string) => void;
   curUserId?: string;
 }) {
+  const { isOnTaskFilter, taskData } = useStageTask(tabName);
+
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case "complete":
@@ -639,7 +656,7 @@ const AllTasks = React.memo(function AllTasks({
     [curUserId]
   );
 
-  if (loading || tasks === undefined) {
+  if (loading || taskData === undefined) {
     return (
       <div className="h-[600px] rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 scrollbar">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 p-6">
@@ -687,11 +704,13 @@ const AllTasks = React.memo(function AllTasks({
   }
 
   // Empty state
-  if (!tasks || tasks.length === 0) {
+  if (!taskData || taskData.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 dark:text-gray-400 text-base font-medium">
-          No tasks added
+          {isOnTaskFilter
+            ? "No task found, try adjusting you filer"
+            : "No task added"}
         </p>
       </div>
     );
@@ -701,7 +720,7 @@ const AllTasks = React.memo(function AllTasks({
     <div className="h-[600px] overflow-y-auto">
       {/* Masonry layout using CSS columns */}
       <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
-        {tasks.map((task, index) => {
+        {taskData.map((task, index) => {
           // enable edit/update if the curUser is assigner for this task
           // and
           const isCurUserAssignee = isCurUserId(task.assign_by);

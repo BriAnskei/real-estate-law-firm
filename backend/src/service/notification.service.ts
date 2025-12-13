@@ -13,6 +13,7 @@ import { CaseStageService } from "./case_stage.service.js";
 import { TaskReviewService } from "./task_review.service.js";
 import { HearingService } from "./hearing.service.js";
 import { TaskFileService } from "./task_file.service.js";
+import { TaskType } from "../model/taskModel.js";
 
 /**
  *
@@ -457,12 +458,13 @@ export class NotificationService {
       related_task_id: string;
       message: string;
     },
-    connection: PoolConnection
+    connection?: PoolConnection
   ): Promise<void> {
     try {
       const { user_id, related_case_id, related_task_id, message } = payload;
+      const sqlPool = connection ?? pool;
 
-      await connection.execute(
+      await sqlPool.execute(
         `
           INSERT INTO notifications (user_id, type, related_case_id, related_task_id, message) 
           VALUES (?, ?, ?, ?, ?)
@@ -623,6 +625,41 @@ export class NotificationService {
       return rows;
     } catch (error) {
       console.error(error);
+      throw error;
+    }
+  }
+
+  /**
+   * fetch the remainder notification task
+   */
+  static async fetchRemainderTaskDue(
+    userId: string
+  ): Promise<NotificationModel[] | undefined> {
+    try {
+      const closeDueTasks = await TaskService.fetchAllCloseDueTask(userId);
+
+      if (!closeDueTasks.length) return;
+
+      for (let closetsk of closeDueTasks) {
+        const stageData = await CaseStageService.findById(
+          closetsk.case_stage_id
+        );
+        const caseData = (await CaseService.findById(stageData.case_id)).data!;
+
+        await this.taskRelatedNotification({
+          related_case_id: caseData.id!,
+          user_id: userId,
+          related_task_id: closetsk.id,
+          message: `Your task "${closetsk.title}" under the case "${
+            caseData.concern
+          }", currently at the "${caseStageLabel(
+            stageData.stage_name
+          )}" stage, has ${
+            closetsk.days_remaining
+          } days remaining before its due date.`,
+        });
+      }
+    } catch (error) {
       throw error;
     }
   }

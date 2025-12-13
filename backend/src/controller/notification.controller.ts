@@ -10,6 +10,14 @@ export class NotificationController {
     res.json({ success: true, data: response });
   }
 
+  static async fetchCloseDue(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.userId;
+
+    const response = await NotificationService.fetchRemainderTaskDue(userId!);
+
+    res.json({ success: true, data: response });
+  }
+
   static async markAsRead(req: AuthRequest, res: Response): Promise<void> {
     await NotificationService.markAsRead(req.params.id);
 

@@ -43,6 +43,18 @@ taskRoute.get(
 );
 
 taskRoute.get(
+  "/filter/:stageId",
+  asyncHandler(authMiddleware),
+  asyncHandler(taskController.filterTask)
+);
+
+taskRoute.get(
+  "/filter/hearing/:stageId/:hearingId",
+  asyncHandler(authMiddleware),
+  asyncHandler(taskController.filterTask)
+);
+
+taskRoute.get(
   "/process_server/get/:assign_to",
   asyncHandler(authMiddleware),
   asyncHandler(taskController.fetchByAssignTo)
