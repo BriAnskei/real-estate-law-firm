@@ -118,6 +118,7 @@ export class AuthApi {
 
       return res.data.accessToken;
     } catch (error) {
+      console.log(error);
       throw error;
     }
   }

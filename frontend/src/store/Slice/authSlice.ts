@@ -31,8 +31,6 @@ export const googleSignIn = createAsyncThunk(
     try {
       const res = await AuthApi.googleSignIn(payload);
 
-      console.log("res: ", res);
-
       if (!res.success) {
         rejectWithValue(res.message);
         return { success: false, message: res.message };

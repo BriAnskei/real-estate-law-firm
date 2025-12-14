@@ -8,6 +8,7 @@ import { UsersService } from "./user.service.js";
 import { CaseService } from "./case.service.js";
 import { NotificationService } from "./notification.service.js";
 import { CaseStageService } from "./case_stage.service.js";
+import { TaskReviewService } from "./task_review.service.js";
 
 const TASK_SELECT_BASE = `
     SELECT 
@@ -34,6 +35,22 @@ const PROCESS_SERVER_TASK_SELECT_BASE = `
       LEFT JOIN client cl ON cl.id = c.client_id
     
 `;
+
+// global dashboard
+const DASHBOARD_SELECT_FIELDS = `
+SELECT
+  t.title      AS task_title,
+  t.stage_name,
+  c.concern    AS case_concern,
+  t.due_date
+`;
+
+type DashboardReturnTypes = {
+  task_title: string;
+  stage_name: string;
+  case_concern: string;
+  due_date: string;
+};
 
 export class TaskService {
   static async add(payload: {
@@ -89,6 +106,134 @@ export class TaskService {
       throw error;
     } finally {
       connection.release();
+    }
+  }
+
+  /**
+   *
+   * for admin dashboard
+   */
+  static async getAllDueTask(): Promise<number> {
+    try {
+      const [res] = await pool.execute<
+        ({
+          due_tasks: number;
+        } & ResultSetHeader)[]
+      >(`SELECT COUNT(*) AS due_tasks
+                FROM tasks
+                WHERE status = 'pending'
+              AND due_date IS NOT NULL
+              AND due_date <= CURDATE();
+`);
+
+      return res[0].due_tasks;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   *
+   * Global dashboard fetcher
+   */
+
+  static async countPendingTasksByUser(userId: string): Promise<number> {
+    try {
+      const [res] = await pool.execute<
+        ({
+          pending_count: number;
+        } & ResultSetHeader)[]
+      >(
+        `SELECT COUNT(*) AS pending_count
+      FROM tasks
+      WHERE
+      assign_to = ?
+      AND status = 'pending'
+`,
+        [userId]
+      );
+
+      return res[0].pending_count;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async fetchOverDueTaskByUser(
+    userId: string
+  ): Promise<DashboardReturnTypes[]> {
+    try {
+      const [rows] = await pool.execute<
+        (DashboardReturnTypes & RowDataPacket)[]
+      >(
+        `
+      ${DASHBOARD_SELECT_FIELDS} FROM tasks t
+    INNER JOIN case_stages cs ON cs.id = t.case_stage_id
+    INNER JOIN cases c ON c.id = cs.case_id
+    WHERE 
+      t.assign_to = ? AND
+      t.status = 'pending'
+      AND t.due_date IS NOT NULL
+      AND t.due_date < CURDATE()
+    ORDER BY t.due_date ASC
+      `,
+        [userId]
+      );
+
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async fetchTasksDueIn3Days(
+    userId: string
+  ): Promise<DashboardReturnTypes[]> {
+    try {
+      const [rows] = await pool.execute<
+        (DashboardReturnTypes & RowDataPacket)[]
+      >(
+        `
+      ${DASHBOARD_SELECT_FIELDS}   FROM tasks t
+    INNER JOIN case_stages cs ON cs.id = t.case_stage_id
+    INNER JOIN cases c ON c.id = cs.case_id
+    WHERE 
+      t.assign_to = ? AND
+      t.status = 'pending'
+      AND t.due_date = DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+    ORDER BY t.due_date ASC
+      `,
+        [userId]
+      );
+
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async fetchTasksDueIn5Days(
+    userId: string
+  ): Promise<DashboardReturnTypes[]> {
+    try {
+      const [rows] = await pool.execute<
+        (DashboardReturnTypes & RowDataPacket)[]
+      >(
+        `
+      ${DASHBOARD_SELECT_FIELDS}  FROM tasks t
+    INNER JOIN case_stages cs ON cs.id = t.case_stage_id
+    INNER JOIN cases c ON c.id = cs.case_id
+    WHERE 
+      t.status = 'pending'
+      AND t.due_date = DATE_ADD(CURDATE(), INTERVAL 5 DAY)
+    ORDER BY t.due_date ASC
+      `,
+        [userId]
+      );
+
+      return rows;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -274,7 +419,7 @@ export class TaskService {
   }
 
   /**
-   * fetch the task that dues are 3-5 days from now on
+   * fetch the task that dues are 3-5 days from now on for notification
    */
   static async fetchAllCloseDueTask(userId: string): Promise<
     {
@@ -505,8 +650,10 @@ WHERE id = ?;
     try {
       await connection.beginTransaction();
 
-      await this.deleteById(id, connection);
+      await NotificationService.deleteByRelatedTaskId(id, connection);
+      await TaskReviewService.deleteByTaskId(id, connection);
       await TaskFileService.delete({ taskId: id }, connection);
+      await this.deleteById(id, connection);
 
       await connection.commit();
     } catch (err) {

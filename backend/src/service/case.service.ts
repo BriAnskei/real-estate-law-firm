@@ -10,6 +10,8 @@ import { TaskFileService } from "./task_file.service.js";
 import { deleteCaseFolder } from "../util/deleteCaseFolderHandler.js";
 import { TaskReviewService } from "./task_review.service.js";
 import { NotificationService } from "./notification.service.js";
+import { HearingService } from "./hearing.service.js";
+import { HearingCancellationService } from "./hearing_cancellation.service.js";
 
 const CASE_STAGE_MODEL_JOIN = ` SELECT 
         c.id AS case_id,
@@ -83,6 +85,64 @@ export class CaseService {
       );
 
       return row.insertId.toString();
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   *
+   * for admin dashboard, returns all the total, active(ongoing), completed cases.
+   */
+
+  static async getAllCasesStatus(): Promise<{
+    total_cases: number;
+    active_cases: number;
+    completed_cases: number;
+  }> {
+    try {
+      const [rows] = await pool.execute<
+        ({
+          total_cases: number;
+          active_cases: number;
+          completed_cases: number;
+        } & RowDataPacket)[]
+      >(
+        `
+      SELECT 
+        COUNT(*) AS total_cases,
+        COALESCE(SUM(status = 'ongoing'), 0) AS active_cases,
+        COALESCE(SUM(status = 'complete'), 0) AS completed_cases
+      FROM cases
+      `
+      );
+
+      return rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async countAllActiveCases(userId: string): Promise<number> {
+    try {
+      const [res] = await pool.execute<
+        (ResultSetHeader & { involved_cases_count: number })[]
+      >(
+        `SELECT COUNT(*) AS involved_cases_count
+          FROM cases c
+          WHERE c.status = 'Ongoing'
+          AND EXISTS (
+          SELECT 1
+          FROM case_stages cs
+          JOIN tasks t ON t.case_stage_id = cs.id
+          WHERE cs.case_id = c.id
+        AND (t.assign_to = ? OR t.assign_by = ?)
+  );
+`,
+        [userId, userId]
+      );
+
+      return res[0].involved_cases_count;
     } catch (error) {
       throw error;
     }
@@ -226,14 +286,14 @@ export class CaseService {
       const whereClause =
         whereParts.length > 0 ? "WHERE " + whereParts.join(" AND ") : "";
 
-      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(
-        `
-    SELECT *
+      const sqlQuery = `SELECT *
     FROM cases
         ${whereClause}
     ORDER BY ${sortFilter} ${sortFilter === "created_at" ? "DESC" : "ASC"}
-    LIMIT ? OFFSET ? 
-        `,
+    LIMIT ? OFFSET ? `;
+
+      const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(
+        sqlQuery,
         [...params, limit, offset]
       );
 
@@ -628,13 +688,13 @@ export class CaseService {
 
     try {
       await connection.beginTransaction();
-
+      await NotificationService.deleteByRelatedCaseId(id, connection);
       await TaskReviewService.deleteByCaseId(id, connection);
+      await HearingService.deleteAllByCaseId(id, connection);
+
       await TaskFileService.deleteAllByCaseId(id, connection);
       await TaskService.deleteAllByCaseId(id, connection);
       await CaseStageService.deleteAllByCaseId(id, connection);
-
-      await NotificationService.deleteByRelatedCaseId(id, connection);
 
       await this.deleteCaseById(id, connection);
 

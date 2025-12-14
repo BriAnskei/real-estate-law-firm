@@ -16,6 +16,7 @@ import hearingRoute from "./route/hearing.route.js";
 import postponed_historyRouter from "./route/postponed_history.router.js";
 import hearingCancellationRouter from "./route/hearing_cancellation.router.js";
 import notificationRoute from "./route/notification.router.js";
+import dashboardRoute from "./route/dashboard.route.js";
 
 const app = express();
 const PORT = 4000;
@@ -25,6 +26,9 @@ app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 app.use("/api/auth", authRouter);
+
+app.use("/api/dashboard", dashboardRoute);
+
 app.use("/api/user", userRouter);
 app.use("/api/registration", registrationRouter);
 

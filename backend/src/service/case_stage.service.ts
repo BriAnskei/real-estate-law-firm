@@ -32,6 +32,34 @@ export class CaseStageService {
     }
   }
 
+  /**
+   * for admin dashboard
+   */
+  static async getOngoingCasesStageSummary(): Promise<{
+    MANAGE_REQUIREMENTS: number;
+    FILING_DOCS: number;
+    HEARING: number;
+  }> {
+    const [rows] = await pool.execute<
+      (RowDataPacket & {
+        MANAGE_REQUIREMENTS: number;
+        FILING_DOCS: number;
+        HEARING: number;
+      })[]
+    >(
+      `
+    SELECT
+      COALESCE(SUM(stage_name = 'MANAGE_REQUIREMENTS'), 0) AS MANAGE_REQUIREMENTS,
+      COALESCE(SUM(stage_name = 'FILING_DOCS'), 0) AS FILING_DOCS,
+      COALESCE(SUM(stage_name = 'HEARING'), 0) AS HEARING
+    FROM case_stages
+    WHERE stage_status = 'ongoing'
+    `
+    );
+
+    return rows[0];
+  }
+
   static async getAllCaseStages(id: string): Promise<{
     requirementsStage: CaseStageModel;
     documentsStage: CaseStageModel;

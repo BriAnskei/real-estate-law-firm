@@ -376,10 +376,8 @@ const caseSlice = createSlice({
     setFilterCases: (state, action) => {
       const { allIds, byId } = normalizeResponse(action.payload.data);
 
-      const newIds = allIds.filter((id) => !state.filterIds.includes(id));
-
-      state.filterIds = [...state.filterIds, ...newIds];
-      state.filterById = { ...state.filterById, ...byId };
+      state.filterIds = allIds;
+      state.filterById = byId;
 
       state.filterCurrentPage = action.payload.currentPage;
       state.filterTotalPage = action.payload.totalPages;

@@ -374,25 +374,27 @@ export const CaseTransactionProvider: React.FC<{
     if (isTaskOnFiltered) {
       setTaskloading(true);
       const stageData = getStageData(activeTab as Exclude<TabTypes, "details">);
+
+      const isHearingFilter = activeTab === "hearings";
+
       debouncerFilterRef.current!({
         filter: taskFilterOption,
         stageId: stageData!.id!,
+        stage_name: stageData?.stage_name,
+        ...(isHearingFilter && { hearingId: selectedHearing?.id }),
       });
     }
-  }, [taskFilterOption, isTaskOnFiltered, activeTab]);
+  }, [taskFilterOption, isTaskOnFiltered, activeTab, selectedHearing]);
 
   const handleTaskFilter = useCallback(
     async (payload: {
       filter: Exclude<TaskFilterType, "all">;
       stageId: string;
       stage_name: Stages;
+      hearingId?: string; // filled if we are in the hearing filter
     }) => {
       try {
-        const response = await TaskApi.filterTask({
-          ...payload,
-          ...(payload.stage_name === "HEARING" &&
-            selectedHearing && { hearingId: selectedHearing.id! }),
-        });
+        const response = await TaskApi.filterTask(payload);
 
         setFilteredTask(response);
       } catch (error) {

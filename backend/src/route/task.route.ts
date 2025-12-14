@@ -49,7 +49,7 @@ taskRoute.get(
 );
 
 taskRoute.get(
-  "/filter/hearing/:stageId/:hearingId",
+  "/filter/:stageId/hearing/:hearingId",
   asyncHandler(authMiddleware),
   asyncHandler(taskController.filterTask)
 );

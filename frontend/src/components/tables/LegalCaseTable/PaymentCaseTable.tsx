@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, Clock } from "lucide-react";
 import {
   TableHeader,
   TableRow,
@@ -8,7 +8,7 @@ import {
 } from "../../ui/table";
 import { CaseType } from "../../../store/Slice/case.slice";
 import { MarkPaidCaseDetialsType } from "../../../hooks/case/payments/useMarkPaidModal";
-import { formatDateTime } from "../../../util/DateDecoder";
+import { formatDate } from "../../../util/DateDecoder";
 
 type PaymentsTableProp = {
   byId: Record<string, CaseType>;
@@ -192,7 +192,7 @@ function TableHeaders() {
           isHeader
           className="px-5 py-3 font-medium text-[#D4AF37] text-start text-xs dark:text-[#D4AF37]"
         >
-          Date Filed
+          Promise to Pay
         </TableCell>
         <TableCell
           isHeader
@@ -203,6 +203,17 @@ function TableHeaders() {
       </TableRow>
     </TableHeader>
   );
+}
+
+function isOverdue(dateString: string): boolean {
+  const promiseDate = new Date(dateString);
+  const today = new Date();
+
+  // Reset time to compare dates only
+  promiseDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  return promiseDate <= today;
 }
 
 function TableRows({
@@ -252,6 +263,34 @@ function TableRows({
     return null;
   };
 
+  const getPromiseToPayDisplay = () => {
+    if (caseItem.paid === "paid" || !caseItem.promise_to_pay) {
+      return (
+        <span className="text-gray-500 dark:text-gray-400 text-sm">N/A</span>
+      );
+    }
+
+    const overdue = isOverdue(caseItem.promise_to_pay);
+    const formattedDate = formatDate(caseItem.promise_to_pay);
+
+    if (overdue) {
+      return (
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
+          <Clock className="w-4 h-4 text-red-600 dark:text-red-400" />
+          <span className="text-sm font-bold text-red-600 dark:text-red-400">
+            {formattedDate}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <span className="text-gray-500 dark:text-gray-400 text-sm">
+        {formattedDate}
+      </span>
+    );
+  };
+
   return (
     <TableRow
       key={caseItem.id}
@@ -265,8 +304,8 @@ function TableRows({
       <TableCell className="px-5 py-4 text-gray-500 text-start text-sm dark:text-gray-400">
         {caseItem.concern}
       </TableCell>
-      <TableCell className="px-5 py-4 text-gray-500 text-start text-sm dark:text-gray-400">
-        {formatDateTime(caseItem.created_at!)}
+      <TableCell className="px-5 py-4 text-start">
+        {getPromiseToPayDisplay()}
       </TableCell>
       <TableCell className="px-5 py-4 text-start">
         {getPaymentStatusDisplay(caseItem.paid)}

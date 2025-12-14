@@ -4,7 +4,7 @@ import { users } from "../model/user.model.js";
 import { PasswordUtils } from "../util/password.util.js";
 import { ResponseType, SignInPayload } from "../types/auth.types.js";
 import { Roles } from "../model/registration_request.model.js";
-import { PoolConnection } from "mysql2/promise";
+import { PoolConnection, ResultSetHeader } from "mysql2/promise";
 
 export class UsersService {
   static async createUser(user: users): Promise<void> {
@@ -25,6 +25,21 @@ export class UsersService {
           user.provider ?? "manual",
         ]
       );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getAllTotalUsers(): Promise<number> {
+    try {
+      const [res] = await pool.query<
+        (ResultSetHeader & { total_users: number })[]
+      >(`
+       SELECT COUNT(*) AS total_users
+    FROM users
+        `);
+
+      return res[0].total_users;
     } catch (error) {
       throw error;
     }

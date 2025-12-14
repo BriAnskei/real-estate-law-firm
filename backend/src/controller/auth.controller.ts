@@ -148,6 +148,7 @@ export class AuthController {
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
       });
+      throw error;
     }
   }
 }

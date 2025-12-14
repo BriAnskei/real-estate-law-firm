@@ -49,6 +49,61 @@ export class HearingService {
     }
   }
 
+  static async getUpcomingHearings(): Promise<
+    {
+      case_concern: string;
+      hearing_type: string;
+      scheduled_date: Date;
+    }[]
+  > {
+    try {
+      const [rows] = await pool.execute<
+        (RowDataPacket & {
+          case_concern: string;
+          hearing_type: string;
+          scheduled_date: Date;
+        })[]
+      >(
+        `
+      SELECT
+        c.concern AS case_concern,
+        h.type AS hearing_type,
+        h.scheduled_date
+      FROM hearings h
+      INNER JOIN cases c ON c.id = h.case_id
+      WHERE h.status = 'scheduled'
+        AND h.scheduled_date >= NOW()
+        AND h.scheduled_date <= DATE_ADD(NOW(), INTERVAL 7 DAY)
+      ORDER BY h.scheduled_date ASC
+      `
+      );
+
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getUpcomingHearingsCount(): Promise<number> {
+    try {
+      const [rows] = await pool.execute<
+        (RowDataPacket & { upcoming_hearings_count: number })[]
+      >(
+        `
+      SELECT COUNT(*) AS upcoming_hearings_count
+      FROM hearings
+      WHERE status = 'scheduled'
+        AND scheduled_date >= NOW()
+        AND scheduled_date <= DATE_ADD(NOW(), INTERVAL 7 DAY)
+      `
+      );
+
+      return rows[0].upcoming_hearings_count;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getAllByCaseId(caseId: string): Promise<HearingModel[]> {
     try {
       const [rows] = await pool.execute<(HearingModel & RowDataPacket)[]>(

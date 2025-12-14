@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserCircle, Bell } from "lucide-react";
+import { UserCircle, Bell, Scale } from "lucide-react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useNotifications } from "../../context/NotificationContext";
@@ -16,6 +16,7 @@ export default function NotificationDropdown() {
     notifications,
     getCategoryLabel,
     getRelativeTime,
+    getNotificationIcon,
   } = useNotifications();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -105,7 +106,7 @@ export default function NotificationDropdown() {
                   }`}
                 >
                   <span className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex-shrink-0">
-                    <UserCircle className="w-6 h-6 text-[#D4AF37]" />
+                    {getNotificationIcon(notification.type)}
                     {!notification.is_read && (
                       <span className="absolute bottom-0 right-0 z-10 h-2.5 w-2.5 rounded-full border-[1.5px] border-white bg-[#D4AF37] dark:border-gray-900"></span>
                     )}

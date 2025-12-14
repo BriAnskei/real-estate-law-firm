@@ -42,7 +42,7 @@ export class TaskReviewService {
           connection
         );
       } else {
-        // if the review type is executed function, we only notify the assigner
+        // if the review type is 'executed' function, we only notify the assigner
         await NotificationService.taskExecuted(newReview.task_id, connection);
       }
 
@@ -124,6 +124,25 @@ export class TaskReviewService {
       );
 
       return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async deleteByTaskId(
+    taskId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      const [result] = await connection.execute<ResultSetHeader>(
+        `
+        DELETE FROM task_reviews 
+        WHERE task_id = ?
+        `,
+        [taskId]
+      );
+
+      if (result.affectedRows === 0) throw new Error("Notification not found");
     } catch (error) {
       throw error;
     }

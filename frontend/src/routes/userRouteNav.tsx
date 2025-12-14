@@ -19,6 +19,8 @@ import ProccessServerTaskPage from "../pages/LegalCase/ProccessServerTaskPage";
 
 import PaymentsPage from "../pages/LegalCase/CasePaymentPage";
 import NotificationsPage from "../pages/Notification/NotificationPage";
+import AdminDashboard from "../pages/Dashboard/AdminDashboard";
+import Dashboard from "../pages/Dashboard/Dashboard";
 
 export type NavItem = {
   name: string;
@@ -151,7 +153,7 @@ type AppRoutes = {
 
 export const appRoutes: Record<Roles, AppRoutes[]> = {
   [Roles.foundingManager]: [
-    { path: "/", element: <Home /> },
+    { path: "/", element: <AdminDashboard /> },
 
     // cases
     { path: "/consultation", element: <ConsultationPage /> },
@@ -166,7 +168,7 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/notification", element: <NotificationsPage /> },
   ],
   [Roles.lawyer]: [
-    { path: "/", element: <Home /> },
+    { path: "/", element: <Dashboard /> },
 
     // cases
     { path: "/consultation", element: <ConsultationPage /> },
@@ -176,7 +178,7 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/notification", element: <NotificationsPage /> },
   ],
   [Roles.paralegal]: [
-    { path: "/", element: <Home /> },
+    { path: "/", element: <Dashboard /> },
 
     // cases
     { path: "/consultation", element: <ConsultationPage /> },

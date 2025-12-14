@@ -145,7 +145,7 @@ export class NotificationService {
       await this.caseRelatedNotification(
         {
           related_case_id: caseId,
-          message: `The case "${caseData?.concern}" has completed all required procedures and is now designated as Completed.`,
+          message: `The case "${caseData?.concern}" has completed all required procedures and is now marked as complete.`,
           type: "CASE_COMPLETION",
         },
         connection
@@ -521,6 +521,9 @@ export class NotificationService {
         connection
       );
 
+      // check if the task is assgin the one user, if so there is no need for notification
+      if (taskData.assign_by === taskData.assign_to) return;
+
       // Include either the assignee or the assigner if one is missing.
       // At least one of them must be present to ensure the notification
       // is sent to the correct user.
@@ -741,6 +744,25 @@ export class NotificationService {
       if (result.affectedRows === 0) throw new Error("Notification not found");
     } catch (error) {
       console.error(error);
+      throw error;
+    }
+  }
+
+  static async deleteByRelatedTaskId(
+    taskId: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    try {
+      const [result] = await connection.execute<ResultSetHeader>(
+        `
+        DELETE FROM notifications 
+        WHERE related_task_id = ?
+        `,
+        [taskId]
+      );
+
+      if (result.affectedRows === 0) throw new Error("Notification not found");
+    } catch (error) {
       throw error;
     }
   }

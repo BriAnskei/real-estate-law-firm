@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  JSX,
   useCallback,
   useContext,
   useEffect,
@@ -10,6 +11,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
 import { NotificationApi } from "../util/api/notification.api";
 import { useToast } from "../hooks/useToast";
+import { Scale, UserCircle } from "lucide-react";
 
 type NotificationContextType = {
   notifications: NotificationType[];
@@ -21,6 +23,8 @@ type NotificationContextType = {
   // helper helper functions
   getCategoryLabel: (type: notificationType) => string;
   getRelativeTime: (timestamp: string) => string;
+
+  getNotificationIcon: (type: string) => JSX.Element;
 };
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -118,6 +122,22 @@ export const NotificationContextProvider: React.FC<{
     }
   };
 
+  const getNotificationIcon = (type: string) => {
+    const caseTypes = [
+      "CASE_CONSULTATION",
+      "ONGOING_CASE",
+      "CASE_COMPLETION",
+      "CASE_STAGE_STATUS",
+    ];
+
+    if (caseTypes.includes(type)) {
+      return <Scale className="w-6 h-6 text-[#D4AF37]" />;
+    }
+
+    // For TASK_RELATED and ACCOUNTS_RELATED
+    return <UserCircle className="w-6 h-6 text-[#D4AF37]" />;
+  };
+
   const getRelativeTime = (timestamp: string): string => {
     const now = Date.now();
     const then = new Date(timestamp).getTime();
@@ -143,6 +163,8 @@ export const NotificationContextProvider: React.FC<{
 
         getCategoryLabel,
         getRelativeTime,
+
+        getNotificationIcon,
       }}
     >
       {children}

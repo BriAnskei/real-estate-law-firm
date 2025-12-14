@@ -23,6 +23,7 @@ import ViewTaskPage from "./pages/LegalCase/ViewTaskPage";
 import HearingsPage from "./pages/LegalCase/CaseHearingPage";
 import ProcessServerTaskView from "./pages/ProcessServer/ProcessServerTaskView";
 import { NotificationContextProvider } from "./context/NotificationContext";
+import { DashboardProvider } from "./context/DashboardContext";
 
 function isCaseTransactionRole(role: Roles): role is CaseTransactionRoles {
   return role !== Roles.processServer;
@@ -36,9 +37,8 @@ const AppRoutes = () => {
 
   const user = useSelector(selectCurrentUser);
 
-  if (!user && (refreshLoading || loading || isAuthenticated)) {
+  if (!user && (refreshLoading || loading || isAuthenticated))
     return <AppInitializationLoader isLoading />;
-  }
 
   return (
     <Routes>
@@ -106,9 +106,11 @@ export default function App() {
     <>
       <AuthProvider>
         <NotificationContextProvider>
-          <AppRoutes />
+          <DashboardProvider>
+            <AppRoutes />
 
-          <Toaster position="top-left" />
+            <Toaster position="top-left" />
+          </DashboardProvider>
         </NotificationContextProvider>
       </AuthProvider>
     </>

@@ -1,12 +1,8 @@
 import { useState } from "react";
-import { UserCircle, Bell, Filter, Check } from "lucide-react";
+import { Bell, Filter, Check } from "lucide-react";
 import { useNotifications } from "../../context/NotificationContext";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "../../store/selector/user/userSelector";
-import { Roles } from "../../store/Slice/userSlice";
 
 export default function NotificationsPage() {
-  const currUser = useSelector(selectCurrentUser);
   const {
     notificationLoading,
     notifications,
@@ -15,6 +11,8 @@ export default function NotificationsPage() {
 
     markAllAsRead,
     markAsRead,
+
+    getNotificationIcon,
   } = useNotifications();
 
   const [filterOpen, setFilterOpen] = useState(false);
@@ -29,8 +27,6 @@ export default function NotificationsPage() {
     setSelectedFilter(filter);
     setFilterOpen(false);
   };
-
-  // Placeholder function for marking a notification as read
 
   // Filter notifications based on selected filter
   const filteredNotifications = notifications.filter((notification) => {
@@ -151,7 +147,7 @@ export default function NotificationsPage() {
                   }`}
                 >
                   <span className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex-shrink-0">
-                    <UserCircle className="w-6 h-6 text-[#D4AF37]" />
+                    {getNotificationIcon(notification.type)}
                     {!notification.is_read && (
                       <span className="absolute bottom-0 right-0 z-10 h-2.5 w-2.5 rounded-full border-[1.5px] border-white bg-[#D4AF37] dark:border-gray-900"></span>
                     )}
