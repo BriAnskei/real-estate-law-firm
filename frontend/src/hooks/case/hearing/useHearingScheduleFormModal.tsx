@@ -5,6 +5,7 @@ import { HearingApi } from "../../../util/api/hearing.api";
 import { HearingType } from "../../../types/HearingTypes";
 import { useParams } from "react-router";
 import { decodeInputDateAndTimeToDate } from "../../../util/DateDecoder";
+import { useCaseTransaction } from "../../../context/CaseTransactionContext";
 
 export type HearingInputType = {
   id?: string;
@@ -27,6 +28,8 @@ const useHearingScheduleFormModal = ({
   addNewHearing: (payload: HearingType) => void;
   updateHearingType: (payload: { id: string; newType: string }) => void;
 }) => {
+  const { setSelectedHearingSched } = useCaseTransaction();
+
   const { id } = useParams();
   const { promiseToast, errorToast } = useToast();
 
@@ -82,6 +85,8 @@ const useHearingScheduleFormModal = ({
         scheduled_date: decodeInputDateAndTimeToDate(input.date, input.time),
       },
     });
+
+    setSelectedHearingSched({ hearingData: response, hearingId: response.id! });
 
     addNewHearing(response);
   }, [handleSubmit]);

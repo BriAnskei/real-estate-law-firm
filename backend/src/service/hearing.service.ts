@@ -7,6 +7,7 @@ import { HearingCancellationService } from "./hearing_cancellation.service.js";
 import { ResponseType } from "../types/auth.types.js";
 import { TaskService } from "./task.service.js";
 import { NotificationService } from "./notification.service.js";
+import { CaseStageService } from "./case_stage.service.js";
 
 const HEARING_SELECT_BASE = `
     SELECT 
@@ -32,6 +33,11 @@ export class HearingService {
         `,
         [hearingData.case_id, hearingData.type, hearingData.scheduled_date]
       );
+
+      await CaseStageService.processSelectHearingSched({
+        case_id: hearingData.case_id,
+        hearingId: row.insertId.toString(),
+      });
 
       await NotificationService.caseNewHearing(
         {

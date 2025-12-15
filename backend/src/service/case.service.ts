@@ -664,8 +664,11 @@ export class CaseService {
     id: string,
     connection?: PoolConnection
   ): Promise<void> {
+    const sqlConnection = connection ?? (await pool.getConnection());
     try {
-      const sqlConnection = connection ?? pool;
+      if (!connection) await sqlConnection.beginTransaction();
+      await NotificationService.deleteByRelatedCaseId(id, connection);
+
       const [res] = await sqlConnection.execute<ResultSetHeader>(
         `
         DELETE FROM cases WHERE id = ?
@@ -673,10 +676,16 @@ export class CaseService {
         [id]
       );
 
+      if (!connection) await sqlConnection.commit();
+
       if (res.affectedRows === 0) throw new Error("Case not found");
     } catch (error) {
+      if (!connection) await sqlConnection.rollback();
+
       console.error(error);
       throw error;
+    } finally {
+      if (!connection) sqlConnection.release();
     }
   }
 

@@ -26,6 +26,58 @@ type MyTasksCardProps = {
   loading: boolean;
 };
 
+const renderSkeletonTask = (key: number) => (
+  <div
+    key={key}
+    className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50 p-4 mb-3"
+  >
+    <div className="flex items-start justify-between mb-2">
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse"></div>
+      <div className="h-6 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+    </div>
+
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse"></div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const renderLoadingState = () => (
+  <>
+    <div className="mb-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+      </div>
+      {[1, 2].map((i) => renderSkeletonTask(i))}
+    </div>
+
+    <div className="mb-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+      </div>
+      {[3, 4].map((i) => renderSkeletonTask(i))}
+    </div>
+
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+      </div>
+      {[5, 6].map((i) => renderSkeletonTask(i))}
+    </div>
+  </>
+);
+
 const MyTasksCard: FC<MyTasksCardProps> = ({
   overDueTasks,
   dueIn3Days,
@@ -112,58 +164,6 @@ const MyTasksCard: FC<MyTasksCardProps> = ({
     </div>
   );
 
-  const renderSkeletonTask = (key: number) => (
-    <div
-      key={key}
-      className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50 p-4 mb-3"
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse"></div>
-        <div className="h-6 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse"></div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse"></div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderLoadingState = () => (
-    <>
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
-        </div>
-        {[1, 2].map((i) => renderSkeletonTask(i))}
-      </div>
-
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
-        </div>
-        {[3, 4].map((i) => renderSkeletonTask(i))}
-      </div>
-
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
-        </div>
-        {[5, 6].map((i) => renderSkeletonTask(i))}
-      </div>
-    </>
-  );
-
   return (
     <div
       className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 flex flex-col"
@@ -179,8 +179,7 @@ const MyTasksCard: FC<MyTasksCardProps> = ({
         </p>
       </div>
 
-      {/* Lists */}
-      <div className="overflow-y-auto flex-1 space-y-6">
+      <div className="overflow-y-auto flex-1 space-y-6 custom-scrollbar">
         {isComponentReady ? (
           renderLoadingState()
         ) : hasNoTasks ? (
@@ -236,6 +235,44 @@ const MyTasksCard: FC<MyTasksCardProps> = ({
           </>
         )}
       </div>
+      <style>{`
+        /* Custom Scrollbar Styling */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+          border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+          transition: background 0.3s ease;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #4b5563;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #6b7280;
+        }
+
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .dark .custom-scrollbar {
+          scrollbar-color: #4b5563 transparent;
+        }
+      `}</style>
     </div>
   );
 };

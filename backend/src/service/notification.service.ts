@@ -14,6 +14,7 @@ import { TaskReviewService } from "./task_review.service.js";
 import { HearingService } from "./hearing.service.js";
 import { TaskFileService } from "./task_file.service.js";
 import { TaskType } from "../model/taskModel.js";
+import { TaskNotificationService } from "./task_notification.service.js";
 
 /**
  *
@@ -644,6 +645,24 @@ export class NotificationService {
       if (!closeDueTasks.length) return;
 
       for (let closetsk of closeDueTasks) {
+        // check if the notification was already send
+        if (closetsk.days_remaining === 3) {
+          const isAllreadyNotified =
+            await TaskNotificationService.is3DaysNotified(Number(closetsk.id));
+          if (isAllreadyNotified) {
+            continue;
+          }
+
+          await TaskNotificationService.mark3DaysNotified(Number(closetsk.id));
+        } else if (closetsk.days_remaining === 5) {
+          const isAllreadyNotified =
+            await TaskNotificationService.is5DaysNotified(Number(closetsk.id));
+          if (isAllreadyNotified) {
+            continue;
+          }
+          await TaskNotificationService.mark5DaysNotified(Number(closetsk.id));
+        }
+
         const stageData = await CaseStageService.findById(
           closetsk.case_stage_id
         );
@@ -760,8 +779,6 @@ export class NotificationService {
         `,
         [taskId]
       );
-
-      if (result.affectedRows === 0) throw new Error("Notification not found");
     } catch (error) {
       throw error;
     }

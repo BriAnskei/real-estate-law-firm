@@ -226,12 +226,11 @@ export default function ConsultationPage() {
                       return (
                         <div
                           key={id}
-                          className="group relative flex h-full flex-col 
-
+                          className="group relative flex flex-col 
                           rounded-lg border-2 border-gray-200 bg-white p-6
                            transition-all duration-300 hover:border-[#D4AF37] 
                            hover:shadow-lg dark:border-gray-700 dark:bg-gray-800
-                            dark:hover:border-[#D4AF37]"
+                            dark:hover:border-[#D4AF37] h-[380px]"
                           style={{
                             animation: `fadeIn 0.3s ease-out ${
                               index * 0.1
@@ -287,13 +286,16 @@ export default function ConsultationPage() {
                           {/* Gold Accent Line */}
                           <div className="h-px w-12 bg-[#D4AF37] mb-4"></div>
 
-                          {/* Description */}
+                          {/* Description - Truncated to 2 lines */}
                           <p
-                            className="mb-5 flex-1 text-sm leading-relaxed
-                           text-gray-600 dark:text-gray-300"
+                            className="mb-5 text-sm leading-relaxed
+                           text-gray-600 dark:text-gray-300 line-clamp-2"
                           >
                             {caseData.description}
                           </p>
+
+                          {/* Spacer to push content to bottom */}
+                          <div className="flex-1"></div>
 
                           {/* Client Info */}
                           <div

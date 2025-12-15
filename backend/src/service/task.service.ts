@@ -9,6 +9,7 @@ import { CaseService } from "./case.service.js";
 import { NotificationService } from "./notification.service.js";
 import { CaseStageService } from "./case_stage.service.js";
 import { TaskReviewService } from "./task_review.service.js";
+import { TaskNotificationService } from "./task_notification.service.js";
 
 const TASK_SELECT_BASE = `
     SELECT 
@@ -85,19 +86,23 @@ export class TaskService {
         ]
       );
 
-      await NotificationService.newTaskNotification(
-        {
-          user_id: taskData.assign_to,
-          related_case_id: taskDetials.case_id,
-          related_task_id: row.insertId.toString(),
-          task_title: taskData.title,
+      await TaskNotificationService.add(row.insertId, connection);
 
-          case_concern: taskDetials.case_concern,
-          assignerName: taskDetials.assignerName,
-        },
-        connection
-      );
+      // dont add a notification if the assign assgin to himself
+      if (Number(taskData.assign_by) !== Number(taskData.assign_to)) {
+        await NotificationService.newTaskNotification(
+          {
+            user_id: taskData.assign_to,
+            related_case_id: taskDetials.case_id,
+            related_task_id: row.insertId.toString(),
+            task_title: taskData.title,
 
+            case_concern: taskDetials.case_concern,
+            assignerName: taskDetials.assignerName,
+          },
+          connection
+        );
+      }
       await connection.commit();
       return await this.findById({ id: row.insertId.toString() });
     } catch (error) {
@@ -427,7 +432,7 @@ export class TaskService {
       title: string;
       case_stage_id: string;
       due_date: string;
-      days_remaining: string;
+      days_remaining: number;
     }[]
   > {
     try {
@@ -437,11 +442,11 @@ export class TaskService {
           title: string;
           case_stage_id: string;
           due_date: string;
-          days_remaining: string;
+          days_remaining: number;
         } & RowDataPacket)[]
       >(
         ` 
-     SELECT 
+ SELECT 
     id,
     title,
     case_stage_id,
@@ -450,10 +455,10 @@ export class TaskService {
 FROM 
     tasks
 WHERE
-   assign_to  = ? AND
-    status = 'pending'
-    AND due_date BETWEEN CURDATE() + INTERVAL 3 DAY
-                      AND CURDATE() + INTERVAL 5 DAY;
+    assign_to = ?
+    AND status = 'pending'
+    AND DATEDIFF(due_date, CURDATE()) IN (3, 5);
+
 
         `,
         [userId]
@@ -650,6 +655,7 @@ WHERE id = ?;
     try {
       await connection.beginTransaction();
 
+      await TaskNotificationService.delete(Number(id), connection);
       await NotificationService.deleteByRelatedTaskId(id, connection);
       await TaskReviewService.deleteByTaskId(id, connection);
       await TaskFileService.delete({ taskId: id }, connection);

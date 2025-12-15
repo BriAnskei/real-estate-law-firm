@@ -141,8 +141,6 @@ export class TaskReviewService {
         `,
         [taskId]
       );
-
-      if (result.affectedRows === 0) throw new Error("Notification not found");
     } catch (error) {
       throw error;
     }

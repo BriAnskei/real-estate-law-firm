@@ -184,7 +184,7 @@ export function ViewCaseModal({
                 onClick={onConfirm}
                 className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#C4A037] active:scale-95"
               >
-                Confirm & Move to Ongoing
+                Confirm
               </button>
             )}
           </div>
