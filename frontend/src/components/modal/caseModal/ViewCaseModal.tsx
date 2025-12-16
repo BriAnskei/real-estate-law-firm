@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import { useState } from "react";
 import { CaseType } from "../../../store/Slice/case.slice";
 import {
   dateDisplay,

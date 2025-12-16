@@ -4,7 +4,6 @@ import PageMeta from "../../components/common/PageMeta";
 import usePayments from "../../hooks/case/payments/usePaymentDisplayData";
 import PaymentsTable from "../../components/tables/LegalCaseTable/PaymentCaseTable";
 import { MarkAsPaidModal } from "../../components/modal/caseModal/MarkAsPaidModal";
-import { CaseType } from "../../store/Slice/case.slice";
 import useMarkPaidModal from "../../hooks/case/payments/useMarkPaidModal";
 
 export default function PaymentsPage() {
@@ -18,8 +17,6 @@ export default function PaymentsPage() {
     setPaidType,
 
     clearFilterInput,
-    markAsPaid,
-    viewPaymentDetails,
   } = usePayments();
 
   const markPaidModalState = useMarkPaidModal();

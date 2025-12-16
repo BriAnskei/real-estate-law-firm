@@ -1,4 +1,3 @@
-import React from "react";
 import { X, User, Mail, Phone, MapPin } from "lucide-react";
 import { ClientType } from "../../../store/Slice/client.slice";
 

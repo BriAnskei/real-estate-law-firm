@@ -1,6 +1,5 @@
 import { CheckCircle, X, User, Mail, UserCog } from "lucide-react";
 import Button from "../../ui/button/Button";
-import { Modal } from "../../ui/modal";
 
 type Roles =
   | "founding-manager/admin"

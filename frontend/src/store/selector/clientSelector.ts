@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import { clientAdapter, filteredClientAdapter } from "../Slice/client.slice";
 import { RootState } from "../store";
 

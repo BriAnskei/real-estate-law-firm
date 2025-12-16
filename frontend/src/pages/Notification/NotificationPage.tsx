@@ -4,7 +4,6 @@ import { useNotifications } from "../../context/NotificationContext";
 
 export default function NotificationsPage() {
   const {
-    notificationLoading,
     notifications,
     getCategoryLabel,
     getRelativeTime,

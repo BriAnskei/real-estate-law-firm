@@ -1,9 +1,7 @@
-import { useEffect } from "react";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { DeleteClientModal } from "../../components/modal/caseModal/deleteClientModal";
-import AllAccountsTable from "../../components/tables/adminTables/AllAccountsTable";
 import ClientsTable from "../../components/tables/LegalCaseTable/ClientTable";
 import { useClient } from "../../hooks/case/client/useClients";
 import { useSelector } from "react-redux";

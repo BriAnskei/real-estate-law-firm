@@ -7,7 +7,7 @@ import { useToast } from "./useToast";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
-import { googleSignUp, signIn, signUp } from "../store/Slice/authSlice";
+import { googleSignUp, signUp } from "../store/Slice/authSlice";
 
 export type SignUpInputType = {
   role:
@@ -34,7 +34,7 @@ const useSignUpVerification = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { errorToast, successToast, promiseToast } = useToast();
+  const { errorToast, promiseToast } = useToast();
   const [signUpInput, setSignUpInput] = useState<SignUpInputType>(initialInput);
 
   const handleSignUpOnchange =

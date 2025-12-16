@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ProcessServerTask } from "../../types/ProcessServerTaskType";
+
 import { useNavigate, useParams } from "react-router";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../store/selector/user/userSelector";

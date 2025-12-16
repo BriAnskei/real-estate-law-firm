@@ -6,7 +6,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { FC, useCallback, useMemo } from "react";
+import { FC, useMemo } from "react";
 import { StageDistibutionCount } from "../../../context/DashboardContext";
 
 /* ----------------------------- Types ----------------------------- */

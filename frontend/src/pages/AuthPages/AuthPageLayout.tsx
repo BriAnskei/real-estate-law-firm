@@ -1,4 +1,3 @@
-import React from "react";
 import { ThemeToggleButton } from "../../components/common/ThemeToggleButton";
 import { Outlet } from "react-router";
 

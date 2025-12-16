@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { Link, replace, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
-import { clearAuth, signOut } from "../../store/Slice/authSlice";
+import { signOut } from "../../store/Slice/authSlice";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../store/selector/user/userSelector";
 import { Roles } from "../../store/Slice/userSlice";

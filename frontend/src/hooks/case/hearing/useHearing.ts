@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-
+import { useCallback, useEffect, useState } from "react";
 import { HearingStatusType, HearingType } from "../../../types/HearingTypes";
 import { useCaseTransaction } from "../../../context/CaseTransactionContext";
 import { useParams } from "react-router";

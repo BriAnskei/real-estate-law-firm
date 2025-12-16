@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CaseType,
   clearCaseFilter,
-  filterActiveCases,
   filterPayments,
   getActiveCases,
 } from "../../../store/Slice/case.slice";

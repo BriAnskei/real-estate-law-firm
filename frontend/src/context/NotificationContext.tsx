@@ -10,7 +10,6 @@ import { notificationType, NotificationType } from "../types/NotificationType";
 import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
 import { NotificationApi } from "../util/api/notification.api";
-import { useToast } from "../hooks/useToast";
 import { Scale, UserCircle } from "lucide-react";
 
 type NotificationContextType = {

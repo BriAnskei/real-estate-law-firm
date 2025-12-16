@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { createChangeHandler } from "../../util/createOnChangeHandler";
 import { addNewCase, CaseType, updateCase } from "../../store/Slice/case.slice";
 import { AppDispatch, RootState } from "../../store/store";

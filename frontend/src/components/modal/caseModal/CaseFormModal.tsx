@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import React, { useEffect } from "react";
+import React from "react";
 import { CaseType } from "../../../store/Slice/case.slice";
 import { ClientFormType } from "../../../store/Slice/client.slice";
 

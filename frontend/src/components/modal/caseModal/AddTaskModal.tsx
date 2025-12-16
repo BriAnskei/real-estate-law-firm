@@ -1,7 +1,7 @@
 import { X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Roles, UserType } from "../../../store/Slice/userSlice";
-import { TaskFormType } from "../../../hooks/case/ongoing/useCaseStages";
+import { TaskFormType } from "../../../hooks/case/ongoing/useTaskForm";
 
 type AddTaskModalProps = {
   isOpen: boolean;

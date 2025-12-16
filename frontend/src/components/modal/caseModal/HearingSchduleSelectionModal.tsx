@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { X, Search, Calendar, CheckCircle2 } from "lucide-react";
 import { HearingType } from "../../../types/HearingTypes";
 import { HearingStatus } from "../../../hooks/case/hearing/useHearing";

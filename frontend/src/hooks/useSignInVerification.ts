@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { createChangeHandler } from "../util/createOnChangeHandler";
-import { signInWithPopup, signInWithRedirect } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../provider/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
 import { googleSignIn, signIn } from "../store/Slice/authSlice";
 import { useToast } from "./useToast";
-import { useNavigate } from "react-router";
 
 export type SignInInputType = {
   role:
@@ -90,10 +89,6 @@ const useSignInVerification = () => {
       }
     } catch (error) {
       console.log("errorr: ", error);
-
-      const res = await signInWithRedirect(auth, provider);
-
-      // TODO: implement this functionnallity too.
     }
   };
 

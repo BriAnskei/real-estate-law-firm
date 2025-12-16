@@ -7,7 +7,6 @@ import {
   selectFilterClientIds,
   selectFilterClientLoading,
 } from "../../store/selector/clientSelector";
-import { useEffect } from "react";
 
 const useClientSelector = () => {
   const loading = useSelector(selectClientLoading);

@@ -4,7 +4,6 @@ import {
   TaskFilterType,
   useCaseTransaction,
 } from "../../../../context/CaseTransactionContext";
-import useTaskFilter from "../../../../hooks/case/ongoing/useTaskFilter";
 import { CaseStagesType } from "../../../../store/Slice/case.slice";
 
 interface TaskFilterDropdownProps {
@@ -16,7 +15,6 @@ interface TaskFilterDropdownProps {
 const TaskFilterDropdown: React.FC<TaskFilterDropdownProps> = ({
   isOpen,
   setIsOpen,
-  stageData,
 }) => {
   const {
     taskFilterOption: filterOption,

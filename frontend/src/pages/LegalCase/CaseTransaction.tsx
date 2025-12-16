@@ -1,4 +1,4 @@
-import React, { JSX, useCallback, useEffect, useMemo, useState } from "react";
+import React, { JSX, useCallback, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -16,15 +16,10 @@ import Chart from "react-apexcharts";
 
 import StatusDropdown from "../../components/ui/dropdown/caseTransaction/StatusDropdown";
 import { Outlet, useNavigate, useParams } from "react-router";
-import {
-  CaseStageStatus,
-  CaseStagesType,
-  CaseTransactionTask,
-} from "../../store/Slice/case.slice";
+import { CaseStageStatus, CaseStagesType } from "../../store/Slice/case.slice";
 import {
   CaseTransactionProvider,
   TabTypes,
-  TaskFilterType,
   useCaseTransaction,
 } from "../../context/CaseTransactionContext";
 import CaseTransactionLoader from "../../components/ui/loading/CaseTransactionLoader";
@@ -413,7 +408,6 @@ function CaseStage({
 }) {
   const {
     getStageData,
-    getTaskData,
 
     fetchStageTask,
     taskLoading,

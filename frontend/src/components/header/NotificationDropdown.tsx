@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserCircle, Bell, Scale } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useNotifications } from "../../context/NotificationContext";
@@ -12,7 +12,6 @@ export default function NotificationDropdown() {
   const navigate = useNavigate();
 
   const {
-    notificationLoading,
     notifications,
     getCategoryLabel,
     getRelativeTime,

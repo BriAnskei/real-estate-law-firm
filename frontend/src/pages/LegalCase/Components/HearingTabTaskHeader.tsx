@@ -7,7 +7,7 @@ import {
   CalendarX2,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+
 import { useNavigate } from "react-router";
 import { HearingStatusType, HearingType } from "../../../types/HearingTypes";
 
