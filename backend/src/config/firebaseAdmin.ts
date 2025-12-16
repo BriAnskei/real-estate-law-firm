@@ -1,8 +1,11 @@
-  import admin, { ServiceAccount } from "firebase-admin";
-  import serviceAccount from "../real-estate-law-firm-firebase-adminsdk-fbsvc-eadd334827.json" with { type: "json" };
+import admin, { ServiceAccount } from "firebase-admin";
 
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as ServiceAccount),
-  });
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY,
+  }),
+});
 
-  export default admin;
+export default admin;
