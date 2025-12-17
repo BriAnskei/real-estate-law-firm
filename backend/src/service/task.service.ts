@@ -10,6 +10,7 @@ import { NotificationService } from "./notification.service.js";
 import { CaseStageService } from "./case_stage.service.js";
 import { TaskReviewService } from "./task_review.service.js";
 import { TaskNotificationService } from "./task_notification.service.js";
+import { CaseLogService } from "./case_log.service.js";
 
 const TASK_SELECT_BASE = `
     SELECT 
@@ -84,6 +85,22 @@ export class TaskService {
           taskData.due_date,
           taskData.hearing_id,
         ]
+      );
+
+      // add log
+      await CaseLogService.create(
+        {
+          case_id: Number(taskDetials.case_id),
+          user_id: Number(taskData.assign_by),
+          type: "task_created",
+          title: "Task Added",
+          description: taskData.title,
+          metadata: {
+            task_title: taskData.title,
+            stage_name: taskData.stage_name,
+          },
+        },
+        connection
       );
 
       await TaskNotificationService.add(row.insertId, connection);
@@ -513,16 +530,18 @@ WHERE
 
   static async processUpdateTask(payload: {
     id: string;
+    userId: string;
     formData: FormData;
     file_type: FileType;
     files?: Express.Multer.File[];
   }): Promise<TaskType> {
-    const { id, formData, file_type, files } = payload;
+    const { id, userId, formData, file_type, files } = payload;
 
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
 
+      // process files update
       await TaskFileService.proccessUpdateSavedFiles(
         { task_id: id, file_type, files },
         connection
@@ -534,7 +553,32 @@ WHERE
         await connection.commit();
         return await this.findById({ id: id.toString() });
       }
+
       await this.update({ id, formData }, connection);
+
+      // process for audit-log
+      const taskData = await TaskService.findById({ id }, connection);
+      const stageData = await CaseStageService.findById(
+        taskData.case_stage_id,
+        connection
+      );
+      const caseData = (await CaseService.findById(stageData.case_id)).data!;
+
+      await CaseLogService.create(
+        {
+          case_id: Number(caseData.id!),
+          user_id: Number(userId),
+          type: "case_created",
+          title: "Case was successfully created and filed in the system",
+          metadata: {
+            old_value: taskData.created_at,
+            new_value: new Date().toString(),
+            stage_name: stageData.stage_name,
+            task_title: taskData.title,
+          },
+        },
+        connection
+      );
 
       await connection.commit();
       return await this.findById({ id: id.toString() });

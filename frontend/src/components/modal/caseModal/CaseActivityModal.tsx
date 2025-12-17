@@ -6,7 +6,6 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  AlertCircle,
   Edit,
   Trash,
   Plus,

@@ -12,6 +12,7 @@ import { TaskReviewService } from "./task_review.service.js";
 import { NotificationService } from "./notification.service.js";
 import { HearingService } from "./hearing.service.js";
 import { HearingCancellationService } from "./hearing_cancellation.service.js";
+import { CaseLogService } from "./case_log.service.js";
 
 const CASE_STAGE_MODEL_JOIN = ` SELECT 
         c.id AS case_id,
@@ -40,6 +41,18 @@ export class CaseService {
       const newClientId = await ClientService.addClient(clientData, connection);
       const newCaseId = await this.create(
         { ...caseData, client_id: newClientId },
+        connection
+      );
+
+      // add log
+      await CaseLogService.create(
+        {
+          case_id: Number(newCaseId),
+          user_id: Number(userId),
+          type: "case_created",
+          title: "Case was successfully created and filed in the system",
+          description: "Case was successfully created and filed in the system",
+        },
         connection
       );
 

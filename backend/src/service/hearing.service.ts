@@ -8,6 +8,7 @@ import { ResponseType } from "../types/auth.types.js";
 import { TaskService } from "./task.service.js";
 import { NotificationService } from "./notification.service.js";
 import { CaseStageService } from "./case_stage.service.js";
+import { CaseLogService } from "./case_log.service.js";
 
 const HEARING_SELECT_BASE = `
     SELECT 
@@ -32,6 +33,21 @@ export class HearingService {
         VALUES (?, ?, ?)
         `,
         [hearingData.case_id, hearingData.type, hearingData.scheduled_date]
+      );
+
+      // add log
+      await CaseLogService.create(
+        {
+          case_id: Number(hearingData.case_id),
+          user_id: Number(userId),
+          type: "hearing_scheduled",
+          title: "Task Added",
+          description: `${hearingData.type} has been added`,
+          metadata: {
+            stage_name: "Hearing/Case Proper",
+          },
+        },
+        connection
       );
 
       await CaseStageService.processSelectHearingSched({

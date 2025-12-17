@@ -8,6 +8,7 @@ import { CaseService } from "./case.service.js";
 import { HearingService } from "./hearing.service.js";
 import { HearingModel } from "../model/hearing.model.js";
 import { NotificationService } from "./notification.service.js";
+import { CaseLogService } from "./case_log.service.js";
 
 export class CaseStageService {
   static async create(id: string, connection: PoolConnection) {
@@ -228,6 +229,31 @@ export class CaseStageService {
           message:
             "Complemention of all hearing is required to make this stage as complete",
         };
+
+      // audit_log
+      await CaseLogService.create(
+        {
+          case_id: Number(caseId),
+          user_id: Number(userId),
+          title: `${stage_name} Stage ${
+            status === "complete"
+              ? "Completed"
+              : "Legal documents stage is now in progress"
+          }`,
+          type: "stage_status_changed",
+          description: `${
+            status === "complete"
+              ? "All requirements have been fulfilled and stage marked as complete"
+              : "Started"
+          }`,
+          metadata: {
+            old_value: "ongoing",
+            new_value: "complete",
+            stage_name,
+          },
+        },
+        connection
+      );
 
       await this.updateStatus(
         { id: stageId, status: status, stage: stage_name },
