@@ -11,6 +11,7 @@ import {
   Edit2,
   Trash2,
   Eye,
+  History,
 } from "lucide-react";
 import Chart from "react-apexcharts";
 
@@ -39,6 +40,7 @@ import useHearingSelectionModal from "../../hooks/case/hearing/useHearingSelecti
 import PageMeta from "../../components/common/PageMeta";
 import TaskFilterDropdown from "../../components/ui/dropdown/caseTransaction/TaskFilterDropdown";
 import useStageTask from "../../hooks/case/ongoing/useStageTask";
+import CaseActivity from "../../components/modal/caseModal/CaseActivityModal";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -132,16 +134,35 @@ function Header({
 }) {
   const navigate = useNavigate();
 
+  const handleActivityLogsClick = () => {
+    // Placeholder for future implementation
+    console.log("Activity Logs clicked");
+  };
+
   return (
     <div className="mb-8">
-      <button
-        onClick={() => navigate("/case", { replace: true })}
-        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 
-            hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors mb-4"
-      >
-        <ArrowLeft className="h-5 w-5" />
-        <span className="text-sm font-medium">Back to Cases</span>
-      </button>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => navigate("/case", { replace: true })}
+          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 
+            hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="text-sm font-medium">Back to Cases</span>
+        </button>
+
+        <button
+          onClick={handleActivityLogsClick}
+          className="flex items-center gap-2 text-xs font-normal
+            text-gray-700 dark:text-gray-300 
+            rounded-md transition-all
+            hover:border-[#D4AF37] hover:text-[#D4AF37]
+            dark:hover:border-[#D4AF37] dark:hover:text-[#D4AF37]
+            active:scale-95"
+        >
+          <History className="h-4 w-4" />
+        </button>
+      </div>
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 md:gap-8">
         {/* Left side: Text content */}
@@ -299,6 +320,15 @@ export function Content() {
         clearFilter={
           hearingSchduleSelectionModal.filteredHearingState.clearFilter
         }
+      />
+
+      {/* activity logs */}
+      <CaseActivity
+        isOpen={false}
+        onClose={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+        activities={[]}
       />
     </>
   );

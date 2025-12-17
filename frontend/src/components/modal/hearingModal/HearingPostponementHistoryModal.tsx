@@ -3,14 +3,6 @@ import { HearingPostponementsType } from "../../../types/HearingPostponementsTyp
 import { formatDateTime } from "../../../util/DateDecoder";
 import { useCaseTransaction } from "../../../context/CaseTransactionContext";
 
-interface PostponementHistoryRecord {
-  id: string;
-  oldDate: string;
-  newDate: string;
-  reason: string;
-  postponedAt: string;
-}
-
 interface HearingPostponementHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,34 +10,6 @@ interface HearingPostponementHistoryModalProps {
   isLoading?: boolean;
   postponements: HearingPostponementsType[];
 }
-
-// Mock data for demonstration
-const mockPostponementHistory: PostponementHistoryRecord[] = [
-  {
-    id: "1",
-    oldDate: "2024-01-15 09:00 AM",
-    newDate: "2024-01-22 10:00 AM",
-    reason:
-      "Conflict with another court hearing. The presiding judge has a prior commitment that cannot be rescheduled.",
-    postponedAt: "2024-01-10 02:30 PM",
-  },
-  {
-    id: "2",
-    oldDate: "2024-01-22 10:00 AM",
-    newDate: "2024-02-05 02:00 PM",
-    reason:
-      "Defense counsel requested postponement due to medical emergency requiring immediate attention.",
-    postponedAt: "2024-01-20 11:15 AM",
-  },
-  {
-    id: "3",
-    oldDate: "2024-02-05 02:00 PM",
-    newDate: "2024-02-12 09:30 AM",
-    reason:
-      "Key witness unavailable on the scheduled date. Witness is out of the country for urgent family matters.",
-    postponedAt: "2024-02-01 04:45 PM",
-  },
-];
 
 export default function HearingPostponementHistoryModal({
   isOpen,
@@ -56,7 +20,6 @@ export default function HearingPostponementHistoryModal({
 }: HearingPostponementHistoryModalProps) {
   if (!isOpen) return null;
   const { formatDate } = useCaseTransaction();
-  const history = mockPostponementHistory;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -268,7 +231,7 @@ export default function HearingPostponementHistoryModal({
 
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-4">
-                  {history.map((record, index) => (
+                  {postponements.map((record, index) => (
                     <div
                       key={record.id}
                       className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3"
@@ -278,7 +241,7 @@ export default function HearingPostponementHistoryModal({
                           {index + 1}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {record.postponedAt}
+                          {record.created_at}
                         </span>
                       </div>
 
@@ -288,7 +251,7 @@ export default function HearingPostponementHistoryModal({
                             Original Date
                           </label>
                           <p className="text-sm font-medium text-gray-900 dark:text-white line-through decoration-red-500 mt-0.5">
-                            {record.oldDate}
+                            {record.old_date}
                           </p>
                         </div>
 
@@ -297,7 +260,7 @@ export default function HearingPostponementHistoryModal({
                             Rescheduled To
                           </label>
                           <p className="text-sm font-medium text-green-600 dark:text-green-400 mt-0.5">
-                            {formatDateTime(record.newDate)}
+                            {formatDateTime(record.new_date)}
                           </p>
                         </div>
 

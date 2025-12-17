@@ -1,8 +1,9 @@
 frontend/.env
+frontend/node_modules
 
 backend/src/real-estate-law-firm-firebase-adminsdk-fbsvc-eadd334827.json
 backend/.env
-backend/.env
+backend/uploads
 backend/node_modules
 
 .vscode
