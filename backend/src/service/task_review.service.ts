@@ -5,6 +5,9 @@ import { ResponseType } from "../types/auth.types.js";
 import { TaskService } from "./task.service.js";
 import { PoolConnection } from "mysql2/promise";
 import { NotificationService } from "./notification.service.js";
+import { CaseLogService } from "./case_log.service.js";
+import { CaseStageService } from "./case_stage.service.js";
+import { CaseService } from "./case.service.js";
 
 const REVIEW_SELECT_BASE = `SELECT 
     tr.id,
@@ -38,6 +41,30 @@ export class TaskReviewService {
           {
             user_id: newReview.reviewer_id,
             related_task_id: newReview.task_id,
+          },
+          connection
+        );
+
+        // log
+        const taskData = await TaskService.findById(
+          { id: newReview.task_id },
+          connection
+        );
+        const stageData = await CaseStageService.findById(
+          taskData.case_stage_id,
+          connection
+        );
+        const caseData = (
+          await CaseService.findById(stageData.case_id, connection)
+        ).data!;
+
+        await CaseLogService.create(
+          {
+            type: "comment_added",
+            user_id: Number(newReview.reviewer_id),
+            case_id: Number(caseData.id!),
+            title: "Comment Added",
+            description: `A commnet was added to the discussion on task ${taskData.title}`,
           },
           connection
         );

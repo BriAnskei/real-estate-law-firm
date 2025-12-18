@@ -236,15 +236,13 @@ export class CaseStageService {
           case_id: Number(caseId),
           user_id: Number(userId),
           title: `${stage_name} Stage ${
-            status === "complete"
-              ? "Completed"
-              : "Legal documents stage is now in progress"
+            status === "complete" ? "Completed" : "Started"
           }`,
           type: "stage_status_changed",
           description: `${
             status === "complete"
               ? "All requirements have been fulfilled and stage marked as complete"
-              : "Started"
+              : `${stage_name} stage is now in progress`
           }`,
           metadata: {
             old_value: "ongoing",

@@ -41,6 +41,7 @@ import PageMeta from "../../components/common/PageMeta";
 import TaskFilterDropdown from "../../components/ui/dropdown/caseTransaction/TaskFilterDropdown";
 import useStageTask from "../../hooks/case/ongoing/useStageTask";
 import CaseActivity from "../../components/modal/caseModal/CaseActivityModal";
+import { useCaseLog } from "../../hooks/case/ongoing/useCaseLog";
 
 export default function CaseTransaction() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -125,19 +126,16 @@ function Header({
   concern,
   date_filed,
   calculateProgress,
+  openCaseLog,
 }: {
   concern: string;
   date_filed: string;
   formatDate: (dateString: string) => string;
   getCompletedStagesCount: () => number;
   calculateProgress: () => number;
+  openCaseLog: () => void;
 }) {
   const navigate = useNavigate();
-
-  const handleActivityLogsClick = () => {
-    // Placeholder for future implementation
-    console.log("Activity Logs clicked");
-  };
 
   return (
     <div className="mb-8">
@@ -152,7 +150,7 @@ function Header({
         </button>
 
         <button
-          onClick={handleActivityLogsClick}
+          onClick={openCaseLog}
           className="flex items-center gap-2 text-xs font-normal
             text-gray-700 dark:text-gray-300 
             rounded-md transition-all
@@ -242,6 +240,8 @@ export function Content() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isAuthLoading = useSelector(selectAuthLoading);
 
+  const caseLogStage = useCaseLog();
+
   if (loading || !isAuthenticated || isAuthLoading || caseData === undefined)
     return (
       <CaseTransactionLoader
@@ -273,6 +273,7 @@ export function Content() {
         <ScrollToTop />
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Header
+            openCaseLog={caseLogStage.open}
             formatDate={formatDate}
             date_filed={caseData?.created_at!}
             concern={caseData?.concern!}
@@ -324,11 +325,10 @@ export function Content() {
 
       {/* activity logs */}
       <CaseActivity
-        isOpen={true}
-        onClose={function (): void {
-          throw new Error("Function not implemented.");
-        }}
-        activities={[]}
+        isOpen={caseLogStage.isOpen}
+        isLoading={caseLogStage.loading}
+        onClose={caseLogStage.close}
+        activities={caseLogStage.caseLogs}
       />
     </>
   );

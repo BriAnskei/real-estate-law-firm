@@ -568,11 +568,10 @@ WHERE
         {
           case_id: Number(caseData.id!),
           user_id: Number(userId),
-          type: "case_created",
-          title: "Case was successfully created and filed in the system",
+          type: "task_updated",
+          title: `Task Update`,
+          description: `Task ${taskData.title} has been updated`,
           metadata: {
-            old_value: taskData.created_at,
-            new_value: new Date().toString(),
             stage_name: stageData.stage_name,
             task_title: taskData.title,
           },
@@ -651,6 +650,22 @@ WHERE
       );
       const caseData = (await CaseService.findById(stageData.case_id)).data;
 
+      // log
+      await CaseLogService.create(
+        {
+          case_id: Number(caseData?.id!),
+          type: "task_completed",
+          title: "Task Complete",
+          description: `${taskData.title} task has been marked as complete`,
+          user_id: Number(taskData.assign_by),
+          metadata: {
+            stage_name: stageData.stage_name,
+            task_title: `${taskData.title}`,
+          },
+        },
+        connection
+      );
+
       // notification for the assigneee for completion
       await NotificationService.taskCompletion(
         {
@@ -699,11 +714,28 @@ WHERE id = ?;
     try {
       await connection.beginTransaction();
 
+      const taskData = await this.findById({ id }, connection);
+
       await TaskNotificationService.delete(Number(id), connection);
       await NotificationService.deleteByRelatedTaskId(id, connection);
       await TaskReviewService.deleteByTaskId(id, connection);
       await TaskFileService.delete({ taskId: id }, connection);
       await this.deleteById(id, connection);
+
+      // logs
+
+      const stageData = await CaseStageService.findById(taskData.case_stage_id);
+      const caseData = (await CaseService.findById(stageData.case_id)).data!;
+      await CaseLogService.create(
+        {
+          case_id: Number(caseData.id!),
+          user_id: Number(taskData.assign_by),
+          title: "Task Deleted",
+          type: "task_deleted",
+          description: `Task ${taskData.title} has been deleted`,
+        },
+        connection
+      );
 
       await connection.commit();
     } catch (err) {

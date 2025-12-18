@@ -17,6 +17,7 @@ import postponed_historyRouter from "./route/postponed_history.router.js";
 import hearingCancellationRouter from "./route/hearing_cancellation.router.js";
 import notificationRoute from "./route/notification.router.js";
 import dashboardRoute from "./route/dashboard.route.js";
+import caseLogRoute from "./route/case_log.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -38,10 +39,12 @@ app.use("/api/case/stages", caseStageRoute);
 app.use("/api/hearing", hearingRoute);
 app.use("/api/hearing/postponements", postponed_historyRouter);
 app.use("/api/hearing/cancellation", hearingCancellationRouter);
-5;
+
 app.use("/api/task", taskRoute);
 app.use("/api/file", taskFileRoute);
 app.use("/api/task/review", taskReviewRoute);
+
+app.use("/api/case/log", caseLogRoute);
 
 app.use("/api/client", clientRoute);
 

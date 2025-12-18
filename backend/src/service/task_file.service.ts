@@ -3,6 +3,10 @@ import pool from "../config/db.js";
 import { FileType, TaskFileModel } from "../model/task_files.model.js";
 import { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import { NotificationService } from "./notification.service.js";
+import { CaseLogService } from "./case_log.service.js";
+import { TaskService } from "./task.service.js";
+import { CaseStageService } from "./case_stage.service.js";
+import { CaseService } from "./case.service.js";
 
 export class TaskFileService {
   static async createFiles(
@@ -59,6 +63,32 @@ export class TaskFileService {
         await this.createFiles(payload, connection);
       } else if (file_type === "SUBMISSION") {
         await this.proccessUpdateSavedFiles(payload, connection);
+
+        // log
+        const taskData = await TaskService.findById(
+          { id: task_id },
+          connection
+        );
+        const stageData = await CaseStageService.findById(
+          taskData.case_stage_id,
+          connection
+        );
+        const caseData = (
+          await CaseService.findById(stageData.case_id, connection)
+        ).data!;
+        await CaseLogService.create(
+          {
+            type: "document_uploaded",
+            title: "Document Uploaded",
+            case_id: Number(caseData.id!),
+            description: `Documents has been uploaded on task  ${taskData.title}`,
+            user_id: Number(taskData.assign_to),
+            metadata: {
+              stage_name: stageData.stage_name,
+            },
+          },
+          connection
+        );
       }
 
       await connection.commit();

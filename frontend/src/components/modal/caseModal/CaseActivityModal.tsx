@@ -10,52 +10,22 @@ import {
   Trash,
   Plus,
 } from "lucide-react";
-
-// Activity types enum
-export type ActivityType =
-  | "case_created"
-  | "case_updated"
-  | "stage_status_changed"
-  | "task_created"
-  | "task_updated"
-  | "task_deleted"
-  | "task_completed"
-  | "hearing_scheduled"
-  | "hearing_postponed"
-  | "hearing_cancelled"
-  | "document_uploaded"
-  | "comment_added";
-
-export interface ActivityLog {
-  id: string;
-  type: ActivityType;
-  title: string;
-  description: string;
-  user_name: string;
-  user_id: string;
-  created_at: string;
-  metadata?: {
-    old_value?: string;
-    new_value?: string;
-    stage_name?: string;
-    task_title?: string;
-    [key: string]: any;
-  };
-}
+import { ActivityType, CaseLogType } from "../../../types/case_log.type";
+import { useNotifications } from "../../../context/NotificationContext";
+import { Roles } from "../../../store/Slice/userSlice";
 
 interface ActivityLogsModalProps {
   isOpen: boolean;
   onClose: () => void;
   caseConcern?: string;
   isLoading?: boolean;
-  activities: ActivityLog[];
+  activities: CaseLogType[];
 }
 
 // Helper function to get activity icon
 const getActivityIcon = (type: ActivityType) => {
   switch (type) {
     case "case_created":
-    case "case_updated":
       return <FileText className="h-4 w-4" />;
     case "stage_status_changed":
       return <CheckCircle className="h-4 w-4" />;
@@ -87,7 +57,6 @@ const getActivityColor = (type: ActivityType) => {
     case "task_created":
     case "hearing_scheduled":
       return "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400";
-    case "case_updated":
     case "task_updated":
     case "stage_status_changed":
       return "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400";
@@ -106,186 +75,27 @@ const getActivityColor = (type: ActivityType) => {
   }
 };
 
-// Helper function to format relative time
-const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+export function useRoleLabel(role: Roles) {
+  const encodedUserRole: Record<Roles, string> = {
+    "founding-manager/admin": "",
+    lawyer: "Atty.",
+    paralegal: "Para.",
+    "process-server": "P.Server ", // or whatever label you want
+  };
 
-  if (diffInSeconds < 60) return "just now";
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800)
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  });
-};
-
-// Mock data for demonstration
-const MOCK_ACTIVITIES: ActivityLog[] = [
-  {
-    id: "1",
-    type: "case_created",
-    title: "Case Created",
-    description: "Case was successfully created and filed in the system",
-    user_name: "Attorney Maria Santos",
-    user_id: "user-001",
-    created_at: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
-  },
-  {
-    id: "2",
-    type: "stage_status_changed",
-    title: "Requirements Stage Started",
-    description: "Requirements stage status was changed to ongoing",
-    user_name: "Attorney Maria Santos",
-    user_id: "user-001",
-    created_at: new Date(Date.now() - 86400000 * 4).toISOString(), // 4 days ago
-    metadata: {
-      old_value: "pending",
-      new_value: "ongoing",
-      stage_name: "Requirements",
-    },
-  },
-  {
-    id: "3",
-    type: "task_created",
-    title: "Task Added",
-    description: "A new task was added to the requirements stage",
-    user_name: "Attorney John Cruz",
-    user_id: "user-002",
-    created_at: new Date(Date.now() - 86400000 * 4 + 3600000).toISOString(),
-    metadata: {
-      stage_name: "Requirements",
-      task_title: "Submit birth certificate",
-    },
-  },
-  {
-    id: "4",
-    type: "document_uploaded",
-    title: "Document Uploaded",
-    description: "Birth certificate has been uploaded to the case files",
-    user_name: "Client Pedro Reyes",
-    user_id: "user-003",
-    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-    metadata: {
-      stage_name: "Requirements",
-    },
-  },
-  {
-    id: "5",
-    type: "task_completed",
-    title: "Task Completed",
-    description:
-      "Birth certificate submission task has been marked as complete",
-    user_name: "Attorney Maria Santos",
-    user_id: "user-001",
-    created_at: new Date(Date.now() - 86400000 * 3 + 7200000).toISOString(),
-    metadata: {
-      stage_name: "Requirements",
-      task_title: "Submit birth certificate",
-    },
-  },
-  {
-    id: "6",
-    type: "comment_added",
-    title: "Comment Added",
-    description: "A comment was added to the case discussion",
-    user_name: "Attorney John Cruz",
-    user_id: "user-002",
-    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: "7",
-    type: "stage_status_changed",
-    title: "Requirements Stage Completed",
-    description:
-      "All requirements have been fulfilled and stage marked as complete",
-    user_name: "Attorney Maria Santos",
-    user_id: "user-001",
-    created_at: new Date(Date.now() - 86400000 * 2 + 14400000).toISOString(),
-    metadata: {
-      old_value: "ongoing",
-      new_value: "complete",
-      stage_name: "Requirements",
-    },
-  },
-  {
-    id: "8",
-    type: "stage_status_changed",
-    title: "Documents Stage Started",
-    description: "Legal documents stage is now in progress",
-    user_name: "Attorney Maria Santos",
-    user_id: "user-001",
-    created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
-    metadata: {
-      old_value: "pending",
-      new_value: "ongoing",
-      stage_name: "Legal Documents",
-    },
-  },
-  {
-    id: "9",
-    type: "hearing_scheduled",
-    title: "Hearing Scheduled",
-    description: "Initial hearing has been scheduled with the court",
-    user_name: "Court Administrator",
-    user_id: "user-004",
-    created_at: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-    metadata: {
-      stage_name: "Hearing/Case Proper",
-    },
-  },
-  {
-    id: "10",
-    type: "task_created",
-    title: "Task Added",
-    description: "Prepare opening statement task assigned",
-    user_name: "Attorney Maria Santos",
-    user_id: "user-001",
-    created_at: new Date(Date.now() - 21600000).toISOString(), // 6 hours ago
-    metadata: {
-      stage_name: "Legal Documents",
-      task_title: "Prepare opening statement",
-    },
-  },
-  {
-    id: "11",
-    type: "task_updated",
-    title: "Task Updated",
-    description: "Due date for opening statement preparation was extended",
-    user_name: "Attorney John Cruz",
-    user_id: "user-002",
-    created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-    metadata: {
-      stage_name: "Legal Documents",
-      task_title: "Prepare opening statement",
-      old_value: "Dec 15, 2024",
-      new_value: "Dec 18, 2024",
-    },
-  },
-  {
-    id: "12",
-    type: "comment_added",
-    title: "Comment Added",
-    description: "Strategy discussion notes added to the case",
-    user_name: "Attorney Maria Santos",
-    user_id: "user-001",
-    created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-  },
-];
+  return encodedUserRole[role];
+}
 
 export default function CaseActivity({
   isOpen,
   onClose,
   caseConcern = "Case",
   isLoading = false,
-  activities = MOCK_ACTIVITIES, // Use mock data as default
+  activities, // Use mock data as default
 }: ActivityLogsModalProps) {
   if (!isOpen) return null;
+
+  const { getRelativeTime } = useNotifications();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -348,7 +158,7 @@ export default function CaseActivity({
                   </div>
                 ))}
               </div>
-            ) : MOCK_ACTIVITIES.length === 0 ? (
+            ) : activities.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-6">
                 <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-full mb-4">
                   <Activity className="h-12 w-12 text-gray-400 dark:text-gray-500" />
@@ -375,7 +185,7 @@ export default function CaseActivity({
 
                 {/* Activity Timeline */}
                 <div className="space-y-4">
-                  {MOCK_ACTIVITIES.map((activity, index) => (
+                  {activities.map((activity, index) => (
                     <div
                       key={activity.id}
                       className="relative flex gap-4 group"
@@ -405,7 +215,7 @@ export default function CaseActivity({
                               {activity.title}
                             </h4>
                             <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                              {formatRelativeTime(activity.created_at)}
+                              {getRelativeTime(activity.created_at!)}
                             </span>
                           </div>
 
@@ -455,12 +265,13 @@ export default function CaseActivity({
                           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                             <User className="h-3 w-3" />
                             <span className="font-medium">
+                              {useRoleLabel(activity.role)}
                               {activity.user_name}
                             </span>
                             <span>•</span>
                             <Clock className="h-3 w-3" />
                             <span>
-                              {new Date(activity.created_at).toLocaleString(
+                              {new Date(activity.created_at!).toLocaleString(
                                 "en-US",
                                 {
                                   month: "short",

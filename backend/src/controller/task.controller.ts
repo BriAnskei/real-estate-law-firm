@@ -115,7 +115,8 @@ export class taskController {
     res.json({ success: true, data: response });
   }
 
-  static async updateTask(req: Request, res: Response): Promise<void> {
+  static async updateTask(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.userId!;
     const { task_id, file_type } = req.params;
     const updatedFields = req.body;
 
@@ -126,6 +127,7 @@ export class taskController {
       formData: updatedFields,
       files,
       file_type: file_type as FileType,
+      userId,
     });
 
     res.json({ success: true, data: response });

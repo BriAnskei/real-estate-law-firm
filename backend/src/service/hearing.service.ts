@@ -41,8 +41,8 @@ export class HearingService {
           case_id: Number(hearingData.case_id),
           user_id: Number(userId),
           type: "hearing_scheduled",
-          title: "Task Added",
-          description: `${hearingData.type} has been added`,
+          title: "Hearing Schdule",
+          description: `${hearingData.type} has been scheduled`,
           metadata: {
             stage_name: "Hearing/Case Proper",
           },
@@ -340,6 +340,23 @@ export class HearingService {
         connection
       );
 
+      //logs
+      await CaseLogService.create(
+        {
+          case_id: Number(hearingData.case_id),
+          type: "hearing_postponed",
+          title: "Posponed Hearing",
+          description: `${hearingData.type} has been postponed`,
+          user_id: Number(userId),
+          metadata: {
+            stage_name: "HEARING",
+            old_value: old_date,
+            new_value: new_date,
+          },
+        },
+        connection
+      );
+
       await connection.commit();
     } catch (error) {
       await connection.rollback();
@@ -398,6 +415,25 @@ export class HearingService {
 
       await NotificationService.hearingStatus(
         { userId, hearingId: hearing_id },
+        connection
+      );
+
+      const hearingData = await this.findById(hearing_id);
+
+      // log
+      await CaseLogService.create(
+        {
+          case_id: Number(hearingData.case_id),
+          type: "hearing_cancelled",
+          title: "Hearing Cancelation",
+          description: `${hearingData.type} has beed cancelled`,
+          user_id: Number(userId),
+          metadata: {
+            stage_name: "HEARING",
+            old_value: "scheduled",
+            new_value: "cancelled",
+          },
+        },
         connection
       );
 
