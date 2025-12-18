@@ -23,13 +23,15 @@ export type SignInInputType = {
 const useSignInVerification = () => {
   const dispatch = useDispatch<AppDispatch>();
 
-  const { errorToast } = useToast();
+  const { errorToast, promiseToast } = useToast();
   const [signInInput, setSigninInput] = useState<SignInInputType>({
     role: "select-option",
     email: "",
     password: "",
     rememberMe: false,
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleSignInOnchange =
     createChangeHandler<SignInInputType>(setSigninInput);
@@ -53,15 +55,25 @@ const useSignInVerification = () => {
   };
 
   const handleSignIn = async () => {
-    try {
-      if (!isSignInInputFilled()) {
-        return errorToast("Please complete all required fields to continue.");
-      }
-
-      await dispatch(signIn(signInInput)).unwrap();
-    } catch (error) {
-      errorToast(error as string);
+    if (!isSignInInputFilled()) {
+      return errorToast("Please complete all required fields to continue.");
     }
+    setLoading(true);
+
+    await promiseToast(
+      async () => {
+        await dispatch(signIn(signInInput)).unwrap();
+
+        setTimeout(() => {
+          setLoading(false);
+        }, 0);
+      },
+      {
+        loading: "Please wait",
+        success: () => "Welcome Back!",
+        error: (err) => `${err || "Unknown error"}`,
+      }
+    );
   };
 
   const isSignInInputFilled = (): boolean => {
@@ -77,18 +89,28 @@ const useSignInVerification = () => {
       const res = await signInWithPopup(auth, provider);
       const token = await res.user.getIdToken();
 
-      const signInRes = await dispatch(
-        googleSignIn({
-          token,
-          rememberMe: signInInput.rememberMe,
-        })
-      ).unwrap();
+      setLoading(true);
+      await promiseToast(
+        async () => {
+          await dispatch(
+            googleSignIn({
+              token,
+              rememberMe: signInInput.rememberMe,
+            })
+          ).unwrap();
 
-      if (!signInRes?.success) {
-        return errorToast(signInRes?.message || "Failed to signin");
-      }
+          setTimeout(() => {
+            setLoading(false);
+          }, 0);
+        },
+        {
+          loading: "Please wait",
+          success: () => "Welcome Back!",
+          error: (err) => `${err || "Unknown error"}`,
+        }
+      );
     } catch (error) {
-      console.log("errorr: ", error);
+      console.error(error);
     }
   };
 
@@ -99,6 +121,8 @@ const useSignInVerification = () => {
     handleSignInOnchange,
     handleSignIn,
     handleSignInProvider,
+
+    loading,
   };
 };
 

@@ -14,6 +14,7 @@ export default function SignUpForm() {
     handleSignUp,
     handleSignUpProvider,
     handleRoleOnChange,
+    loading,
   } = useSignUpVerification();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -155,7 +156,11 @@ export default function SignUpForm() {
                 </div>
               </div>
 
-              <Button onClick={handleSignUp} className="w-full">
+              <Button
+                onClick={handleSignUp}
+                className="w-full"
+                disabled={loading}
+              >
                 Sign Up
               </Button>
             </div>
@@ -163,12 +168,22 @@ export default function SignUpForm() {
             <div className="mt-6">
               <p className="text-sm text-center text-gray-600 dark:text-gray-400">
                 Already have Account?{" "}
-                <Link
-                  to="/signin"
-                  className="text-[#D4AF37] hover:text-[#C4A037] font-medium"
-                >
-                  Sign in
-                </Link>
+                {loading ? (
+                  <Link
+                    to="/signin"
+                    className="text-[#D4AF37] hover:text-[#C4A037] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={(event) => event.preventDefault()}
+                  >
+                    Sign in
+                  </Link>
+                ) : (
+                  <Link
+                    to="/signin"
+                    className="text-[#D4AF37] hover:text-[#C4A037] font-medium"
+                  >
+                    Sign in
+                  </Link>
+                )}
               </p>
             </div>
           </div>

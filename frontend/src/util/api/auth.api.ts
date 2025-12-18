@@ -44,7 +44,7 @@ export class AuthApi {
       );
 
       if (!res.data.success) {
-        return { success: false, message: res.data.message };
+        throw new Error(res.data.message);
       }
 
       return { success: true, data: res.data.data };
@@ -94,7 +94,13 @@ export class AuthApi {
 
   static async onSignOut(): Promise<void> {
     try {
-      const res = await api.post("/api/auth/signout", {});
+      const res = await api.post(
+        "/api/auth/signout",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
 
       if (!res.data.success) {
         throw new Error(res.data.message);

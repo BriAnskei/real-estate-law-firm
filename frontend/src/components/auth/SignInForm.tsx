@@ -18,6 +18,7 @@ export default function SignInForm() {
     handleSignIn,
     signInInput,
     handleRoleOnChange,
+    loading,
   } = useSignInVerification();
 
   return (
@@ -163,19 +164,33 @@ export default function SignInForm() {
                 </button>
               </div>
 
-              <Button onClick={handleSignIn} className="w-full">
+              <Button
+                onClick={handleSignIn}
+                className="w-full"
+                disabled={loading}
+              >
                 Sign In
               </Button>
             </div>
             <div className="mt-6">
               <p className="text-sm text-center text-gray-600 dark:text-gray-400">
                 Don’t have an account?{" "}
-                <Link
-                  to="/signup"
-                  className="text-[#D4AF37] hover:text-[#C4A037] font-medium"
-                >
-                  Sign up
-                </Link>
+                {loading ? (
+                  <Link
+                    to="/signup"
+                    className="text-[#D4AF37] hover:text-[#C4A037] font-medium  disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={(event) => event.preventDefault()}
+                  >
+                    Sign up
+                  </Link>
+                ) : (
+                  <Link
+                    to="/signup"
+                    className="text-[#D4AF37] hover:text-[#C4A037] font-medium"
+                  >
+                    Sign up
+                  </Link>
+                )}
               </p>
             </div>
           </div>

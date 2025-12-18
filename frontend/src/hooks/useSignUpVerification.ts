@@ -37,6 +37,8 @@ const useSignUpVerification = () => {
   const { errorToast, promiseToast } = useToast();
   const [signUpInput, setSignUpInput] = useState<SignUpInputType>(initialInput);
 
+  const [loading, setLoading] = useState(false);
+
   const handleSignUpOnchange =
     createChangeHandler<SignUpInputType>(setSignUpInput);
 
@@ -71,10 +73,13 @@ const useSignUpVerification = () => {
   const handleSignUp = async () => {
     if (!signUpInputFilled())
       return errorToast("Please complete all required fields to continue.");
-
+    setLoading(true);
     await promiseToast(
       async () => {
         await dispatch(signUp(signUpInput)).unwrap();
+        setTimeout(() => {
+          setLoading(false);
+        }, 0);
       },
       {
         loading: "Submitting registration...",
@@ -99,11 +104,16 @@ const useSignUpVerification = () => {
       const res = await signInWithPopup(auth, provider);
       const token = await res.user.getIdToken();
 
+      setLoading(true);
       await promiseToast(
         async () => {
           await dispatch(
             googleSignUp({ token, role: signUpInput.role })
           ).unwrap();
+
+          setTimeout(() => {
+            setLoading(false);
+          }, 0);
         },
         {
           loading: "Submitting registration...",
@@ -128,6 +138,7 @@ const useSignUpVerification = () => {
     handleSignUpOnchange,
     handleSignUp,
     handleSignUpProvider,
+    loading,
   };
 };
 
