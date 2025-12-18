@@ -4,7 +4,7 @@ import { AppDispatch, RootState } from "../../store/store";
 import { refreshTokens } from "../../store/Slice/authSlice";
 
 const api = axios.create({
-  baseURL: import.meta.env.BASE_URL || "http://localhost:4000",
+  baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:4000",
   withCredentials: true,
 });
 
