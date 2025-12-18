@@ -106,12 +106,11 @@ const useFormUploads = (payload: {
 export const encodeFetchedFiles = async (
   fetchedData: taskFileType[]
 ): Promise<UploadedFile[]> => {
+  const url = import.meta.env.VITE_BASE_PATH || "http://localhost:4000";
+
   return await Promise.all(
     fetchedData.map(async (file: taskFileType) => {
-      const fileUrl = `http://localhost:4000/${file.file_path.replace(
-        /\\/g,
-        "/"
-      )}`;
+      const fileUrl = `${url}${file.file_path.replace(/\\/g, "/")}`;
 
       const blob = await fetch(fileUrl).then((r) => r.blob());
 
