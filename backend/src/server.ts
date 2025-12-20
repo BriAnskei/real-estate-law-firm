@@ -18,6 +18,7 @@ import hearingCancellationRouter from "./route/hearing_cancellation.router.js";
 import notificationRoute from "./route/notification.router.js";
 import dashboardRoute from "./route/dashboard.route.js";
 import caseLogRoute from "./route/case_log.route.js";
+import sessionLogRouter from "./route/session_log.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -44,7 +45,9 @@ app.use("/api/task", taskRoute);
 app.use("/api/file", taskFileRoute);
 app.use("/api/task/review", taskReviewRoute);
 
+// session-auditlog
 app.use("/api/case/log", caseLogRoute);
+app.use("/api/user/session", sessionLogRouter);
 
 app.use("/api/client", clientRoute);
 

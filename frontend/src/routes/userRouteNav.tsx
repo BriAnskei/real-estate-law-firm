@@ -5,7 +5,7 @@ import {
   LegalRecords,
   PaymentIcon,
 } from "../icons";
-import { GridIcon, ListTodo } from "lucide-react";
+import { GridIcon, ListTodo, History } from "lucide-react";
 import { JSX } from "react";
 import ConsultationPage from "../pages/LegalCase/ConsultationPage";
 import AccountRequest from "../pages/AdminPages/AccountRequestPage";
@@ -19,6 +19,7 @@ import PaymentsPage from "../pages/LegalCase/CasePaymentPage";
 import NotificationsPage from "../pages/Notification/NotificationPage";
 import AdminDashboard from "../pages/Dashboard/AdminDashboard";
 import Dashboard from "../pages/Dashboard/Dashboard";
+import SessionLogs from "../pages/AdminPages/SessionLogPage";
 
 export type NavItem = {
   name: string;
@@ -83,6 +84,11 @@ export const navRoutes: Record<Roles, { menu: NavItem[]; others: NavItem[] }> =
           icon: <Notification />,
           name: "Notifications",
           path: "/notification",
+        },
+        {
+          icon: <History />,
+          name: "Session Logs",
+          path: "/session",
         },
       ],
     },
@@ -164,6 +170,7 @@ export const appRoutes: Record<Roles, AppRoutes[]> = {
     { path: "/accounts", element: <AllAccountPage /> },
 
     { path: "/notification", element: <NotificationsPage /> },
+    { path: "/session", element: <SessionLogs /> },
   ],
   [Roles.lawyer]: [
     { path: "/", element: <Dashboard /> },

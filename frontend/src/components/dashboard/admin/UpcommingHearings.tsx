@@ -146,7 +146,7 @@ const UpcomingHearingsTable: FC<UpcomingHearingsTableProps> = ({
                     </td>
 
                     <td className="px-4 py-4">
-                      <span className="inline-flex items-center rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2.5 py-1 text-xs font-medium text-[#D4AF37]">
+                      <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium text-[#D4AF37]">
                         {hearing.hearing_type}
                       </span>
                     </td>

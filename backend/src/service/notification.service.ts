@@ -798,7 +798,6 @@ export class NotificationService {
         `,
         [related_case_id]
       );
-      if (result.affectedRows === 0) throw new Error("Notification not found");
     } catch (error) {
       throw error;
     }

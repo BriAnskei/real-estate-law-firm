@@ -172,34 +172,6 @@ export const DashboardProvider: React.FC<{
     }
   }, []);
 
-  useEffect(() => {
-    console.log(
-      "global stage: ",
-      "hearings count",
-      upcommingHearingsCount,
-      "upcomnghearings",
-      upcomingHearings,
-      "pending task cnt",
-      pendingTasksCount,
-      "ovrduetsks",
-      overDueTasks,
-      "duen3",
-      dueIn3DaysTasks,
-      "duein5",
-      dueIn5DaysTasks,
-      "actruve",
-      activeCasesCount
-    );
-  }, [
-    upcommingHearingsCount,
-    upcomingHearings,
-    pendingTasksCount,
-    overDueTasks,
-    dueIn3DaysTasks,
-    dueIn5DaysTasks,
-    activeCasesCount,
-  ]);
-
   // flag for atty, para state
   const isGlobalStateReady =
     upcommingHearingsCount !== undefined &&

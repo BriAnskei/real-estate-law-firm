@@ -6,6 +6,7 @@ type MetricCardProps = {
   value: number;
   iconBgColor: string;
   isLoading?: boolean;
+  onClick?: () => void;
 };
 
 export const MetricCardSkeleton = () => (
@@ -24,13 +25,17 @@ const MetricCard: React.FC<MetricCardProps> = ({
   value,
   iconBgColor,
   isLoading = false,
+  onClick,
 }) => {
   if (isLoading) {
     return <MetricCardSkeleton />;
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+    <div
+      onClick={onClick}
+      className="cursor-pointer rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
+    >
       <div className="flex items-center justify-between mb-4">
         <div
           className={`flex items-center justify-center w-12 h-12 ${iconBgColor} rounded-xl flex-shrink-0`}

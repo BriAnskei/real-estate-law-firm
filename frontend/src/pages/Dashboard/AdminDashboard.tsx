@@ -7,8 +7,10 @@ import UpcomingHearingsTable from "../../components/dashboard/admin/UpcommingHea
 import PageMeta from "../../components/common/PageMeta";
 import { useDashboard } from "../../context/DashboardContext";
 import CaseStagesDistribution from "../../components/dashboard/admin/CaseStageDistribution";
+import { useNavigate } from "react-router";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const { loading, adminDashboard } = useDashboard();
 
   const globalLoading = !adminDashboard || loading;
@@ -40,30 +42,35 @@ export default function AdminDashboard() {
         ) : (
           <>
             <MetricCard
+              onClick={() => navigate("/case")}
               icon={FileText}
               title="Total Cases"
               value={adminDashboard.cards.total_cases}
               iconBgColor="bg-blue-100 dark:bg-blue-900/20"
             />
             <MetricCard
+              onClick={() => navigate("/case")}
               icon={Scale}
               title="Active Cases"
               value={adminDashboard.cards.active_cases}
               iconBgColor="bg-green-100 dark:bg-green-900/20"
             />
             <MetricCard
+              onClick={() => navigate("/case")}
               icon={CheckCircle}
               title="Completed Cases"
               value={adminDashboard.cards.completed_cases}
               iconBgColor="bg-purple-100 dark:bg-purple-900/20"
             />
             <MetricCard
+              onClick={() => navigate("/accounts")}
               icon={Users}
               title="Total Users"
               value={adminDashboard.cards.total_users}
               iconBgColor="bg-amber-100 dark:bg-amber-900/20"
             />
             <MetricCard
+              onClick={() => navigate("/case")}
               icon={AlertCircle}
               title="Past Due Tasks"
               value={adminDashboard.cards.due_tasks}

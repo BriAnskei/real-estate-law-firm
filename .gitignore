@@ -7,3 +7,4 @@ backend/uploads
 backend/node_modules
 
 .vscode
+backend/ca.pem

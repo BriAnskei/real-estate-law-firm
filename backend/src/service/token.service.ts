@@ -7,17 +7,42 @@ import { TokenUtils } from "../util/token.util.js";
 export class TokenService {
   static async createRefreshToken(payload: refreshToken) {
     try {
-      const { token, userId, rememberMeIssued, expiresAt } = payload;
-      const hashedRefreshtoken = TokenUtils.hashToken(token);
+      const { token, userId, rememberMeIssued, expiresAt, session_id } =
+        payload;
+
+      const hashedRefreshToken = TokenUtils.hashToken(token);
+
+      const columns: string[] = [
+        "token",
+        "userId",
+        "rememberMeIssued",
+        "expiresAt",
+      ];
+
+      const values: any[] = [
+        hashedRefreshToken,
+        userId,
+        rememberMeIssued,
+        expiresAt,
+      ];
+
+      if (session_id) {
+        columns.splice(3, 0, "session_id"); // insert before expiresAt
+        values.splice(3, 0, session_id);
+      }
+
+      const placeholders = columns.map(() => "?").join(", ");
+
       await pool.execute(
-        `INSERT INTO refresh_tokens (token, userId, rememberMeIssued,  expiresAt)
-      VALUES (?, ?, ?, ?)`,
-        [hashedRefreshtoken, userId, rememberMeIssued, expiresAt]
+        `INSERT INTO refresh_tokens (${columns.join(", ")})
+       VALUES (${placeholders})`,
+        values
       );
     } catch (error) {
       throw error;
     }
   }
+
   /**
    * Find the token data by refreshToken
    */
@@ -49,10 +74,11 @@ export class TokenService {
    */
 
   static async handleTokenRotation(paylaod: {
+    refreshTokenId: string;
     userId: string;
     rememberMeIssued: boolean;
   }): Promise<{ accessToken: string; refreshToken: string }> {
-    const { userId, rememberMeIssued } = paylaod;
+    const { userId, rememberMeIssued, refreshTokenId } = paylaod;
     const tokens = await this.generateTokens({
       userId,
       rememberMe: rememberMeIssued,
@@ -70,7 +96,7 @@ export class TokenService {
     }
 
     await this.refreshOldToken({
-      userId,
+      refreshTokenId,
       newToken: tokens.refreshToken,
       expiresAt: expirationDate,
     });
@@ -82,20 +108,20 @@ export class TokenService {
    * replace the old refrestToken and  expireAt with the new refreshToken
    */
   static async refreshOldToken(payload: {
-    userId: string;
+    refreshTokenId: string;
     newToken: string;
     expiresAt: Date;
   }) {
     try {
-      const { userId, newToken, expiresAt } = payload;
+      const { refreshTokenId, newToken, expiresAt } = payload;
 
       const hashedRefreshToken = TokenUtils.hashToken(newToken);
 
       const [res] = await pool.execute(
         `UPDATE refresh_tokens 
          SET token = ?, expiresAt = ?
-         WHERE userId = ? LIMIT 1`,
-        [hashedRefreshToken, expiresAt, userId]
+         WHERE id = ? LIMIT 1`,
+        [hashedRefreshToken, expiresAt, refreshTokenId]
       );
 
       const { affectedRows } = res as any;
@@ -122,9 +148,13 @@ export class TokenService {
    * returns decodedRefreshToken(userId) and rememberMeIssued.
    * If token is expired delete token and returns expired message
    */
-  static async validateRefreshToken(
-    refreshToken: string
-  ): Promise<ResponseType<{ decodedUserId: string; rememberMe: boolean }>> {
+  static async validateRefreshToken(refreshToken: string): Promise<
+    ResponseType<{
+      decodedUserId: string;
+      rememberMe: boolean;
+      refreshTokenId: string;
+    }>
+  > {
     try {
       const tokenData = await this.findByToken(refreshToken);
 
@@ -138,6 +168,7 @@ export class TokenService {
         data: {
           decodedUserId: TokenUtils.decodeRefreshToken(refreshToken),
           rememberMe: tokenData.rememberMeIssued!,
+          refreshTokenId: tokenData.id!,
         },
       };
     } catch (error) {
