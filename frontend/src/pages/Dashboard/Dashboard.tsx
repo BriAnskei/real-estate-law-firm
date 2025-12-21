@@ -3,7 +3,7 @@ import MetricCard from "../../components/dashboard/admin/MetricCard";
 import UpcomingHearingsTable from "../../components/dashboard/admin/UpcommingHearings";
 import MyTasksCard from "../../components/dashboard/global/MyTask";
 import { useDashboard } from "../../context/DashboardContext";
-import { useEffect } from "react";
+
 import { useNavigate } from "react-router";
 
 export default function Dashboard() {

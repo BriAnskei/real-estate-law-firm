@@ -1,4 +1,3 @@
-import { useState, useMemo, useEffect } from "react";
 import { Search, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
@@ -12,18 +11,6 @@ import { formatDateTime } from "../../util/DateDecoder";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-
-// Mock data types
-type SessionLog = {
-  id: string;
-  userId: string;
-  fullName: string;
-  email: string;
-  role: string;
-  loginTime: Date;
-  logoutTime: Date | null;
-  status: "active" | "ended";
-};
 
 // Helper function to calculate duration
 const calculateDuration = (login: string, logout: string | null) => {
