@@ -107,7 +107,6 @@ export class CaseService {
    *
    * for admin dashboard, returns all the total, active(ongoing), completed cases.
    */
-
   static async getAllCasesStatus(): Promise<{
     total_cases: number;
     active_cases: number;
@@ -136,6 +135,9 @@ export class CaseService {
     }
   }
 
+  /**
+   * find the case where the user is involved/working with
+   */
   static async countAllActiveCases(userId: string): Promise<number> {
     try {
       const [res] = await pool.execute<

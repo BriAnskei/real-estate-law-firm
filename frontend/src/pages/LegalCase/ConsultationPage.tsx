@@ -9,6 +9,7 @@ import {
   Trash2,
   RotateCcw,
   Loader2,
+  MessageSquareOff,
 } from "lucide-react";
 import AddCaseModal from "../../components/modal/caseModal/CaseFormModal";
 import { ViewCaseModal } from "../../components/modal/caseModal/ViewCaseModal";
@@ -207,14 +208,21 @@ export default function ConsultationPage() {
               filterLoading ? "opacity-50" : "opacity-100"
             } transition-opacity duration-200`}
           >
-            {onFiltered && allIds.length === 0 ? (
+            {allIds.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <Search className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
+                {onFiltered ? (
+                  <Search className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
+                ) : (
+                  <MessageSquareOff className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
+                )}
+
                 <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   No cases found
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Try adjusting your search terms
+                  {onFiltered
+                    ? "Try adjusting your search terms"
+                    : "No Consultation found"}
                 </p>
               </div>
             ) : (

@@ -44,7 +44,7 @@ const useConsultationCases = () => {
   const [sortFilter, setSortFilter] = useState<string | undefined>(undefined);
   const [filterLoading, setFilterLoading] = useState(false);
 
-  const onFiltered = !!search?.length;
+  const onFiltered = !!search?.length || sortFilter !== undefined;
 
   // filter ref
   const debounceFilter = useRef<ReturnType<typeof debouncer> | null>(null);

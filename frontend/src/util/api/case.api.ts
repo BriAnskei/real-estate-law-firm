@@ -94,7 +94,7 @@ export class caseApi {
     }>
   > {
     try {
-      const { page, filters } = payload;
+      const { page = 1, filters } = payload;
 
       const res = await api.get("/api/case/get/unpaid", {
         params: {

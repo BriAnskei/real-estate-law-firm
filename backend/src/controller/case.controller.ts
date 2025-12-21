@@ -40,8 +40,7 @@ export class CaseController {
   }
 
   static async getPending(req: Request, res: Response): Promise<void> {
-    const page = Number(req.query.page) || 1;
-
+    const page = Number(req.query.page);
     const filters = {
       query: req.query.query as string,
       sortFilter: req.query.sortFilter as string,
@@ -51,7 +50,6 @@ export class CaseController {
       page,
       filters,
     });
-
     res.json({ success: true, data: unpaidPaginatedCases });
   }
 
