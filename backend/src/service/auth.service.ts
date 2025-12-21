@@ -251,7 +251,7 @@ export class AuthService {
 
       // if it exist or expired
       if (!validationResponse.success) {
-        return { success };
+        return { success, message };
       }
 
       const generatedTokens = await TokenService.handleTokenRotation({

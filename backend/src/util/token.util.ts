@@ -53,12 +53,16 @@ export class TokenUtils {
       };
       return decoded.userId as string;
     } catch (error) {
-      throw new Error("decodeRefreshToken -> " + error);
+      throw error;
     }
   }
 
-  static isTokenExpired(tokenData: refreshToken): boolean {
-    const now = new Date();
-    return new Date(tokenData.expiresAt) < now;
+  static isTokenExpired(refreshToken: string): boolean {
+    try {
+      this.decodeRefreshToken(refreshToken);
+      return false;
+    } catch (error) {
+      return true;
+    }
   }
 }

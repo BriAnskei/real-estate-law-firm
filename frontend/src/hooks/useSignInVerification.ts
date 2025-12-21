@@ -63,10 +63,6 @@ const useSignInVerification = () => {
     await promiseToast(
       async () => {
         await dispatch(signIn(signInInput)).unwrap();
-
-        setTimeout(() => {
-          setLoading(false);
-        }, 0);
       },
       {
         loading: "Please wait",
@@ -74,6 +70,10 @@ const useSignInVerification = () => {
         error: (err) => `${err || "Unknown error"}`,
       }
     );
+
+    setTimeout(() => {
+      setLoading(false);
+    }, 0);
   };
 
   const isSignInInputFilled = (): boolean => {
@@ -98,10 +98,6 @@ const useSignInVerification = () => {
               rememberMe: signInInput.rememberMe,
             })
           ).unwrap();
-
-          setTimeout(() => {
-            setLoading(false);
-          }, 0);
         },
         {
           loading: "Please wait",
@@ -109,6 +105,10 @@ const useSignInVerification = () => {
           error: (err) => `${err || "Unknown error"}`,
         }
       );
+
+      setTimeout(() => {
+        setLoading(false);
+      }, 0);
     } catch (error) {
       console.error(error);
     }

@@ -6,6 +6,7 @@ import { refreshTokens } from "../store/Slice/authSlice";
 import { fetchCurrentUser } from "../store/Slice/userSlice";
 import { AxiosError } from "axios";
 import { selectCurrentUser } from "../store/selector/user/userSelector";
+import { useToast } from "../hooks/useToast";
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { isAuthenticated, accessToken, loading } = useSelector(
     (state: RootState) => state.auth
   );
+
+  const { warningToast } = useToast();
 
   const currUser = useSelector(selectCurrentUser);
 
@@ -32,9 +35,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       hasAttemptedRefresh.current = true;
 
       try {
-        await dispatch(refreshTokens()).unwrap();
+        const response = await dispatch(refreshTokens()).unwrap();
+
+        // if response is null, user is not logged in so we navigate to signin
+        if (!response) {
+          navigate("/signin", { replace: true });
+        }
       } catch (error) {
-        console.log(error);
+        warningToast(error as string);
 
         navigate("/signin", { replace: true });
       }

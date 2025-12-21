@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { AuthService } from "../service/auth.service.js";
 import { AuthRequest } from "../types/express.types.js";
 
+const isprod = process.env.NODE_ENV === "production";
+
 export class AuthController {
   static async signIn(req: Request, res: Response): Promise<any> {
     const { email, password, role, rememberMe } = req.body;
@@ -19,8 +21,8 @@ export class AuthController {
 
     res.cookie("refreshToken", response.data?.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isprod,
+      sameSite: isprod ? "none" : "lax",
       maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
     });
 
@@ -45,11 +47,11 @@ export class AuthController {
 
     res.cookie("refreshToken", response.data?.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isprod,
+      sameSite: isprod ? "none" : "lax",
       maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
     });
-
+    ("");
     res.json({ success: true, data: response.data?.accessToken });
   }
 
@@ -101,8 +103,8 @@ export class AuthController {
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isprod,
+      sameSite: isprod ? "none" : "lax",
     });
     res.json({ success: true, message: "Logged out successfully" });
   }
@@ -124,8 +126,8 @@ export class AuthController {
       if (!response.success) {
         res.clearCookie("refreshToken", {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
+          secure: isprod,
+          sameSite: isprod ? "none" : "lax",
         });
 
         return res.json({ success: false, message: response.message });
@@ -133,8 +135,8 @@ export class AuthController {
 
       res.cookie("refreshToken", response.data?.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: isprod,
+        sameSite: isprod ? "none" : "lax",
         maxAge: response.data?.rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined,
       });
 
@@ -145,8 +147,8 @@ export class AuthController {
     } catch (error) {
       res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: isprod,
+        sameSite: isprod ? "none" : "lax",
       });
       throw error;
     }

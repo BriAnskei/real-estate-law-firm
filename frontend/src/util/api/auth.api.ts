@@ -110,7 +110,7 @@ export class AuthApi {
     }
   }
 
-  static async refreshAccessToken(): Promise<string> {
+  static async refreshAccessToken(): Promise<string | null> {
     try {
       const res = await api.post(
         "/api/auth/refresh",
@@ -119,12 +119,17 @@ export class AuthApi {
       );
 
       if (!res.data.success) {
-        throw new Error(res.data.message || undefined);
+        // token expired
+        if (res.data.message) {
+          throw new Error(res.data.message);
+        }
+
+        // no refresh token, login
+        return null;
       }
 
       return res.data.accessToken;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }

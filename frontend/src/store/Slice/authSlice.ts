@@ -94,7 +94,11 @@ export const refreshTokens = createAsyncThunk(
     try {
       const newAccessToken = await AuthApi.refreshAccessToken();
 
-      dispatch(setTokens(newAccessToken));
+      if (newAccessToken) {
+        dispatch(setTokens(newAccessToken));
+      }
+
+      return newAccessToken;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
 

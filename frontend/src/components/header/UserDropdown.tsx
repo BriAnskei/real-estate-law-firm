@@ -99,7 +99,7 @@ export default function UserDropdown() {
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium 
           text-gray-700 rounded-lg group text-theme-sm hover:bg-[#D4AF37]/10
            hover:text-gray-800 dark:text-gray-300 dark:hover:bg-[#D4AF37]/10
-            dark:hover:text-white transition-colors duration-200"
+            dark:hover:text-white transition-colors duration-200 cursor-pointer"
         >
           <svg
             className="fill-gray-500 group-hover:fill-[#D4AF37] 

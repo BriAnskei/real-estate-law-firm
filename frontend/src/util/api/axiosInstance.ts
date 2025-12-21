@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Store } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store/store";
-import { refreshTokens } from "../../store/Slice/authSlice";
+import { clearAuth, refreshTokens } from "../../store/Slice/authSlice";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:4000",
@@ -44,6 +44,7 @@ export function setupAxiosInterceptors(store: Store) {
 
           return api(originalRequest);
         } catch (refreshError) {
+          (store.dispatch as AppDispatch)(clearAuth());
           // If refresh fails, reject and let AuthContext handle redirect
           return Promise.reject(refreshError);
         }

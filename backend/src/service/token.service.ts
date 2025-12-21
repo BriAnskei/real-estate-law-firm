@@ -111,27 +111,26 @@ export class TokenService {
       `DELETE FROM refresh_tokens WHERE token = ?`,
       [refreshToken]
     );
-
-    const { affectedRows } = res as any;
-    if (affectedRows === 0) throw new Error("No refresh token found to delete");
   }
 
   /**
    *
    * find token if it exist, validate expiration date,
    * returns decodedRefreshToken(userId) and rememberMeIssued.
-   * If token is expired delete token and returns expired message
+   * If token is expired delete token and returns expired message emediately
    */
   static async validateRefreshToken(
     refreshToken: string
   ): Promise<ResponseType<{ decodedUserId: string; rememberMe: boolean }>> {
     try {
-      const tokenData = await this.findByToken(refreshToken);
-
-      if (TokenUtils.isTokenExpired(tokenData)) {
-        await this.deleteByToken(tokenData.token);
+      // check if the refresh token is expired
+      const isRefreshTokenExpired = TokenUtils.isTokenExpired(refreshToken);
+      if (isRefreshTokenExpired) {
+        await this.deleteByToken(refreshToken);
         return { success: false, message: "Token expired, please login again" };
       }
+
+      const tokenData = await this.findByToken(refreshToken);
 
       return {
         success: true,
