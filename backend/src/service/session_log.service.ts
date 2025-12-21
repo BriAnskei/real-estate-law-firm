@@ -99,9 +99,9 @@ export class SessionLogService {
     INNER JOIN users u ON u.id = us.user_id
     ${whereClause}
     ORDER BY us.loginTime DESC
-    LIMIT ? OFFSET ?
+    LIMIT ?, ?
     `,
-      [...params, limit, offset]
+      [...params, offset, limit]
     );
 
     const total = await this.countSessions(whereClause, params);

@@ -305,11 +305,11 @@ export class CaseService {
     FROM cases
         ${whereClause}
     ORDER BY ${sortFilter} ${sortFilter === "created_at" ? "DESC" : "ASC"}
-    LIMIT ? OFFSET ? `;
+    LIMIT ?, ? `;
 
       const [rows] = await pool.execute<(CasesModel & RowDataPacket)[]>(
         sqlQuery,
-        [...params, limit, offset]
+        [...params, offset, limit]
       );
 
       const total = await this.countTotalCases({
