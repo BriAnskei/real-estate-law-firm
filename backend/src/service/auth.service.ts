@@ -8,19 +8,34 @@ import { TokenUtils } from "../util/token.util.js";
 import { TokenService } from "./token.service.js";
 import { MailerUtil } from "../util/mailer.util.js";
 import { PasswordUtils } from "../util/password.util.js";
+import { SessionLogService } from "./session_log.service.js";
 
 export class AuthService {
-  static async signInVerification(
-    payload: SignInPayload
-  ): Promise<ResponseType<{ accessToken: string; refreshToken?: string }>> {
+  static async signInVerification(payload: SignInPayload): Promise<
+    ResponseType<{
+      accessToken: string;
+      refreshToken?: string;
+    }>
+  > {
     try {
       const res = await UsersService.verifySignInCredentials(payload);
       if (!res.success) {
         return { success: false, message: res.message };
       }
 
-      const tokens = await this.handleRequesTokens({
+      let session_id: string | undefined;
+
+      // there is no need to see the session of the admin
+      if (res.data?.role !== "founding-manager/admin") {
+        // new log session
+        session_id = await SessionLogService.addSession({
+          userId: res.data?.id!,
+        });
+      }
+
+      const tokens = await this.handleRequestTokens({
         userId: res.data?.id!,
+        session_id,
         rememberMe: payload.rememberMe,
       });
 
@@ -58,9 +73,18 @@ export class AuthService {
         };
       }
 
-      const tokens = await this.handleRequesTokens({
+      let session_id: string | undefined;
+      if (userData?.role !== "founding-manager/admin") {
+        // new log session
+        session_id = await SessionLogService.addSession({
+          userId: userData?.id!,
+        });
+      }
+
+      const tokens = await this.handleRequestTokens({
         userId: userData.id!,
         rememberMe,
+        session_id,
       });
 
       return { success: true, data: tokens };
@@ -106,9 +130,13 @@ export class AuthService {
 
   static async handleSignOut(refreshToken: string) {
     try {
-      const hashedToken = TokenUtils.hashToken(refreshToken);
+      const tokenData = await TokenService.findByToken(refreshToken);
 
-      await TokenService.deleteByToken(hashedToken);
+      if (tokenData.session_id) {
+        await SessionLogService.endSession(tokenData.session_id);
+      }
+
+      await TokenService.deleteByToken(tokenData.token);
     } catch (error) {
       throw new Error("handleSignOut -> " + error);
     }
@@ -175,12 +203,13 @@ export class AuthService {
    *
    * issue a refresh and access tokens, saves the refreshToken in the DB
    */
-  private static async handleRequesTokens(payload: {
+  private static async handleRequestTokens(payload: {
     userId: string;
     rememberMe: boolean;
+    session_id?: string;
   }): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const { userId, rememberMe } = payload;
+      const { userId, rememberMe, session_id } = payload;
       const tokens = await TokenService.generateTokens({
         userId,
         rememberMe,
@@ -189,6 +218,7 @@ export class AuthService {
       await this.saveRefreshToken({
         userId,
         refreshToken: tokens.refreshToken,
+        session_id,
         rememberMe,
       });
 
@@ -197,17 +227,18 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
       };
     } catch (error) {
-      throw new Error("handleRequesTokens -> " + error);
+      throw new Error("handleRequestTokens -> " + error);
     }
   }
 
   private static async saveRefreshToken(payload: {
     userId: string;
     refreshToken: string;
+    session_id?: string;
     rememberMe: boolean;
   }): Promise<void> {
     try {
-      const { refreshToken, rememberMe, userId } = payload;
+      const { refreshToken, rememberMe, userId, session_id } = payload;
 
       // calculates expiration date
       const today = new Date();
@@ -223,6 +254,7 @@ export class AuthService {
       await TokenService.createRefreshToken({
         token: refreshToken,
         userId,
+        session_id,
         expiresAt: expirationDate,
         rememberMeIssued: rememberMe,
       });
@@ -257,6 +289,7 @@ export class AuthService {
       const generatedTokens = await TokenService.handleTokenRotation({
         userId: data?.decodedUserId!,
         rememberMeIssued: data?.rememberMe!,
+        refreshTokenId: validationResponse.data?.refreshTokenId!,
       });
 
       return {

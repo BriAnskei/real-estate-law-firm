@@ -240,8 +240,8 @@ function TableRows({
       <span
         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
           isOngoing
-            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-            : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            ? " text-blue-700 dark:text-blue-400"
+            : " text-green-700 dark dark:text-green-400"
         }`}
       >
         {isOngoing ? "Ongoing" : "Completed"}

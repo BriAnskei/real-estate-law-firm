@@ -4,15 +4,13 @@ import UpcomingHearingsTable from "../../components/dashboard/admin/UpcommingHea
 import MyTasksCard from "../../components/dashboard/global/MyTask";
 import { useDashboard } from "../../context/DashboardContext";
 import { useEffect } from "react";
+import { useNavigate } from "react-router";
 
 export default function Dashboard() {
   const { globalDashboard, loading } = useDashboard();
+  const navigate = useNavigate();
 
   const isDashboardReady = loading || !globalDashboard;
-
-  useEffect(() => {
-    console.log("global dashboard: ", globalDashboard, isDashboardReady);
-  }, [isDashboardReady, globalDashboard]);
 
   return (
     <div>
@@ -29,6 +27,7 @@ export default function Dashboard() {
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6 mb-6">
         <MetricCard
+          onClick={() => navigate("/case")}
           isLoading={isDashboardReady}
           icon={FileText}
           title="My Active Cases"
@@ -36,6 +35,7 @@ export default function Dashboard() {
           iconBgColor="bg-blue-100 dark:bg-blue-900/20"
         />
         <MetricCard
+          onClick={() => navigate("/case")}
           isLoading={isDashboardReady}
           icon={LayoutList}
           title="Pending Tasks"
@@ -43,6 +43,7 @@ export default function Dashboard() {
           iconBgColor="bg-yellow-100 dark:bg-yellow-900/20"
         />
         <MetricCard
+          onClick={() => navigate("/case")}
           isLoading={isDashboardReady}
           icon={Calendar}
           title="Upcoming Hearings"

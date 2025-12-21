@@ -8,3 +8,4 @@ backend/node_modules
 backend/ca.pem
 
 .vscode
+backend/ca.pem

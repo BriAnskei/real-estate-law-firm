@@ -1,7 +1,8 @@
 export interface refreshToken {
   id?: string;
-  token: string;
   userId: string;
+  session_id?: string;
+  token: string;
   rememberMeIssued?: boolean;
   expiresAt: Date;
   createdAt?: Date;
