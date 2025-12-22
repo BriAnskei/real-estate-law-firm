@@ -58,13 +58,10 @@ export default function SessionLogs() {
 
   return (
     <>
-      <PageMeta
-        title="Cases | Legal Case Management"
-        description="View and manage all ongoing legal cases"
-      />
-      <PageBreadcrumb pageTitle="Cases" />
+      <PageMeta title="User Sessions" description="View All user sessions" />
+      <PageBreadcrumb pageTitle="Session" />
       <div className="space-y-6">
-        <ComponentCard title="All Cases">
+        <ComponentCard title="All Seesions">
           <SessionLogsTable
             onFilterChange={onFilterChange}
             filter={filter}
