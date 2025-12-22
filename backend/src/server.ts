@@ -21,7 +21,12 @@ import caseLogRoute from "./route/case_log.route.js";
 import sessionLogRouter from "./route/session_log.route.js";
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
+
+/**  REQUIRED FOR RENDER */
+app.get("/health", (_req, res) => {
+  res.status(200).send("OK");
+});
 
 app.use(express.json());
 app.use(cookieParser());
@@ -58,9 +63,6 @@ app.use("/api/client", clientRoute);
 
 app.use("/api/notification", notificationRoute);
 
-//  static routes for files
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
 app.get("/", (req: Request, res: Response) => {
   res.send("Brian Pogi");
 });
@@ -84,8 +86,9 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-  console.log(`Server running on port http://localhost:${PORT}`);
+//  static routes for files
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`server running on port ${PORT}`);
 });
