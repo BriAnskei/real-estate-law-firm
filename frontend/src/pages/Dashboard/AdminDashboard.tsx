@@ -1,17 +1,25 @@
-import { Scale, FileText, CheckCircle, Users, AlertCircle } from "lucide-react";
+import {
+  Scale,
+  FileText,
+  CheckCircle,
+  Users,
+  AlertCircle,
+  Filter,
+} from "lucide-react";
 import MetricCard, {
   MetricCardSkeleton,
 } from "../../components/dashboard/admin/MetricCard";
-
 import UpcomingHearingsTable from "../../components/dashboard/admin/UpcommingHearings";
 import PageMeta from "../../components/common/PageMeta";
 import { useDashboard } from "../../context/DashboardContext";
 import CaseStagesDistribution from "../../components/dashboard/admin/CaseStageDistribution";
 import { useNavigate } from "react-router";
+import DateFilter from "./DateFIlter";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { loading, adminDashboard } = useDashboard();
+  const { loading, adminDashboard, dateFilter, setDateFilter, clearFilter } =
+    useDashboard();
 
   const globalLoading = !adminDashboard || loading;
 
@@ -22,13 +30,23 @@ export default function AdminDashboard() {
         description="Overview of cases, users, and tasks"
       />
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          My Dashboard
-        </h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Summary of ongoing real estate cases and legal staff activity
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            My Dashboard
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Summary of ongoing real estate cases and legal staff activity
+          </p>
+        </div>
+
+        {/* Date Filter */}
+        <DateFilter
+          startDate={dateFilter.startDate}
+          endDate={dateFilter.endDate}
+          setDateFilter={setDateFilter}
+          onClear={clearFilter}
+        />
       </div>
 
       {/* Metrics Cards */}

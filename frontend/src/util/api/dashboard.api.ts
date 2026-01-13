@@ -5,9 +5,14 @@ import {
 import api from "./axiosInstance";
 
 export class DashboardApi {
-  static async fetchAdminDashboard(): Promise<AdminDashboardTypes> {
+  static async fetchAdminDashboard(filter?: {
+    startDate?: string; // 'YYYY-MM-DD'
+    endDate?: string; // 'YYYY-MM-DD'
+  }): Promise<AdminDashboardTypes> {
     try {
-      const res = await api.get("/api/dashboard/admin");
+      const res = await api.get("/api/dashboard/admin", {
+        params: filter,
+      });
 
       if (!res.data.success) throw new Error(res.data.message);
 

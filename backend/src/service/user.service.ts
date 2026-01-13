@@ -30,16 +30,36 @@ export class UsersService {
     }
   }
 
-  static async getAllTotalUsers(): Promise<number> {
+  static async getAllTotalUsers(filter?: {
+    startDate?: string; // 'YYYY-MM-DD'
+    endDate?: string; // 'YYYY-MM-DD'
+  }): Promise<number> {
     try {
-      const [res] = await pool.query<
-        (ResultSetHeader & { total_users: number })[]
-      >(`
-       SELECT COUNT(*) AS total_users
-    FROM users
-        `);
+      let whereClause = "WHERE 1=1";
+      const params: any[] = [];
 
-      return res[0].total_users;
+      if (filter?.startDate) {
+        whereClause += " AND created_at >= ?";
+        params.push(filter.startDate);
+      }
+
+      if (filter?.endDate) {
+        whereClause += " AND created_at <= ?";
+        params.push(filter.endDate);
+      }
+
+      const [rows] = await pool.execute<
+        ({ total_users: number } & RowDataPacket)[]
+      >(
+        `
+      SELECT COUNT(*) AS total_users
+      FROM users
+      ${whereClause}
+      `,
+        params
+      );
+
+      return rows[0].total_users;
     } catch (error) {
       throw error;
     }

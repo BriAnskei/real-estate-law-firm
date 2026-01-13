@@ -107,12 +107,28 @@ export class CaseService {
    *
    * for admin dashboard, returns all the total, active(ongoing), completed cases.
    */
-  static async getAllCasesStatus(): Promise<{
+  static async getAllCasesStatus(filter?: {
+    startDate?: string; // 'YYYY-MM-DD'
+    endDate?: string; // 'YYYY-MM-DD'
+  }): Promise<{
     total_cases: number;
     active_cases: number;
     completed_cases: number;
   }> {
     try {
+      let whereClause = "WHERE 1=1";
+      const params: any[] = [];
+
+      if (filter?.startDate) {
+        whereClause += " AND created_at >= ?";
+        params.push(filter.startDate);
+      }
+
+      if (filter?.endDate) {
+        whereClause += " AND created_at <= ?";
+        params.push(filter.endDate);
+      }
+
       const [rows] = await pool.execute<
         ({
           total_cases: number;
@@ -126,7 +142,9 @@ export class CaseService {
         COALESCE(SUM(status = 'ongoing'), 0) AS active_cases,
         COALESCE(SUM(status = 'complete'), 0) AS completed_cases
       FROM cases
-      `
+      ${whereClause}
+      `,
+        params
       );
 
       return rows[0];

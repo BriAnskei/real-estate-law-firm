@@ -36,11 +36,27 @@ export class CaseStageService {
   /**
    * for admin dashboard
    */
-  static async getOngoingCasesStageSummary(): Promise<{
+  static async getOngoingCasesStageSummary(filter?: {
+    startDate?: string; // 'YYYY-MM-DD'
+    endDate?: string; // 'YYYY-MM-DD'
+  }): Promise<{
     MANAGE_REQUIREMENTS: number;
     FILING_DOCS: number;
     HEARING: number;
   }> {
+    let whereClause = "WHERE stage_status = 'ongoing'";
+    const params: any[] = [];
+
+    if (filter?.startDate) {
+      whereClause += " AND created_at >= ?";
+      params.push(filter.startDate);
+    }
+
+    if (filter?.endDate) {
+      whereClause += " AND created_at < DATE_ADD(?, INTERVAL 1 DAY)";
+      params.push(filter.endDate);
+    }
+
     const [rows] = await pool.execute<
       (RowDataPacket & {
         MANAGE_REQUIREMENTS: number;
@@ -54,8 +70,9 @@ export class CaseStageService {
       COALESCE(SUM(stage_name = 'FILING_DOCS'), 0) AS FILING_DOCS,
       COALESCE(SUM(stage_name = 'HEARING'), 0) AS HEARING
     FROM case_stages
-    WHERE stage_status = 'ongoing'
-    `
+    ${whereClause}
+    `,
+      params
     );
 
     return rows[0];

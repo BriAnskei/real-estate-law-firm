@@ -7,17 +7,22 @@ import { HearingService } from "../service/hearing.service.js";
 import { AuthRequest } from "../types/express.types.js";
 
 export class DashboardController {
-  static async fetchAdminDashboard(_: Request, res: Response): Promise<void> {
+  static async fetchAdminDashboard(req: Request, res: Response): Promise<void> {
+    const filters = {
+      startDate: req.query.startDate as string,
+      endDate: req.query.endDate as string,
+    };
+
     // case cards: total, ongoing, completed
-    const cardsData = await CaseService.getAllCasesStatus();
+    const cardsData = await CaseService.getAllCasesStatus(filters);
 
     // on due tasks
     const dueTasks = await TaskService.getAllDueTask();
 
-    const totalUsers = await UsersService.getAllTotalUsers();
+    const totalUsers = await UsersService.getAllTotalUsers(filters);
 
     const stageDistributionCount =
-      await CaseStageService.getOngoingCasesStageSummary();
+      await CaseStageService.getOngoingCasesStageSummary(filters);
 
     const upcommingHearings = await HearingService.getUpcomingHearings();
 

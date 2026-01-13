@@ -65,6 +65,13 @@ type DashboardContextType = {
   loading: boolean;
   adminDashboard?: AdminDashboardTypes;
   globalDashboard?: DashboardSummary;
+  // admin filter
+  setDateFilter: (filter: { startDate: string; endDate: string }) => void;
+  clearFilter: () => void;
+  dateFilter: {
+    startDate: string;
+    endDate: string;
+  };
 };
 
 const DashoardContext = createContext<DashboardContextType | undefined>(
@@ -119,6 +126,12 @@ export const DashboardProvider: React.FC<{
     TaskItem[] | undefined
   >(undefined);
 
+  // filter for admin dashboard
+  const [dateFilter, setDateFilter] = useState({
+    startDate: "",
+    endDate: "",
+  });
+
   useEffect(() => {
     if (!isAuthenticated || !curUser || curUser.role === Roles.processServer) {
       return;
@@ -133,22 +146,43 @@ export const DashboardProvider: React.FC<{
     }
   }, [curUser]);
 
-  // admin fetcher
-  const fetchAdminDashboard = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const res = await DashboardApi.fetchAdminDashboard();
-
-      setAdminCards(res.cards);
-      setStageDistributionCount(res.stageDistributionCount);
-      setUpcommingHearings(res.upcommingHearings);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+  // date filter
+  useEffect(() => {
+    if (!isAuthenticated || !curUser || curUser.role === Roles.processServer) {
+      return;
     }
-  }, []);
+
+    if (curUser.role === Roles.foundingManager) {
+      fetchAdminDashboard(dateFilter);
+    }
+  }, [dateFilter]);
+
+  const clearFilter = () => {
+    setDateFilter({
+      startDate: "",
+      endDate: "",
+    });
+  };
+
+  // admin fetcher
+  const fetchAdminDashboard = useCallback(
+    async (filterData?: { startDate: string; endDate: string }) => {
+      try {
+        setLoading(true);
+
+        const res = await DashboardApi.fetchAdminDashboard(filterData);
+
+        setAdminCards(res.cards);
+        setStageDistributionCount(res.stageDistributionCount);
+        setUpcommingHearings(res.upcommingHearings);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   // global function, atty, para
   const fetchGlobalDashboard = useCallback(async () => {
@@ -206,6 +240,10 @@ export const DashboardProvider: React.FC<{
               dueIn5Days: dueIn5DaysTasks,
             }
           : undefined,
+
+        setDateFilter,
+        dateFilter,
+        clearFilter,
       }}
     >
       {children}
