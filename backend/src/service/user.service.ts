@@ -44,7 +44,7 @@ export class UsersService {
       }
 
       if (filter?.endDate) {
-        whereClause += " AND created_at <= ?";
+        whereClause += " AND created_at < DATE_ADD(?, INTERVAL 1 DAY)";
         params.push(filter.endDate);
       }
 
